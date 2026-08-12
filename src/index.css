@@ -1,0 +1,48 @@
+@import url('https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&display=swap');
+@import "tailwindcss";
+
+:root {
+  font-family: 'Sora', sans-serif;
+  color-scheme: light;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background-color: #0f1015;
+  color: #1a1a1a;
+  font-family: 'Sora', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.15);
+  border-radius: 9999px;
+}
+
+/* Hide scrollbar for clean horizontal filter pills */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+@keyframes pulse-subtle {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.92; transform: scale(0.98); }
+}
+
+.animate-pulse-subtle {
+  animation: pulse-subtle 2s infinite ease-in-out;
+}
