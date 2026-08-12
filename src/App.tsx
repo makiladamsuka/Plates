@@ -143,6 +143,7 @@ export function App() {
           searchQuery={searchQuery}
           onSearchChange={setSearchQuery}
           isDark={isDark}
+          onToggleTheme={handleToggleTheme}
         />
 
         {/* View Switcher */}

@@ -29,47 +29,31 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ isDark = true, onTog
         </div>
       </div>
 
-      {/* Theme Switcher Setting Row */}
-      <div className={`rounded-2xl p-3.5 flex items-center justify-between shadow-sm border transition-colors ${
-        isDark
-          ? 'bg-[#14151b] border-white/[0.08]'
-          : 'bg-white border-black/[0.08]'
-      }`}>
+      {/* Simple Theme Toggle Button */}
+      <button
+        onClick={onToggleTheme}
+        className={`w-full rounded-2xl p-3.5 flex items-center justify-between shadow-sm border transition-all ${
+          isDark
+            ? 'bg-[#14151b] border-white/[0.08] hover:bg-[#191b23]'
+            : 'bg-white border-black/[0.08] hover:bg-neutral-50'
+        }`}
+      >
         <div className="flex items-center gap-2.5">
           {isDark ? <Moon className="w-4 h-4 text-[#f5c744]" /> : <Sun className="w-4 h-4 text-amber-500" />}
-          <div>
-            <span className={`text-xs font-semibold block ${isDark ? 'text-white' : 'text-[#0f1015]'}`}>
-              Appearance
-            </span>
-            <span className={`text-[10px] block ${isDark ? 'text-neutral-400' : 'text-neutral-500'}`}>
-              Switch between Light & Dark Mode
-            </span>
-          </div>
+          <span className={`text-xs font-semibold ${isDark ? 'text-white' : 'text-[#0f1015]'}`}>
+            Theme Appearance
+          </span>
         </div>
 
-        {/* Theme Toggle Pill */}
-        <button
-          onClick={onToggleTheme}
-          className={`flex items-center p-1 rounded-full border transition-all ${
-            isDark
-              ? 'bg-[#16171e] border-white/10 text-white'
-              : 'bg-neutral-100 border-black/10 text-neutral-800'
-          }`}
-        >
-          <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold flex items-center gap-1 transition-all ${
-            !isDark ? 'bg-white text-black shadow-sm' : 'text-neutral-400'
-          }`}>
-            <Sun className="w-3 h-3 text-amber-500" />
-            Light
-          </span>
-          <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold flex items-center gap-1 transition-all ${
-            isDark ? 'bg-[#f5c744] text-black shadow-sm' : 'text-neutral-500'
-          }`}>
-            <Moon className="w-3 h-3" />
-            Dark
-          </span>
-        </button>
-      </div>
+        <span className={`text-[10px] font-bold px-3 py-1 rounded-full border transition-all ${
+          isDark
+            ? 'bg-[#f5c744] text-black border-[#f5c744]'
+            : 'bg-[#0f1015] text-white border-[#0f1015]'
+        }`}>
+          {isDark ? 'Dark Mode' : 'Light Mode'}
+        </span>
+      </button>
+
 
       {/* Settings Options */}
       <div className={`rounded-2xl p-1.5 space-y-0.5 shadow-sm border transition-colors ${

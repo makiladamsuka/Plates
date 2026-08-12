@@ -1,14 +1,21 @@
 import React, { useState } from 'react';
-import { Search, X } from 'lucide-react';
+import { Search, X, Sun, Moon } from 'lucide-react';
 
 interface HeaderProps {
   title: string;
   searchQuery: string;
   onSearchChange: (query: string) => void;
   isDark?: boolean;
+  onToggleTheme?: () => void;
 }
 
-export const Header: React.FC<HeaderProps> = ({ title, searchQuery, onSearchChange, isDark = true }) => {
+export const Header: React.FC<HeaderProps> = ({
+  title,
+  searchQuery,
+  onSearchChange,
+  isDark = true,
+  onToggleTheme,
+}) => {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
 
   return (
@@ -51,19 +58,34 @@ export const Header: React.FC<HeaderProps> = ({ title, searchQuery, onSearchChan
           <h1 className={`text-2xl font-bold tracking-tight font-['Sora'] ${isDark ? 'text-white' : 'text-[#0f1015]'}`}>
             {title}
           </h1>
-          <button
-            onClick={() => setIsSearchOpen(true)}
-            className={`p-2 rounded-full active:scale-95 transition-all ${
-              isDark ? 'hover:bg-white/10 text-neutral-300 hover:text-white' : 'hover:bg-black/5 text-neutral-700 hover:text-black'
-            }`}
-            aria-label="Search"
-          >
-            <Search className="w-5 h-5 stroke-[2]" />
-          </button>
+          <div className="flex items-center gap-1">
+            {onToggleTheme && (
+              <button
+                onClick={onToggleTheme}
+                className={`p-2 rounded-full active:scale-95 transition-all ${
+                  isDark ? 'hover:bg-white/10 text-[#f5c744]' : 'hover:bg-black/5 text-amber-600'
+                }`}
+                aria-label="Toggle Theme"
+                title="Switch Theme"
+              >
+                {isDark ? <Moon className="w-5 h-5" /> : <Sun className="w-5 h-5" />}
+              </button>
+            )}
+            <button
+              onClick={() => setIsSearchOpen(true)}
+              className={`p-2 rounded-full active:scale-95 transition-all ${
+                isDark ? 'hover:bg-white/10 text-neutral-300 hover:text-white' : 'hover:bg-black/5 text-neutral-700 hover:text-black'
+              }`}
+              aria-label="Search"
+            >
+              <Search className="w-5 h-5 stroke-[2]" />
+            </button>
+          </div>
         </>
       )}
     </header>
   );
 };
+
 
 
