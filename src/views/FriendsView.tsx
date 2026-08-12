@@ -6,12 +6,14 @@ interface FriendsViewProps {
   friends: Friend[];
   onAddFriend: (name: string, username: string) => void;
   onAcceptRequest: (friendId: string) => void;
+  isDark?: boolean;
 }
 
 export const FriendsView: React.FC<FriendsViewProps> = ({
   friends,
   onAddFriend,
   onAcceptRequest,
+  isDark = true,
 }) => {
   const [activeFilter, setActiveFilter] = useState<'all' | 'pending'>('all');
   const [showAddModal, setShowAddModal] = useState(false);
@@ -40,8 +42,12 @@ export const FriendsView: React.FC<FriendsViewProps> = ({
           onClick={() => setActiveFilter('all')}
           className={`px-3.5 py-1 rounded-full text-xs font-medium transition-all font-['Sora'] ${
             activeFilter === 'all'
-              ? 'bg-white text-black font-bold shadow-sm'
-              : 'bg-[#16171e] text-neutral-400 hover:text-white border border-white/[0.08]'
+              ? isDark
+                ? 'bg-white text-black font-bold shadow-sm'
+                : 'bg-[#0f1015] text-white font-bold shadow-sm'
+              : isDark
+                ? 'bg-[#16171e] text-neutral-400 hover:text-white border border-white/[0.08]'
+                : 'bg-white text-neutral-700 hover:text-black border border-black/[0.08] shadow-sm'
           }`}
         >
           All
@@ -50,8 +56,12 @@ export const FriendsView: React.FC<FriendsViewProps> = ({
           onClick={() => setActiveFilter('pending')}
           className={`px-3.5 py-1 rounded-full text-xs font-medium transition-all flex items-center gap-1 font-['Sora'] ${
             activeFilter === 'pending'
-              ? 'bg-white text-black font-bold shadow-sm'
-              : 'bg-[#16171e] text-neutral-400 hover:text-white border border-white/[0.08]'
+              ? isDark
+                ? 'bg-white text-black font-bold shadow-sm'
+                : 'bg-[#0f1015] text-white font-bold shadow-sm'
+              : isDark
+                ? 'bg-[#16171e] text-neutral-400 hover:text-white border border-white/[0.08]'
+                : 'bg-white text-neutral-700 hover:text-black border border-black/[0.08] shadow-sm'
           }`}
         >
           <span>Pending</span>
@@ -66,14 +76,18 @@ export const FriendsView: React.FC<FriendsViewProps> = ({
       {/* Friends List */}
       <div className="space-y-2">
         {displayedFriends.length === 0 ? (
-          <div className="text-center py-12 text-neutral-500">
+          <div className={`text-center py-12 ${isDark ? 'text-neutral-500' : 'text-neutral-400'}`}>
             <p className="text-xs">No friends found in this section.</p>
           </div>
         ) : (
           displayedFriends.map((friend) => (
             <div
               key={friend.id}
-              className="bg-[#14151b] rounded-2xl p-3 flex items-center justify-between shadow-sm border border-white/[0.07] hover:bg-[#191b23] transition-all"
+              className={`rounded-2xl p-3 flex items-center justify-between shadow-sm border transition-all ${
+                isDark
+                  ? 'bg-[#14151b] border-white/[0.07] hover:bg-[#191b23]'
+                  : 'bg-white border-black/[0.08] hover:bg-[#f9f9fc]'
+              }`}
             >
               <div className="flex items-center gap-2.5">
                 <img
@@ -82,8 +96,10 @@ export const FriendsView: React.FC<FriendsViewProps> = ({
                   className="w-10 h-10 rounded-full object-cover border border-white/20"
                 />
                 <div>
-                  <h4 className="font-semibold text-xs text-white font-['Sora']">{friend.name}</h4>
-                  <p className="text-[10px] text-neutral-400">{friend.username}</p>
+                  <h4 className={`font-semibold text-xs font-['Sora'] ${isDark ? 'text-white' : 'text-[#0f1015]'}`}>
+                    {friend.name}
+                  </h4>
+                  <p className={`text-[10px] ${isDark ? 'text-neutral-400' : 'text-neutral-500'}`}>{friend.username}</p>
                 </div>
               </div>
 
@@ -91,27 +107,31 @@ export const FriendsView: React.FC<FriendsViewProps> = ({
                 <div className="flex items-center gap-1.5">
                   <button
                     onClick={() => onAcceptRequest(friend.id)}
-                    className="p-1.5 bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 rounded-full hover:bg-emerald-500/30 transition-colors"
+                    className="p-1.5 bg-emerald-500/20 text-emerald-500 border border-emerald-500/30 rounded-full hover:bg-emerald-500/30 transition-colors"
                   >
                     <Check className="w-3.5 h-3.5" />
                   </button>
-                  <button className="p-1.5 bg-white/10 text-neutral-400 rounded-full hover:bg-white/20 transition-colors">
+                  <button className={`p-1.5 rounded-full transition-colors ${
+                    isDark ? 'bg-white/10 text-neutral-400 hover:bg-white/20' : 'bg-black/5 text-neutral-500 hover:bg-black/10'
+                  }`}>
                     <X className="w-3.5 h-3.5" />
                   </button>
                 </div>
               ) : (
                 <div className="text-right">
                   {friend.balance === 0 ? (
-                    <span className="text-[10px] font-semibold text-neutral-400 bg-white/5 px-2 py-0.5 rounded-full border border-white/5">
+                    <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${
+                      isDark ? 'text-neutral-400 bg-white/5 border-white/5' : 'text-neutral-500 bg-neutral-100 border-black/5'
+                    }`}>
                       Settled
                     </span>
                   ) : friend.balance > 0 ? (
-                    <div className="text-emerald-400 font-bold text-xs flex items-center gap-0.5 font-['Sora']">
+                    <div className="text-emerald-600 dark:text-emerald-400 font-bold text-xs flex items-center gap-0.5 font-['Sora']">
                       <ArrowDownLeft className="w-3 h-3" />
                       <span>+LKR {friend.balance.toLocaleString()}</span>
                     </div>
                   ) : (
-                    <div className="text-rose-400 font-bold text-xs flex items-center gap-0.5 font-['Sora']">
+                    <div className="text-rose-600 dark:text-rose-400 font-bold text-xs flex items-center gap-0.5 font-['Sora']">
                       <ArrowUpRight className="w-3 h-3" />
                       <span>-LKR {Math.abs(friend.balance).toLocaleString()}</span>
                     </div>
@@ -126,7 +146,11 @@ export const FriendsView: React.FC<FriendsViewProps> = ({
       {/* Add Friend Floating Button */}
       <button
         onClick={() => setShowAddModal(true)}
-        className="fixed bottom-20 right-5 sm:right-[calc(50%-180px)] w-12 h-12 rounded-full bg-[#14151b] hover:bg-[#1a1c24] active:scale-95 transition-all shadow-xl flex items-center justify-center text-white z-30 border border-white/20"
+        className={`fixed bottom-20 right-5 sm:right-[calc(50%-180px)] w-12 h-12 rounded-full active:scale-95 transition-all shadow-xl flex items-center justify-center z-30 border ${
+          isDark
+            ? 'bg-[#14151b] hover:bg-[#1a1c24] text-white border-white/20'
+            : 'bg-black hover:bg-neutral-800 text-white border-black/20'
+        }`}
         aria-label="Add Friend"
       >
         <UserPlus className="w-5 h-5" />
@@ -135,35 +159,41 @@ export const FriendsView: React.FC<FriendsViewProps> = ({
       {/* Add Friend Modal */}
       {showAddModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-md p-4">
-          <div className="w-full max-w-[360px] bg-[#14151b] text-white rounded-2xl p-5 shadow-2xl relative border border-white/10">
+          <div className={`w-full max-w-[360px] rounded-2xl p-5 shadow-2xl relative border ${
+            isDark ? 'bg-[#14151b] text-white border-white/10' : 'bg-white text-black border-black/10'
+          }`}>
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-base font-bold font-['Sora']">Add New Friend</h3>
-              <button onClick={() => setShowAddModal(false)} className="text-neutral-400 hover:text-white">
+              <button onClick={() => setShowAddModal(false)} className={isDark ? 'text-neutral-400 hover:text-white' : 'text-neutral-500 hover:text-black'}>
                 <X className="w-4 h-4" />
               </button>
             </div>
 
             <form onSubmit={handleAddSubmit} className="space-y-3.5">
               <div>
-                <label className="block text-[11px] font-medium text-neutral-400 mb-1">Full Name</label>
+                <label className={`block text-[11px] font-medium mb-1 ${isDark ? 'text-neutral-400' : 'text-neutral-600'}`}>Full Name</label>
                 <input
                   type="text"
                   required
                   value={newFriendName}
                   onChange={(e) => setNewFriendName(e.target.value)}
                   placeholder="e.g. Ruwan Wickrama"
-                  className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-white text-xs focus:outline-none focus:border-[#f5c744]"
+                  className={`w-full border rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-[#f5c744] ${
+                    isDark ? 'bg-white/5 border-white/10 text-white' : 'bg-neutral-100 border-black/10 text-black'
+                  }`}
                 />
               </div>
 
               <div>
-                <label className="block text-[11px] font-medium text-neutral-400 mb-1">Username / Handle</label>
+                <label className={`block text-[11px] font-medium mb-1 ${isDark ? 'text-neutral-400' : 'text-neutral-600'}`}>Username / Handle</label>
                 <input
                   type="text"
                   value={newFriendHandle}
                   onChange={(e) => setNewFriendHandle(e.target.value)}
                   placeholder="@ruwan_w"
-                  className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-white text-xs focus:outline-none focus:border-[#f5c744]"
+                  className={`w-full border rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-[#f5c744] ${
+                    isDark ? 'bg-white/5 border-white/10 text-white' : 'bg-neutral-100 border-black/10 text-black'
+                  }`}
                 />
               </div>
 
@@ -180,4 +210,5 @@ export const FriendsView: React.FC<FriendsViewProps> = ({
     </div>
   );
 };
+
 

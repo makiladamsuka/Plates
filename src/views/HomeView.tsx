@@ -8,6 +8,7 @@ interface HomeViewProps {
   onSelectBill: (bill: Bill) => void;
   onOpenNewBill: () => void;
   onNavigateToBills: () => void;
+  isDark?: boolean;
 }
 
 export const HomeView: React.FC<HomeViewProps> = ({
@@ -15,6 +16,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
   onSelectBill,
   onOpenNewBill,
   onNavigateToBills,
+  isDark = true,
 }) => {
   const pendingBills = bills.filter((b) => b.status === 'Pending');
   const needsApproval = pendingBills.find((b) => b.creator !== 'You');
@@ -39,22 +41,30 @@ export const HomeView: React.FC<HomeViewProps> = ({
     <div className="px-4 pb-24 pt-2 space-y-4">
       {/* Overview Balance Cards */}
       <div className="grid grid-cols-2 gap-2.5">
-        <div className="bg-[#14151b] text-white rounded-2xl p-3.5 border border-white/[0.08] shadow-sm">
-          <div className="flex items-center gap-1 text-[11px] text-emerald-400 font-semibold mb-1">
+        <div className={`rounded-2xl p-3.5 border transition-colors shadow-sm ${
+          isDark
+            ? 'bg-[#14151b] text-white border-white/[0.08]'
+            : 'bg-white text-[#0f1015] border-black/[0.08]'
+        }`}>
+          <div className="flex items-center gap-1 text-[11px] text-emerald-500 font-semibold mb-1">
             <ArrowDownLeft className="w-3.5 h-3.5" />
             <span>Owed to You</span>
           </div>
-          <p className="text-xl font-bold font-['Sora'] tracking-tight text-white">
+          <p className={`text-xl font-bold font-['Sora'] tracking-tight ${isDark ? 'text-white' : 'text-[#0f1015]'}`}>
             LKR {owedToYouTotal.toLocaleString()}
           </p>
         </div>
 
-        <div className="bg-[#14151b] text-white rounded-2xl p-3.5 border border-white/[0.08] shadow-sm">
-          <div className="flex items-center gap-1 text-[11px] text-rose-400 font-semibold mb-1">
+        <div className={`rounded-2xl p-3.5 border transition-colors shadow-sm ${
+          isDark
+            ? 'bg-[#14151b] text-white border-white/[0.08]'
+            : 'bg-white text-[#0f1015] border-black/[0.08]'
+        }`}>
+          <div className="flex items-center gap-1 text-[11px] text-rose-500 font-semibold mb-1">
             <ArrowUpRight className="w-3.5 h-3.5" />
             <span>You Owe</span>
           </div>
-          <p className="text-xl font-bold font-['Sora'] tracking-tight text-white">
+          <p className={`text-xl font-bold font-['Sora'] tracking-tight ${isDark ? 'text-white' : 'text-[#0f1015]'}`}>
             LKR {youOweTotal.toLocaleString()}
           </p>
         </div>
@@ -89,7 +99,11 @@ export const HomeView: React.FC<HomeViewProps> = ({
       <div className="grid grid-cols-2 gap-2.5">
         <button
           onClick={onOpenNewBill}
-          className="bg-[#16171e] text-white rounded-xl p-3 flex items-center justify-center gap-2 hover:bg-[#1c1d26] transition-colors border border-white/[0.08]"
+          className={`rounded-xl p-3 flex items-center justify-center gap-2 border transition-colors ${
+            isDark
+              ? 'bg-[#16171e] text-white border-white/[0.08] hover:bg-[#1c1d26]'
+              : 'bg-white text-black border-black/[0.08] hover:bg-neutral-50 shadow-sm'
+          }`}
         >
           <div className="w-7 h-7 rounded-full bg-[#f5c744] text-black flex items-center justify-center font-bold">
             <Plus className="w-4 h-4 stroke-[2.5]" />
@@ -99,9 +113,15 @@ export const HomeView: React.FC<HomeViewProps> = ({
 
         <button
           onClick={onNavigateToBills}
-          className="bg-[#16171e] text-white rounded-xl p-3 flex items-center justify-center gap-2 hover:bg-[#1c1d26] transition-colors border border-white/[0.08]"
+          className={`rounded-xl p-3 flex items-center justify-center gap-2 border transition-colors ${
+            isDark
+              ? 'bg-[#16171e] text-white border-white/[0.08] hover:bg-[#1c1d26]'
+              : 'bg-white text-black border-black/[0.08] hover:bg-neutral-50 shadow-sm'
+          }`}
         >
-          <div className="w-7 h-7 rounded-full bg-white text-black flex items-center justify-center font-bold">
+          <div className={`w-7 h-7 rounded-full flex items-center justify-center font-bold ${
+            isDark ? 'bg-white text-black' : 'bg-black text-white'
+          }`}>
             <ArrowUpRight className="w-4 h-4 stroke-[2.5]" />
           </div>
           <span className="text-xs font-semibold">View All</span>
@@ -111,19 +131,24 @@ export const HomeView: React.FC<HomeViewProps> = ({
       {/* Recent Activity Section */}
       <div>
         <div className="flex justify-between items-center mb-2.5 pt-1">
-          <h2 className="text-xs font-bold text-neutral-400 uppercase tracking-wider font-['Sora']">Recent Activity</h2>
-          <button onClick={onNavigateToBills} className="text-xs font-semibold text-neutral-400 hover:text-white transition-colors">
+          <h2 className={`text-xs font-bold uppercase tracking-wider font-['Sora'] ${
+            isDark ? 'text-neutral-400' : 'text-neutral-600'
+          }`}>Recent Activity</h2>
+          <button onClick={onNavigateToBills} className={`text-xs font-semibold hover:underline transition-colors ${
+            isDark ? 'text-neutral-400 hover:text-white' : 'text-neutral-600 hover:text-black'
+          }`}>
             See all
           </button>
         </div>
 
         <div className="space-y-2">
           {bills.slice(0, 3).map((bill) => (
-            <BillCard key={bill.id} bill={bill} onClick={onSelectBill} />
+            <BillCard key={bill.id} bill={bill} onClick={onSelectBill} isDark={isDark} />
           ))}
         </div>
       </div>
     </div>
   );
 };
+
 

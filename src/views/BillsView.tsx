@@ -9,6 +9,7 @@ interface BillsViewProps {
   onSortChange: (sort: SortOption) => void;
   onSelectBill: (bill: Bill) => void;
   onOpenNewBill: () => void;
+  isDark?: boolean;
 }
 
 export const BillsView: React.FC<BillsViewProps> = ({
@@ -17,6 +18,7 @@ export const BillsView: React.FC<BillsViewProps> = ({
   onSortChange,
   onSelectBill,
   onOpenNewBill,
+  isDark = true,
 }) => {
   const sortOptions: { id: SortOption; label: string }[] = [
     { id: 'all', label: 'All' },
@@ -37,8 +39,12 @@ export const BillsView: React.FC<BillsViewProps> = ({
               onClick={() => onSortChange(opt.id)}
               className={`px-3.5 py-1 rounded-full text-xs font-medium transition-all duration-150 shrink-0 font-['Sora'] ${
                 isActive
-                  ? 'bg-white text-black font-bold shadow-sm'
-                  : 'bg-[#16171e] text-neutral-400 hover:text-white border border-white/[0.08]'
+                  ? isDark
+                    ? 'bg-white text-black font-bold shadow-sm'
+                    : 'bg-[#0f1015] text-white font-bold shadow-sm'
+                  : isDark
+                    ? 'bg-[#16171e] text-neutral-400 hover:text-white border border-white/[0.08]'
+                    : 'bg-white text-neutral-700 hover:text-black border border-black/[0.08] shadow-sm'
               }`}
             >
               {opt.label}
@@ -49,13 +55,13 @@ export const BillsView: React.FC<BillsViewProps> = ({
 
       {/* Bill List */}
       {bills.length === 0 ? (
-        <div className="text-center py-16 text-neutral-500">
+        <div className={`text-center py-16 ${isDark ? 'text-neutral-500' : 'text-neutral-400'}`}>
           <p className="text-xs font-medium">No bills match your search.</p>
         </div>
       ) : (
         <div className="space-y-2">
           {bills.map((bill) => (
-            <BillCard key={bill.id} bill={bill} onClick={onSelectBill} />
+            <BillCard key={bill.id} bill={bill} onClick={onSelectBill} isDark={isDark} />
           ))}
         </div>
       )}
@@ -71,4 +77,5 @@ export const BillsView: React.FC<BillsViewProps> = ({
     </div>
   );
 };
+
 

@@ -36,3 +36,6 @@ export interface Friend {
 export type TabType = 'home' | 'bills' | 'friends' | 'settings';
 
 export type SortOption = 'all' | 'highest' | 'lowest' | 'oldest';
+
+export type ThemeMode = 'dark' | 'light';
+

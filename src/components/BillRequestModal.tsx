@@ -7,6 +7,7 @@ interface BillRequestModalProps {
   onClose: () => void;
   onApprove: (billId: string) => void;
   onDecline: (billId: string) => void;
+  isDark?: boolean;
 }
 
 export const BillRequestModal: React.FC<BillRequestModalProps> = ({
@@ -14,6 +15,7 @@ export const BillRequestModal: React.FC<BillRequestModalProps> = ({
   onClose,
   onApprove,
   onDecline,
+  isDark = true,
 }) => {
   const [sliderPosition, setSliderPosition] = useState(0); // 0 to 100%
   const [isSliding, setIsSliding] = useState(false);
@@ -68,37 +70,49 @@ export const BillRequestModal: React.FC<BillRequestModalProps> = ({
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/75 backdrop-blur-md transition-opacity">
       <div
-        className="w-full max-w-[412px] bg-[#14151b] text-white rounded-t-3xl p-5 shadow-2xl relative border-t border-white/10 animate-in slide-in-from-bottom duration-250 max-h-[90vh] overflow-y-auto"
+        className={`w-full max-w-[412px] rounded-t-3xl p-5 shadow-2xl relative border-t animate-in slide-in-from-bottom duration-250 max-h-[90vh] overflow-y-auto ${
+          isDark
+            ? 'bg-[#14151b] text-white border-white/10'
+            : 'bg-white text-[#0f1015] border-black/10'
+        }`}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Grab Handle */}
-        <div className="w-10 h-1 bg-neutral-700 rounded-full mx-auto mb-4" />
+        <div className={`w-10 h-1 rounded-full mx-auto mb-4 ${isDark ? 'bg-neutral-700' : 'bg-neutral-300'}`} />
 
         {/* Close button */}
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 p-1.5 rounded-full bg-white/5 hover:bg-white/10 text-neutral-400 hover:text-white transition-colors"
+          className={`absolute top-4 right-4 p-1.5 rounded-full transition-colors ${
+            isDark ? 'bg-white/5 hover:bg-white/10 text-neutral-400 hover:text-white' : 'bg-black/5 hover:bg-black/10 text-neutral-500 hover:text-black'
+          }`}
         >
           <X className="w-4 h-4" />
         </button>
 
         {/* Header Metadata */}
         <div className="mb-4">
-          <p className="text-neutral-400 text-xs mb-0.5">{bill.creator} added you</p>
-          <h2 className="text-xl font-bold text-white font-['Sora'] leading-snug">
+          <p className={`text-xs mb-0.5 ${isDark ? 'text-neutral-400' : 'text-neutral-500'}`}>{bill.creator} added you</p>
+          <h2 className={`text-xl font-bold font-['Sora'] leading-snug ${isDark ? 'text-white' : 'text-[#0f1015]'}`}>
             {bill.title}
           </h2>
-          <span className="inline-block mt-1.5 px-2.5 py-0.5 bg-white/10 text-neutral-300 rounded-full text-[10px] font-medium">
+          <span className={`inline-block mt-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-medium ${
+            isDark ? 'bg-white/10 text-neutral-300' : 'bg-neutral-100 text-neutral-700'
+          }`}>
             {bill.peopleCount} People • {bill.category}
           </span>
         </div>
 
         {/* Participant List */}
-        <div className="space-y-2 mb-4 bg-white/5 p-3 rounded-xl border border-white/5">
+        <div className={`space-y-2 mb-4 p-3 rounded-xl border ${
+          isDark ? 'bg-white/5 border-white/5' : 'bg-neutral-50 border-black/5'
+        }`}>
           {bill.participants.map((person) => (
             <div
               key={person.id}
-              className="flex items-center justify-between py-1.5 border-b border-white/5 last:border-none"
+              className={`flex items-center justify-between py-1.5 border-b last:border-none ${
+                isDark ? 'border-white/5' : 'border-black/5'
+              }`}
             >
               <div className="flex items-center gap-2.5">
                 {person.avatar ? (
@@ -108,15 +122,17 @@ export const BillRequestModal: React.FC<BillRequestModalProps> = ({
                     className="w-7 h-7 rounded-full object-cover border border-white/20"
                   />
                 ) : (
-                  <div className="w-7 h-7 rounded-full bg-neutral-700 flex items-center justify-center font-bold text-[10px] text-white">
+                  <div className={`w-7 h-7 rounded-full flex items-center justify-center font-bold text-[10px] ${
+                    isDark ? 'bg-neutral-700 text-white' : 'bg-neutral-200 text-neutral-800'
+                  }`}>
                     {person.name.substring(0, 2).toUpperCase()}
                   </div>
                 )}
-                <span className="text-xs font-medium text-neutral-200">
+                <span className={`text-xs font-medium ${isDark ? 'text-neutral-200' : 'text-neutral-800'}`}>
                   {person.name}
                 </span>
               </div>
-              <span className="font-bold text-xs text-white font-['Sora']">
+              <span className={`font-bold text-xs font-['Sora'] ${isDark ? 'text-white' : 'text-[#0f1015]'}`}>
                 {bill.currency} {person.share.toLocaleString()}
               </span>
             </div>
@@ -142,7 +158,7 @@ export const BillRequestModal: React.FC<BillRequestModalProps> = ({
 
         {/* Slider Action or Settled Banner */}
         {bill.status === 'Settled' || isSuccess ? (
-          <div className="bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 p-3 rounded-full flex items-center justify-center gap-2 font-bold text-xs mb-3">
+          <div className="bg-emerald-500/20 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 p-3 rounded-full flex items-center justify-center gap-2 font-bold text-xs mb-3">
             <ShieldCheck className="w-4 h-4" />
             <span>Bill Approved & Settled!</span>
           </div>
@@ -159,7 +175,9 @@ export const BillRequestModal: React.FC<BillRequestModalProps> = ({
               onTouchMove={(e) => handleMove(e.touches[0].clientX)}
               onTouchEnd={handleEnd}
               onClick={() => completeApproval()}
-              className="relative w-full h-[52px] bg-[#1d1f27] rounded-full p-1 flex items-center cursor-pointer select-none overflow-hidden group border border-white/10"
+              className={`relative w-full h-[52px] rounded-full p-1 flex items-center cursor-pointer select-none overflow-hidden group border ${
+                isDark ? 'bg-[#1d1f27] border-white/10' : 'bg-neutral-100 border-black/10'
+              }`}
             >
               {/* Progress track fill */}
               <div
@@ -185,7 +203,9 @@ export const BillRequestModal: React.FC<BillRequestModalProps> = ({
               </div>
 
               {/* Text */}
-              <span className="w-full text-center text-white group-hover:text-black font-bold text-xs tracking-wide z-10 font-['Sora'] pointer-events-none transition-colors">
+              <span className={`w-full text-center font-bold text-xs tracking-wide z-10 font-['Sora'] pointer-events-none transition-colors ${
+                isDark ? 'text-white group-hover:text-black' : 'text-neutral-800 group-hover:text-black'
+              }`}>
                 {isSuccess ? 'Approved!' : 'Slide to approve'}
               </span>
             </div>
@@ -193,7 +213,9 @@ export const BillRequestModal: React.FC<BillRequestModalProps> = ({
             {/* Decline Option */}
             <button
               onClick={() => onDecline(bill.id)}
-              className="w-full py-1.5 text-center text-neutral-400 hover:text-rose-400 text-xs font-medium transition-colors"
+              className={`w-full py-1.5 text-center hover:text-rose-500 text-xs font-medium transition-colors ${
+                isDark ? 'text-neutral-400' : 'text-neutral-500'
+              }`}
             >
               Decline Request
             </button>
@@ -203,4 +225,5 @@ export const BillRequestModal: React.FC<BillRequestModalProps> = ({
     </div>
   );
 };
+
 

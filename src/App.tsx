@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import type { TabType, Bill, SortOption, Friend } from './types';
+import type { TabType, Bill, SortOption, Friend, ThemeMode } from './types';
 import { INITIAL_BILLS, INITIAL_FRIENDS } from './data/mockData';
 import { Header } from './components/Header';
 import { Dock } from './components/Dock';
@@ -18,6 +18,20 @@ export function App() {
   const [activeSort, setActiveSort] = useState<SortOption>('all');
   const [searchQuery, setSearchQuery] = useState('');
   
+  const [theme, setTheme] = useState<ThemeMode>(() => {
+    return (localStorage.getItem('plates_theme') as ThemeMode) || 'dark';
+  });
+
+  const isDark = theme === 'dark';
+
+  const handleToggleTheme = () => {
+    setTheme((prev) => {
+      const next = prev === 'dark' ? 'light' : 'dark';
+      localStorage.setItem('plates_theme', next);
+      return next;
+    });
+  };
+
   const [selectedBill, setSelectedBill] = useState<Bill | null>(null);
   const [isNewBillOpen, setIsNewBillOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -113,15 +127,22 @@ export function App() {
   };
 
   return (
-    <div className="min-h-screen bg-[#050508] flex items-center justify-center p-0 sm:p-4 font-['Sora'] selection:bg-[#f5c744] selection:text-black">
+    <div className={`min-h-screen flex items-center justify-center p-0 sm:p-4 font-['Sora'] selection:bg-[#f5c744] selection:text-black transition-colors duration-200 ${
+      isDark ? 'bg-[#050508]' : 'bg-[#e2e2e8]'
+    }`}>
       {/* Phone App Container */}
-      <div className="w-full max-w-[412px] min-h-screen sm:min-h-[874px] sm:max-h-[900px] bg-[#090a0f] text-white sm:rounded-[40px] shadow-2xl relative flex flex-col overflow-hidden border border-white/10">
+      <div className={`w-full max-w-[412px] min-h-screen sm:min-h-[874px] sm:max-h-[900px] sm:rounded-[40px] shadow-2xl relative flex flex-col overflow-hidden border transition-colors duration-200 ${
+        isDark
+          ? 'bg-[#090a0f] text-white border-white/10'
+          : 'bg-[#ededf1] text-[#0f1015] border-black/10'
+      }`}>
         
         {/* Dynamic Header */}
         <Header
           title={getHeaderTitle()}
           searchQuery={searchQuery}
           onSearchChange={setSearchQuery}
+          isDark={isDark}
         />
 
         {/* View Switcher */}
@@ -132,6 +153,7 @@ export function App() {
               onSelectBill={setSelectedBill}
               onOpenNewBill={() => setIsNewBillOpen(true)}
               onNavigateToBills={() => setActiveTab('bills')}
+              isDark={isDark}
             />
           )}
 
@@ -142,6 +164,7 @@ export function App() {
               onSortChange={setActiveSort}
               onSelectBill={setSelectedBill}
               onOpenNewBill={() => setIsNewBillOpen(true)}
+              isDark={isDark}
             />
           )}
 
@@ -150,14 +173,20 @@ export function App() {
               friends={friends}
               onAddFriend={handleAddFriend}
               onAcceptRequest={handleAcceptRequest}
+              isDark={isDark}
             />
           )}
 
-          {activeTab === 'settings' && <SettingsView />}
+          {activeTab === 'settings' && (
+            <SettingsView
+              isDark={isDark}
+              onToggleTheme={handleToggleTheme}
+            />
+          )}
         </main>
 
         {/* Floating Bottom Navigation Dock */}
-        <Dock activeTab={activeTab} onTabChange={setActiveTab} />
+        <Dock activeTab={activeTab} onTabChange={setActiveTab} isDark={isDark} />
 
         {/* Interactive Bill Request Bottom Sheet Modal */}
         <BillRequestModal
@@ -165,6 +194,7 @@ export function App() {
           onClose={() => setSelectedBill(null)}
           onApprove={handleApproveBill}
           onDecline={handleDeclineBill}
+          isDark={isDark}
         />
 
         {/* New Bill Creation Modal */}
@@ -172,11 +202,16 @@ export function App() {
           isOpen={isNewBillOpen}
           onClose={() => setIsNewBillOpen(false)}
           onCreate={handleCreateBill}
+          isDark={isDark}
         />
 
         {/* Notification Toast */}
         {toastMessage && (
-          <div className="fixed top-6 left-1/2 -translate-x-1/2 bg-[#1a1a1a] text-white text-xs font-bold px-4 py-3 rounded-full shadow-2xl z-50 flex items-center gap-2 border border-white/20 animate-in fade-in slide-in-from-top duration-200">
+          <div className={`fixed top-6 left-1/2 -translate-x-1/2 text-xs font-bold px-4 py-3 rounded-full shadow-2xl z-50 flex items-center gap-2 border animate-in fade-in slide-in-from-top duration-200 ${
+            isDark
+              ? 'bg-[#1a1a1a] text-white border-white/20'
+              : 'bg-[#0f1015] text-white border-black/20'
+          }`}>
             <CheckCircle2 className="w-4 h-4 text-emerald-400" />
             <span>{toastMessage}</span>
           </div>
@@ -187,3 +222,4 @@ export function App() {
 }
 
 export default App;
+
