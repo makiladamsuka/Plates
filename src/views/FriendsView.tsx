@@ -6,6 +6,7 @@ interface FriendsViewProps {
   friends: Friend[];
   onAddFriend: (name: string, username: string) => void;
   onAcceptRequest: (friendId: string) => void;
+  onSelectFriend?: (friend: Friend) => void;
   isDark?: boolean;
 }
 
@@ -13,6 +14,7 @@ export const FriendsView: React.FC<FriendsViewProps> = ({
   friends,
   onAddFriend,
   onAcceptRequest,
+  onSelectFriend,
   isDark = true,
 }) => {
   const [activeFilter, setActiveFilter] = useState<'all' | 'pending'>('all');
@@ -83,7 +85,10 @@ export const FriendsView: React.FC<FriendsViewProps> = ({
           displayedFriends.map((friend) => (
             <div
               key={friend.id}
+              onClick={() => onSelectFriend && !friend.isPendingRequest && onSelectFriend(friend)}
               className={`rounded-2xl p-3 flex items-center justify-between shadow-sm border transition-all ${
+                !friend.isPendingRequest ? 'cursor-pointer active:scale-[0.99]' : ''
+              } ${
                 isDark
                   ? 'bg-[#14151b] border-white/[0.07] hover:bg-[#191b23]'
                   : 'bg-white border-black/[0.08] hover:bg-[#f9f9fc]'

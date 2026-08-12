@@ -9,6 +9,7 @@ import { FriendsView } from './views/FriendsView';
 import { SettingsView } from './views/SettingsView';
 import { BillRequestModal } from './components/BillRequestModal';
 import { NewBillModal } from './components/NewBillModal';
+import { FriendDetailModal } from './components/FriendDetailModal';
 import { CheckCircle2 } from 'lucide-react';
 
 export function App() {
@@ -17,6 +18,7 @@ export function App() {
   const [friends, setFriends] = useState<Friend[]>(INITIAL_FRIENDS);
   const [activeSort, setActiveSort] = useState<SortOption>('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedFriend, setSelectedFriend] = useState<Friend | null>(null);
   
   const [theme, setTheme] = useState<ThemeMode>(() => {
     return (localStorage.getItem('plates_theme') as ThemeMode) || 'dark';
@@ -174,6 +176,7 @@ export function App() {
               friends={friends}
               onAddFriend={handleAddFriend}
               onAcceptRequest={handleAcceptRequest}
+              onSelectFriend={setSelectedFriend}
               isDark={isDark}
             />
           )}
@@ -195,6 +198,18 @@ export function App() {
           onClose={() => setSelectedBill(null)}
           onApprove={handleApproveBill}
           onDecline={handleDeclineBill}
+          isDark={isDark}
+        />
+
+        {/* Friend Detail Bottom Sheet Modal (Figma 70:131) */}
+        <FriendDetailModal
+          friend={selectedFriend}
+          bills={bills}
+          onClose={() => setSelectedFriend(null)}
+          onSelectBill={(b) => {
+            setSelectedFriend(null);
+            setSelectedBill(b);
+          }}
           isDark={isDark}
         />
 
