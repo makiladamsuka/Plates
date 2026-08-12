@@ -26,19 +26,19 @@ export const BillsView: React.FC<BillsViewProps> = ({
   ];
 
   return (
-    <div className="px-4 pb-28 pt-2">
-      {/* Sort Filter Buttons (Figma Group 1 / Node 53:84) */}
-      <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-2 mb-4">
+    <div className="px-4 pb-24 pt-2">
+      {/* Sort Filter Pills */}
+      <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-1 mb-3">
         {sortOptions.map((opt) => {
           const isActive = activeSort === opt.id;
           return (
             <button
               key={opt.id}
               onClick={() => onSortChange(opt.id)}
-              className={`px-5 py-1.5 rounded-full text-base font-semibold transition-all duration-200 shrink-0 font-['Sora'] ${
+              className={`px-3.5 py-1 rounded-full text-xs font-medium transition-all duration-150 shrink-0 font-['Sora'] ${
                 isActive
-                  ? 'bg-[#1a1a1a] text-[#ededf1] shadow-sm'
-                  : 'bg-[#d9d9d9] text-black hover:bg-[#cfcfd4]'
+                  ? 'bg-white text-black font-bold shadow-sm'
+                  : 'bg-[#16171e] text-neutral-400 hover:text-white border border-white/[0.08]'
               }`}
             >
               {opt.label}
@@ -49,25 +49,26 @@ export const BillsView: React.FC<BillsViewProps> = ({
 
       {/* Bill List */}
       {bills.length === 0 ? (
-        <div className="text-center py-16 text-gray-500">
-          <p className="text-lg font-medium">No bills match your query.</p>
+        <div className="text-center py-16 text-neutral-500">
+          <p className="text-xs font-medium">No bills match your search.</p>
         </div>
       ) : (
-        <div className="space-y-4">
+        <div className="space-y-2">
           {bills.map((bill) => (
             <BillCard key={bill.id} bill={bill} onClick={onSelectBill} />
           ))}
         </div>
       )}
 
-      {/* Floating Action Button (FAB - Figma Ellipse 3 node 64:76) */}
+      {/* Floating Action Button */}
       <button
         onClick={onOpenNewBill}
-        className="fixed bottom-24 right-5 sm:right-[calc(50%-180px)] w-16 h-16 rounded-full bg-[#ffd0db] hover:bg-[#ffb6c7] active:scale-90 transition-all shadow-xl flex items-center justify-center text-black z-30 border border-black/10"
+        className="fixed bottom-20 right-5 sm:right-[calc(50%-180px)] w-12 h-12 rounded-full bg-[#f5c744] hover:bg-yellow-400 active:scale-95 transition-all shadow-xl flex items-center justify-center text-black z-30 border border-black/20"
         aria-label="Add Bill"
       >
-        <Plus className="w-8 h-8 stroke-[2.5]" />
+        <Plus className="w-5 h-5 stroke-[2.5]" />
       </button>
     </div>
   );
 };
+

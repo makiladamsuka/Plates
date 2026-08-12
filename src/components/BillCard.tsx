@@ -7,51 +7,76 @@ interface BillCardProps {
 }
 
 export const BillCard: React.FC<BillCardProps> = ({ bill, onClick }) => {
-  const isRestaurant = bill.category === 'Restaurant';
+  const userShare = bill.participants.find((p) => p.name.includes('You'))?.share || Math.round(bill.amount / bill.peopleCount);
 
   return (
     <div
       onClick={() => onClick(bill)}
-      className="bg-[#d9d9d9] hover:bg-[#d0d0d5] active:scale-[0.98] transition-all duration-200 rounded-[32px] p-5 shadow-sm cursor-pointer mb-4 border border-black/5 relative overflow-hidden"
+      className="bg-[#14151b] hover:bg-[#191b23] active:scale-[0.99] transition-all duration-150 rounded-2xl p-3.5 shadow-sm cursor-pointer mb-2.5 border border-white/[0.07] relative overflow-hidden"
     >
-      <div className="flex justify-between items-start mb-2">
-        <div className="flex-1 pr-2">
-          <h3 className="text-[22px] font-semibold text-[#1a1a1a] leading-tight font-['Sora']">
+      <div className="flex justify-between items-start">
+        <div className="flex-1 pr-3">
+          <h3 className="text-sm font-semibold text-white leading-snug font-['Sora']">
             {bill.title}
           </h3>
           
-          <div className="flex items-center gap-2 mt-2">
-            <span
-              className={`px-3 py-0.5 rounded-full text-xs font-medium text-black ${
-                isRestaurant ? 'bg-[#f6d6da]' : 'bg-[#d7ecd1]'
-              }`}
-            >
+          <div className="flex items-center gap-2 mt-1.5">
+            <span className="px-2 py-0.5 rounded-md text-[10px] font-medium text-neutral-300 bg-white/10">
               {bill.category}
             </span>
-            <span className="text-xs text-gray-600 font-normal">
-              {bill.date}
+            <span className="text-[11px] text-neutral-400 font-normal">
+              {bill.date} • {bill.peopleCount} people
             </span>
           </div>
         </div>
 
         <div className="text-right shrink-0">
-          <span className="text-2xl font-bold text-[#1a1a1a] font-['Sora'] block">
-            {bill.currency} {bill.amount}
+          <span className="text-sm font-bold text-white font-['Sora'] block tracking-tight">
+            {bill.currency} {bill.amount.toLocaleString()}
+          </span>
+          <span className="text-[10px] text-neutral-400 block mt-0.5">
+            Your share: <span className="font-semibold text-neutral-200">{bill.currency} {userShare.toLocaleString()}</span>
           </span>
         </div>
       </div>
 
-      <div className="mt-4 flex justify-center">
-        <div
-          className={`w-[220px] py-1.5 rounded-full text-center font-semibold text-sm transition-all shadow-sm ${
+      <div className="mt-3 pt-2.5 border-t border-white/[0.06] flex items-center justify-between">
+        <div className="flex -space-x-1.5 overflow-hidden">
+          {bill.participants.slice(0, 3).map((p) => (
+            p.avatar ? (
+              <img
+                key={p.id}
+                src={p.avatar}
+                alt={p.name}
+                className="inline-block h-5 w-5 rounded-full ring-1 ring-[#14151b] object-cover"
+              />
+            ) : (
+              <div
+                key={p.id}
+                className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-neutral-700 ring-1 ring-[#14151b] text-[9px] font-bold text-white"
+              >
+                {p.name.substring(0, 1)}
+              </div>
+            )
+          ))}
+          {bill.participants.length > 3 && (
+            <div className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-neutral-800 ring-1 ring-[#14151b] text-[9px] font-bold text-neutral-400">
+              +{bill.participants.length - 3}
+            </div>
+          )}
+        </div>
+
+        <span
+          className={`px-2.5 py-0.5 rounded-full text-[10px] font-semibold tracking-wide ${
             bill.status === 'Pending'
-              ? 'bg-[#f5c744] text-black hover:brightness-105'
-              : 'bg-[#4c8c3c] text-white hover:brightness-105'
+              ? 'bg-[#f5c744]/15 text-[#f5c744] border border-[#f5c744]/30'
+              : 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'
           }`}
         >
           {bill.status}
-        </div>
+        </span>
       </div>
     </div>
   );
 };
+

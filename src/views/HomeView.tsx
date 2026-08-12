@@ -36,89 +36,89 @@ export const HomeView: React.FC<HomeViewProps> = ({
     }, 0);
 
   return (
-    <div className="px-4 pb-28 pt-2 space-y-6">
-      {/* Overview Cards */}
-      <div className="grid grid-cols-2 gap-3">
-        <div className="bg-[#1a1a1a] text-white rounded-[28px] p-5 shadow-sm border border-white/5">
-          <div className="flex items-center gap-1.5 text-xs text-emerald-400 font-semibold mb-2">
-            <ArrowDownLeft className="w-4 h-4" />
+    <div className="px-4 pb-24 pt-2 space-y-4">
+      {/* Overview Balance Cards */}
+      <div className="grid grid-cols-2 gap-2.5">
+        <div className="bg-[#14151b] text-white rounded-2xl p-3.5 border border-white/[0.08] shadow-sm">
+          <div className="flex items-center gap-1 text-[11px] text-emerald-400 font-semibold mb-1">
+            <ArrowDownLeft className="w-3.5 h-3.5" />
             <span>Owed to You</span>
           </div>
-          <p className="text-2xl font-extrabold font-['Sora']">
+          <p className="text-xl font-bold font-['Sora'] tracking-tight text-white">
             LKR {owedToYouTotal.toLocaleString()}
           </p>
         </div>
 
-        <div className="bg-[#1a1a1a] text-white rounded-[28px] p-5 shadow-sm border border-white/5">
-          <div className="flex items-center gap-1.5 text-xs text-rose-400 font-semibold mb-2">
-            <ArrowUpRight className="w-4 h-4" />
+        <div className="bg-[#14151b] text-white rounded-2xl p-3.5 border border-white/[0.08] shadow-sm">
+          <div className="flex items-center gap-1 text-[11px] text-rose-400 font-semibold mb-1">
+            <ArrowUpRight className="w-3.5 h-3.5" />
             <span>You Owe</span>
           </div>
-          <p className="text-2xl font-extrabold font-['Sora']">
+          <p className="text-xl font-bold font-['Sora'] tracking-tight text-white">
             LKR {youOweTotal.toLocaleString()}
           </p>
         </div>
       </div>
 
-      {/* Action Needed Highlight Card */}
+      {/* Action Needed Highlight Banner */}
       {needsApproval && (
         <div
           onClick={() => onSelectBill(needsApproval)}
-          className="bg-gradient-to-r from-[#f5c744] to-[#f8d468] text-black rounded-[28px] p-5 cursor-pointer hover:shadow-md transition-all active:scale-[0.99] relative overflow-hidden"
+          className="bg-[#f5c744] text-black rounded-2xl p-4 cursor-pointer hover:brightness-105 transition-all active:scale-[0.99] relative overflow-hidden shadow-sm"
         >
-          <div className="flex items-start justify-between">
-            <div className="flex items-center gap-2 mb-1">
-              <ShieldAlert className="w-5 h-5 text-black" />
-              <span className="text-xs font-extrabold tracking-wider uppercase">Action Needed</span>
+          <div className="flex items-center justify-between mb-1">
+            <div className="flex items-center gap-1.5">
+              <ShieldAlert className="w-4 h-4 text-black" />
+              <span className="text-[10px] font-extrabold tracking-wider uppercase">Action Needed</span>
             </div>
-            <Sparkles className="w-5 h-5 text-black/60" />
+            <Sparkles className="w-4 h-4 text-black/60" />
           </div>
-          <h3 className="text-xl font-extrabold font-['Sora'] mt-1">{needsApproval.title}</h3>
-          <p className="text-xs font-semibold text-black/80 mt-1">
-            {needsApproval.creator} requested your share of LKR{' '}
+          <h3 className="text-base font-bold font-['Sora'] leading-snug">{needsApproval.title}</h3>
+          <p className="text-xs font-medium text-black/80 mt-0.5">
+            {needsApproval.creator} requested LKR{' '}
             {needsApproval.participants.find((p) => p.name.includes('You'))?.share || 1200}
           </p>
-          <div className="mt-3 inline-flex items-center gap-1 text-xs font-bold bg-black text-white px-4 py-1.5 rounded-full">
+          <div className="mt-2.5 inline-flex items-center gap-1 text-[11px] font-bold bg-black text-white px-3 py-1 rounded-full">
             <span>Slide to Approve</span>
-            <ArrowUpRight className="w-3.5 h-3.5" />
+            <ArrowUpRight className="w-3 h-3" />
           </div>
         </div>
       )}
 
-      {/* Quick Action Shortcuts */}
-      <div className="flex gap-3 overflow-x-auto no-scrollbar">
+      {/* Quick Action Buttons */}
+      <div className="grid grid-cols-2 gap-2.5">
         <button
           onClick={onOpenNewBill}
-          className="flex-1 min-w-[120px] bg-[#1a1a1a] text-white rounded-2xl p-4 flex flex-col items-center justify-center gap-2 hover:bg-black transition-colors border border-white/5"
+          className="bg-[#16171e] text-white rounded-xl p-3 flex items-center justify-center gap-2 hover:bg-[#1c1d26] transition-colors border border-white/[0.08]"
         >
-          <div className="w-10 h-10 rounded-full bg-[#f5c744] text-black flex items-center justify-center font-bold">
-            <Plus className="w-5 h-5 stroke-[2.5]" />
+          <div className="w-7 h-7 rounded-full bg-[#f5c744] text-black flex items-center justify-center font-bold">
+            <Plus className="w-4 h-4 stroke-[2.5]" />
           </div>
           <span className="text-xs font-semibold">New Bill</span>
         </button>
 
         <button
           onClick={onNavigateToBills}
-          className="flex-1 min-w-[120px] bg-[#d9d9d9] text-black rounded-2xl p-4 flex flex-col items-center justify-center gap-2 hover:bg-gray-300 transition-colors"
+          className="bg-[#16171e] text-white rounded-xl p-3 flex items-center justify-center gap-2 hover:bg-[#1c1d26] transition-colors border border-white/[0.08]"
         >
-          <div className="w-10 h-10 rounded-full bg-black text-white flex items-center justify-center font-bold">
-            <ArrowUpRight className="w-5 h-5" />
+          <div className="w-7 h-7 rounded-full bg-white text-black flex items-center justify-center font-bold">
+            <ArrowUpRight className="w-4 h-4 stroke-[2.5]" />
           </div>
           <span className="text-xs font-semibold">View All</span>
         </button>
       </div>
 
-      {/* Recent Bills Section */}
+      {/* Recent Activity Section */}
       <div>
-        <div className="flex justify-between items-center mb-3">
-          <h2 className="text-lg font-bold text-black font-['Sora']">Recent Bills</h2>
-          <button onClick={onNavigateToBills} className="text-xs font-semibold text-gray-600 hover:text-black">
+        <div className="flex justify-between items-center mb-2.5 pt-1">
+          <h2 className="text-xs font-bold text-neutral-400 uppercase tracking-wider font-['Sora']">Recent Activity</h2>
+          <button onClick={onNavigateToBills} className="text-xs font-semibold text-neutral-400 hover:text-white transition-colors">
             See all
           </button>
         </div>
 
-        <div className="space-y-4">
-          {bills.slice(0, 2).map((bill) => (
+        <div className="space-y-2">
+          {bills.slice(0, 3).map((bill) => (
             <BillCard key={bill.id} bill={bill} onClick={onSelectBill} />
           ))}
         </div>
@@ -126,3 +126,4 @@ export const HomeView: React.FC<HomeViewProps> = ({
     </div>
   );
 };
+

@@ -16,8 +16,8 @@ export const Dock: React.FC<DockProps> = ({ activeTab, onTabChange }) => {
   ];
 
   return (
-    <div className="fixed bottom-4 left-0 right-0 max-w-[412px] mx-auto px-4 z-40">
-      <nav className="bg-[#1a1a1a] h-[72px] rounded-[24px] shadow-2xl flex items-center justify-around px-4 border border-white/10 backdrop-blur-lg">
+    <div className="fixed bottom-3 left-0 right-0 max-w-[412px] mx-auto px-4 z-40">
+      <nav className="bg-[#121318]/95 h-[58px] rounded-full shadow-2xl flex items-center justify-around px-3 border border-white/[0.08] backdrop-blur-xl">
         {navItems.map((item) => {
           const Icon = item.icon;
           const isActive = activeTab === item.id;
@@ -25,16 +25,19 @@ export const Dock: React.FC<DockProps> = ({ activeTab, onTabChange }) => {
             <button
               key={item.id}
               onClick={() => onTabChange(item.id)}
-              className={`relative flex flex-col items-center justify-center w-14 h-14 rounded-2xl transition-all duration-200 ${
+              className={`relative flex flex-col items-center justify-center py-1 px-3.5 rounded-full transition-all duration-200 ${
                 isActive
-                  ? 'text-white scale-110'
-                  : 'text-gray-400 hover:text-gray-200 active:scale-95'
+                  ? 'text-white'
+                  : 'text-neutral-500 hover:text-neutral-300 active:scale-95'
               }`}
               aria-label={item.label}
             >
-              <Icon className={`w-6 h-6 ${isActive ? 'stroke-[2.5]' : 'stroke-[1.8]'}`} />
+              <Icon className={`w-4 h-4 ${isActive ? 'stroke-[2.2] text-white' : 'stroke-[1.8]'}`} />
+              <span className={`text-[10px] mt-0.5 tracking-tight font-medium ${isActive ? 'text-white font-semibold' : 'text-neutral-500'}`}>
+                {item.label}
+              </span>
               {isActive && (
-                <span className="absolute bottom-1 w-1.5 h-1.5 bg-yellow-400 rounded-full animate-pulse" />
+                <span className="absolute -bottom-0.5 w-1 h-1 bg-[#f5c744] rounded-full" />
               )}
             </button>
           );
@@ -43,3 +46,4 @@ export const Dock: React.FC<DockProps> = ({ activeTab, onTabChange }) => {
     </div>
   );
 };
+

@@ -113,9 +113,9 @@ export function App() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0d0e12] flex items-center justify-center p-0 sm:p-4 font-['Sora']">
+    <div className="min-h-screen bg-[#050508] flex items-center justify-center p-0 sm:p-4 font-['Sora'] selection:bg-[#f5c744] selection:text-black">
       {/* Phone App Container */}
-      <div className="w-full max-w-[412px] min-h-screen sm:min-h-[874px] sm:max-h-[900px] bg-[#ededf1] sm:rounded-[44px] shadow-2xl relative flex flex-col overflow-hidden border border-white/20">
+      <div className="w-full max-w-[412px] min-h-screen sm:min-h-[874px] sm:max-h-[900px] bg-[#090a0f] text-white sm:rounded-[40px] shadow-2xl relative flex flex-col overflow-hidden border border-white/10">
         
         {/* Dynamic Header */}
         <Header
