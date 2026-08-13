@@ -30,7 +30,7 @@ export const FriendsView: React.FC<FriendsViewProps> = ({
   const displayedFriends = activeFilter === 'all' ? activeFriends : pendingRequests;
 
   return (
-    <div className={`relative h-full w-full font-['Sora'] overflow-hidden ${isDark ? 'bg-[#090a0f]' : 'bg-[#ededf1]'}`}>
+    <div className={`absolute inset-0 z-10 w-full font-['Sora'] overflow-hidden ${isDark ? 'bg-[#090a0f]' : 'bg-[#ededf1]'}`}>
       
       {/* Soft Pink Background Shape */}
       <div className="absolute top-[-46px] left-0 right-0 h-[135px] bg-[#f6d6da] pointer-events-none" />
