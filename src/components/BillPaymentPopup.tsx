@@ -66,7 +66,7 @@ export const BillPaymentPopup: React.FC<BillPaymentPopupProps> = ({
   if (!bill) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 backdrop-blur-sm p-0 transition-opacity font-['Sora']">
+    <div className="absolute inset-0 z-50 flex items-end justify-center bg-black/40 backdrop-blur-sm p-0 transition-opacity font-['Sora']">
       <div
         className="w-full max-w-[402px] h-[422px] rounded-t-[30px] flex flex-col items-center pt-[30px] pb-[30px] shadow-2xl relative bg-[#1a1a1a] text-white animate-in slide-in-from-bottom duration-300"
         onClick={(e) => e.stopPropagation()}

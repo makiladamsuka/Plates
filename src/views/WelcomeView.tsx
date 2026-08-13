@@ -7,7 +7,7 @@ interface WelcomeViewProps {
 
 export const WelcomeView: React.FC<WelcomeViewProps> = ({ onEnter }) => {
   return (
-    <div className="bg-[#ededf1] min-h-screen relative font-['Sora'] flex flex-col items-center justify-center p-[25px]">
+    <div className="bg-[#ededf1] absolute inset-0 z-50 h-full w-full font-['Sora'] flex flex-col items-center justify-center p-[25px]">
       <div className="flex-1 flex flex-col items-center justify-center w-full">
         <h1 className="text-[64px] font-bold text-[#1a1a1a] tracking-tight mb-[10px]">
           Plates

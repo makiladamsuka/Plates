@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React from 'react';
 import type { Bill } from '../types';
-import { ChevronLeft, ChevronsRight } from 'lucide-react';
+import { ChevronLeft } from 'lucide-react';
 
 interface BillInfoViewProps {
   bill: Bill | null;
@@ -13,54 +13,6 @@ export const BillInfoView: React.FC<BillInfoViewProps> = ({
   onClose,
   onPay,
 }) => {
-  const [sliderPos, setSliderPos] = useState(0);
-  const [isDragging, setIsDragging] = useState(false);
-  const sliderRef = React.useRef<HTMLDivElement>(null);
-  
-  const handleWidth = 50;
-  const padding = 12;
-
-  React.useEffect(() => {
-    const handleMouseUp = () => {
-      if (isDragging) {
-        setIsDragging(false);
-        if (sliderRef.current) {
-          const maxPos = sliderRef.current.clientWidth - handleWidth - (padding * 2);
-          if (sliderPos > maxPos * 0.8) {
-            setSliderPos(maxPos);
-            setTimeout(() => onPay(), 300);
-          } else {
-            setSliderPos(0);
-          }
-        }
-      }
-    };
-
-    const handleMouseMove = (e: MouseEvent | TouchEvent) => {
-      if (!isDragging || !sliderRef.current) return;
-      const sliderRect = sliderRef.current.getBoundingClientRect();
-      const clientX = 'touches' in e ? e.touches[0].clientX : (e as MouseEvent).clientX;
-      let newPos = clientX - sliderRect.left - padding - (handleWidth / 2);
-      const maxPos = sliderRect.width - handleWidth - (padding * 2);
-      if (newPos < 0) newPos = 0;
-      if (newPos > maxPos) newPos = maxPos;
-      setSliderPos(newPos);
-    };
-
-    if (isDragging) {
-      window.addEventListener('mousemove', handleMouseMove);
-      window.addEventListener('mouseup', handleMouseUp);
-      window.addEventListener('touchmove', handleMouseMove, { passive: false });
-      window.addEventListener('touchend', handleMouseUp);
-    }
-    return () => {
-      window.removeEventListener('mousemove', handleMouseMove);
-      window.removeEventListener('mouseup', handleMouseUp);
-      window.removeEventListener('touchmove', handleMouseMove);
-      window.removeEventListener('touchend', handleMouseUp);
-    };
-  }, [isDragging, sliderPos, onPay]);
-
   if (!bill) return null;
 
   const userShare = bill.participants.find((p) => p.name.includes('You'))?.share || Math.round(bill.amount / bill.peopleCount);
@@ -71,8 +23,8 @@ export const BillInfoView: React.FC<BillInfoViewProps> = ({
   else if (bill.category.toLowerCase().includes('travel')) tagColor = 'bg-[#e2d1f0]';
 
   return (
-    <div className="fixed inset-0 z-40 bg-[#ededf1] overflow-y-auto font-['Sora'] pb-32 animate-in slide-in-from-right duration-300">
-      <div className="relative min-h-screen px-[25px] pt-[23px]">
+    <div className="absolute inset-0 z-40 bg-[#ededf1] overflow-y-auto font-['Sora'] pb-32 animate-in slide-in-from-right duration-300">
+      <div className="relative min-h-full px-[25px] pt-[23px]">
         {/* Back Button */}
         <button onClick={onClose} className="absolute left-[17px] top-[23px] text-black z-10 w-[30px] h-[30px] flex items-center justify-center">
           <ChevronLeft className="w-8 h-8" strokeWidth={2} />
@@ -128,34 +80,21 @@ export const BillInfoView: React.FC<BillInfoViewProps> = ({
 
           {/* Bottom Action Area */}
           <div className="absolute bottom-[30px] left-0 w-full px-[25px]">
-            <div className="flex justify-between items-center mb-[15px]">
+            <div className="flex justify-between items-center">
               <span className="text-[20px] font-semibold text-[#1a1a1a]">Your Share</span>
-              <span className="text-[20px] font-semibold text-[#ededf1] bg-[#1a1a1a] px-[15px] py-[5px] rounded-full">Pay LKR {userShare}</span>
-            </div>
-
-            {/* Slide to approve / pay */}
-            {isPending && (
-              <div 
-                ref={sliderRef}
-                className="w-full h-[74px] rounded-[37px] bg-gradient-to-r from-neutral-800 to-black relative flex items-center overflow-hidden"
-              >
-                <p className="absolute w-full text-center text-[18px] font-bold text-white pointer-events-none">
-                  Slide to Pay
-                </p>
-                <div
-                  className="absolute h-[50px] w-[50px] rounded-full bg-[#f6d6da] flex items-center justify-center cursor-grab active:cursor-grabbing shadow-sm z-10 transition-transform"
-                  style={{ 
-                    transform: `translateX(${sliderPos}px)`,
-                    left: `${padding}px`,
-                    transition: isDragging ? 'none' : 'transform 0.3s ease-out'
-                  }}
-                  onMouseDown={() => setIsDragging(true)}
-                  onTouchStart={() => setIsDragging(true)}
+              {isPending ? (
+                <button
+                  onClick={onPay}
+                  className="text-[20px] font-semibold text-[#ededf1] bg-[#1a1a1a] px-[15px] py-[5px] rounded-full active:scale-95 transition-transform"
                 >
-                  <ChevronsRight className="text-black w-6 h-6" />
-                </div>
-              </div>
-            )}
+                  Pay LKR {userShare}
+                </button>
+              ) : (
+                <span className="text-[20px] font-semibold text-[#ededf1] bg-[#1a1a1a] px-[15px] py-[5px] rounded-full">
+                  Paid LKR {userShare}
+                </span>
+              )}
+            </div>
           </div>
         </div>
       </div>

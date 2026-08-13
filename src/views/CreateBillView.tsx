@@ -91,8 +91,8 @@ export const CreateBillView: React.FC<CreateBillViewProps> = ({
   const categories: CategoryType[] = ['Restaurant', 'Grocery', 'Travel'];
 
   return (
-    <div className="fixed inset-0 z-40 bg-[#ededf1] overflow-y-auto font-['Sora'] animate-in slide-in-from-right duration-300">
-      <div className="relative min-h-screen px-[25px] pt-[23px] pb-[100px]">
+    <div className="absolute inset-0 z-40 bg-[#ededf1] overflow-y-auto font-['Sora'] animate-in slide-in-from-right duration-300">
+      <div className="relative min-h-full px-[25px] pt-[23px] pb-[100px]">
         {/* Back Button */}
         <button onClick={onClose} className="absolute left-[17px] top-[23px] text-black z-10 w-[30px] h-[30px] flex items-center justify-center">
           <ChevronLeft className="w-8 h-8" strokeWidth={2} />

@@ -103,17 +103,17 @@ export function App() {
     showToast('Friend request accepted!');
   };
 
-  if (showWelcome) {
-    return <WelcomeView onEnter={() => setShowWelcome(false)} />;
-  }
-
   return (
     <div className="min-h-screen flex items-center justify-center p-0 sm:p-4 font-['Sora'] selection:bg-[#f5c744] selection:text-black bg-[#e2e2e8]">
       {/* Phone App Container */}
       <div className="w-full max-w-[412px] min-h-screen sm:min-h-[874px] sm:max-h-[900px] sm:rounded-[40px] shadow-2xl relative flex flex-col overflow-hidden bg-[#ededf1] border border-black/10">
         
-        {/* View Switcher */}
-        <main className="flex-1 overflow-y-auto">
+        {showWelcome ? (
+          <WelcomeView onEnter={() => setShowWelcome(false)} />
+        ) : (
+          <>
+            {/* View Switcher */}
+            <main className="flex-1 overflow-y-auto">
           {activeTab === 'home' && (
             <HomeView
               bills={bills}
@@ -202,6 +202,8 @@ export function App() {
             <CheckCircle2 className="w-5 h-5 text-emerald-400" />
             <span>{toastMessage}</span>
           </div>
+        )}
+        </>
         )}
       </div>
     </div>
