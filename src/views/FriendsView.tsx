@@ -42,7 +42,7 @@ export const FriendsView: React.FC<FriendsViewProps> = ({
             Friends
           </h1>
           <button className="w-[40px] h-[40px] rounded-full bg-white/50 border border-black/[0.04] flex items-center justify-center text-[#1a1a1a] shadow-sm hover:bg-white/80 transition-colors">
-            <Search className="w-[18px] h-[18px]" strokeWidth={2.5} />
+            <Search className="w-[18px] h-[18px]" />
           </button>
         </div>
 
@@ -107,9 +107,9 @@ export const FriendsView: React.FC<FriendsViewProps> = ({
                 {!friend.isPendingRequest ? (
                   <div className="absolute right-[20px] top-[32px] flex items-center gap-[4px]">
                     {isOwed ? (
-                      <ArrowUpRight className={`w-5 h-5 stroke-[2.5] ${isDark ? 'text-emerald-400' : 'text-[#4c8c3c]'}`} />
+                      <ArrowUpRight className={`w-5 h-5 ${isDark ? 'text-emerald-400' : 'text-[#4c8c3c]'}`} />
                     ) : (
-                      <ArrowDownLeft className={`w-5 h-5 stroke-[2.5] ${isDark ? 'text-white' : 'text-[#1a1a1a]'}`} />
+                      <ArrowDownLeft className={`w-5 h-5 ${isDark ? 'text-white' : 'text-[#1a1a1a]'}`} />
                     )}
                     <span className={`text-[18px] font-bold tracking-tight leading-none ${isDark ? 'text-white' : 'text-[#1a1a1a]'}`}>
                       LKR {Math.abs(friend.balance).toLocaleString()}

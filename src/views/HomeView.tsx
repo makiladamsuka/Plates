@@ -44,7 +44,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
       <div className="grid grid-cols-2 gap-[16px] mb-[32px]">
         <div className="bg-white/80 rounded-[24px] p-[20px] shadow-sm border border-black/[0.04]">
           <div className="flex items-center gap-[6px] text-[13px] text-[#4c8c3c] font-semibold mb-[8px]">
-            <ArrowDownLeft className="w-4 h-4" strokeWidth={2.5} />
+            <ArrowDownLeft className="w-4 h-4" />
             <span className="tracking-wide uppercase text-[11px] font-bold">Owed to You</span>
           </div>
           <p className="text-[24px] font-bold text-[#1a1a1a] tracking-tight">
@@ -54,7 +54,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
 
         <div className="bg-white/80 rounded-[24px] p-[20px] shadow-sm border border-black/[0.04]">
           <div className="flex items-center gap-[6px] text-[13px] text-[#1a1a1a] font-semibold mb-[8px]">
-            <ArrowUpRight className="w-4 h-4" strokeWidth={2.5} />
+            <ArrowUpRight className="w-4 h-4" />
             <span className="tracking-wide uppercase text-[11px] font-bold">You Owe</span>
           </div>
           <p className="text-[24px] font-bold text-[#1a1a1a] tracking-tight">
@@ -71,10 +71,10 @@ export const HomeView: React.FC<HomeViewProps> = ({
         >
           <div className="flex items-center justify-between mb-[12px]">
             <div className="flex items-center gap-[6px]">
-              <ShieldAlert className="w-5 h-5 text-[#1a1a1a]" strokeWidth={2.5} />
+              <ShieldAlert className="w-5 h-5 text-[#1a1a1a]" />
               <span className="text-[12px] font-bold tracking-widest uppercase">Action Needed</span>
             </div>
-            <ArrowUpRight className="w-5 h-5 opacity-50" strokeWidth={2.5} />
+            <ArrowUpRight className="w-5 h-5 opacity-50" />
           </div>
           <h3 className="text-[22px] font-bold leading-tight mb-[4px] tracking-tight">{needsApproval.title}</h3>
           <p className="text-[15px] font-medium text-[#1a1a1a]/80">

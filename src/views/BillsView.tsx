@@ -34,7 +34,7 @@ export const BillsView: React.FC<BillsViewProps> = ({
           Bills
         </h1>
         <button className="w-[40px] h-[40px] rounded-full bg-white/50 border border-black/[0.04] flex items-center justify-center text-[#1a1a1a] shadow-sm hover:bg-white/80 transition-colors">
-          <Search className="w-[18px] h-[18px]" strokeWidth={2.5} />
+          <Search className="w-[18px] h-[18px]" />
         </button>
       </div>
 

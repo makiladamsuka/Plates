@@ -95,7 +95,7 @@ export const CreateBillView: React.FC<CreateBillViewProps> = ({
       <div className="relative min-h-full px-[24px] pt-[24px] pb-[100px]">
         {/* Back Button */}
         <button onClick={onClose} className="absolute left-[20px] top-[24px] text-[#1a1a1a] z-10 w-[40px] h-[40px] rounded-full bg-white/50 border border-black/[0.04] flex items-center justify-center hover:bg-white shadow-sm transition-colors">
-          <ChevronLeft className="w-[20px] h-[20px]" strokeWidth={2.5} />
+          <ChevronLeft className="w-[20px] h-[20px]" />
         </button>
 
         {/* Large Container Card */}

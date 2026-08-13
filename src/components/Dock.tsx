@@ -1,5 +1,5 @@
 import React from 'react';
-import { Home, BookmarkMinus, UserSearch, Settings } from 'lucide-react';
+import { House, Settings, UserRoundSearch, BookmarkMinus } from 'lucide-react';
 import type { TabType } from '../types';
 
 interface DockProps {
@@ -10,9 +10,9 @@ interface DockProps {
 
 export const Dock: React.FC<DockProps> = ({ activeTab, onTabChange }) => {
   const navItems: { id: TabType; icon: React.FC<{ className?: string }> }[] = [
-    { id: 'home', icon: Home },
+    { id: 'home', icon: House },
     { id: 'settings', icon: Settings },
-    { id: 'friends', icon: UserSearch },
+    { id: 'friends', icon: UserRoundSearch },
     { id: 'bills', icon: BookmarkMinus },
   ];
 
