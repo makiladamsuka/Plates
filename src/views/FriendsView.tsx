@@ -32,38 +32,38 @@ export const FriendsView: React.FC<FriendsViewProps> = ({
   return (
     <div className={`relative h-full w-full font-['Sora'] overflow-hidden ${isDark ? 'bg-[#090a0f]' : 'bg-[#ededf1]'}`}>
       
-      {/* Soft Pink Background Shape (Figma 70:129 & 70:130) */}
+      {/* Soft Pink Background Shape */}
       <div className="absolute top-[-46px] left-0 right-0 h-[135px] bg-[#f6d6da] pointer-events-none" />
 
-      <div className="relative z-10 h-full flex flex-col pt-[36px]">
+      <div className="relative z-10 h-full flex flex-col pt-[48px]">
         {/* Header Title and Search */}
-        <div className="px-[22px] flex items-center justify-between">
-          <h1 className="text-[48px] font-bold text-black leading-none">
-            Freinds
+        <div className="px-[24px] flex items-center justify-between pb-[16px]">
+          <h1 className="text-[40px] font-bold text-[#1a1a1a] tracking-tight leading-tight">
+            Friends
           </h1>
-          <button className="p-2 -mr-2 mt-2">
-            <Search className="w-6 h-6 text-black" />
+          <button className="w-[40px] h-[40px] rounded-full bg-white/50 border border-black/[0.04] flex items-center justify-center text-[#1a1a1a] shadow-sm hover:bg-white/80 transition-colors">
+            <Search className="w-[18px] h-[18px]" strokeWidth={2.5} />
           </button>
         </div>
 
         {/* Filter Buttons */}
-        <div className="mt-[20px] px-[22px] flex items-center gap-[9px]">
+        <div className="px-[24px] flex items-center gap-[12px] pb-[8px]">
           <button
             onClick={() => setActiveFilter('all')}
-            className={`h-[32px] px-[20px] rounded-[35px] text-[18px] font-semibold flex items-center justify-center transition-colors ${
+            className={`h-[36px] px-[20px] rounded-full text-[14px] font-bold transition-all ${
               activeFilter === 'all'
-                ? 'bg-[#1a1a1a] text-[#ededf1]'
-                : isDark ? 'bg-white/10 text-white' : 'bg-[#d9d9d9] text-black'
+                ? 'bg-[#1a1a1a] text-white shadow-md'
+                : 'bg-white/80 text-[#1a1a1a] hover:bg-white border border-black/[0.04] shadow-sm'
             }`}
           >
             All
           </button>
           <button
             onClick={() => setActiveFilter('pending')}
-            className={`h-[32px] px-[20px] rounded-[35px] text-[18px] font-semibold flex items-center justify-center transition-colors ${
+            className={`h-[36px] px-[20px] rounded-full text-[14px] font-bold transition-all ${
               activeFilter === 'pending'
-                ? 'bg-[#1a1a1a] text-[#ededf1]'
-                : isDark ? 'bg-white/10 text-white' : 'bg-[#d9d9d9] text-black'
+                ? 'bg-[#1a1a1a] text-white shadow-md'
+                : 'bg-white/80 text-[#1a1a1a] hover:bg-white border border-black/[0.04] shadow-sm'
             }`}
           >
             Pending
@@ -71,7 +71,7 @@ export const FriendsView: React.FC<FriendsViewProps> = ({
         </div>
 
         {/* Friends List */}
-        <div className="flex-1 overflow-y-auto mt-[18px] px-[9px] pb-[120px] space-y-[10px]">
+        <div className="flex-1 overflow-y-auto mt-[16px] px-[24px] pb-[120px] space-y-[12px]">
           {displayedFriends.map((friend) => {
             const isOwed = friend.balance >= 0;
             return (
@@ -84,35 +84,35 @@ export const FriendsView: React.FC<FriendsViewProps> = ({
                     onSelectFriend(friend);
                   }
                 }}
-                className={`w-full h-[100px] rounded-[35px] relative cursor-pointer ${
-                  isDark ? 'bg-[#2a2a2a]' : 'bg-[#d9d9d9]'
+                className={`w-full h-[88px] rounded-[24px] relative cursor-pointer active:scale-[0.99] transition-transform border border-black/[0.04] shadow-sm ${
+                  isDark ? 'bg-[#2a2a2a]' : 'bg-white/80 hover:bg-white'
                 }`}
               >
                 {/* Avatar */}
-                <div className="absolute left-[13px] top-[17.74px] w-[54px] h-[54px] rounded-full overflow-hidden">
+                <div className="absolute left-[16px] top-[16px] w-[56px] h-[56px] rounded-full overflow-hidden shadow-sm">
                    <img src={friend.avatar} alt={friend.name} className="w-full h-full object-cover" />
                 </div>
                 
                 {/* Names */}
-                <div className="absolute left-[70.76px] top-[17.74px]">
-                  <h3 className={`text-[24px] font-semibold leading-[normal] ${isDark ? 'text-white' : 'text-[#1a1a1a]'}`}>
+                <div className="absolute left-[84px] top-[20px]">
+                  <h3 className={`text-[18px] font-bold tracking-tight leading-tight ${isDark ? 'text-white' : 'text-[#1a1a1a]'}`}>
                     {friend.name}
                   </h3>
-                  <p className={`text-[15px] font-normal leading-[normal] mt-[10px] ${isDark ? 'text-neutral-400' : 'text-black'}`}>
+                  <p className={`text-[14px] font-medium mt-[4px] ${isDark ? 'text-neutral-400' : 'text-[#1a1a1a]/60'}`}>
                     {friend.username}
                   </p>
                 </div>
 
                 {/* Amount / Action */}
                 {!friend.isPendingRequest && (
-                  <div className="absolute right-[17px] top-[60px] flex items-center gap-[3px]">
+                  <div className="absolute right-[20px] top-[32px] flex items-center gap-[4px]">
                     {isOwed ? (
-                      <ArrowUpRight className={`w-6 h-6 stroke-[2] ${isDark ? 'text-white' : 'text-black'}`} />
+                      <ArrowUpRight className={`w-5 h-5 stroke-[2.5] ${isDark ? 'text-emerald-400' : 'text-[#4c8c3c]'}`} />
                     ) : (
-                      <ArrowDownLeft className={`w-6 h-6 stroke-[2] ${isDark ? 'text-white' : 'text-black'}`} />
+                      <ArrowDownLeft className={`w-5 h-5 stroke-[2.5] ${isDark ? 'text-white' : 'text-[#1a1a1a]'}`} />
                     )}
-                    <span className={`text-[20px] font-semibold leading-[normal] ${isDark ? 'text-white' : 'text-[#1a1a1a]'}`}>
-                      LKR {Math.abs(friend.balance)}
+                    <span className={`text-[18px] font-bold tracking-tight leading-none ${isDark ? 'text-white' : 'text-[#1a1a1a]'}`}>
+                      LKR {Math.abs(friend.balance).toLocaleString()}
                     </span>
                   </div>
                 )}

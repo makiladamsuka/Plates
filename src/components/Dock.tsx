@@ -17,7 +17,7 @@ export const Dock: React.FC<DockProps> = ({ activeTab, onTabChange }) => {
   ];
 
   return (
-    <div className="absolute bottom-[-5px] left-0 right-0 w-[402px] h-[93px] mx-auto z-40 bg-[#1a1a1a] rounded-[20px] flex items-center justify-around px-[15px]">
+    <div className="absolute bottom-[10px] left-0 right-0 w-[402px] h-[93px] mx-auto z-40 bg-[#1a1a1a] rounded-[32px] flex items-center justify-around px-[16px] shadow-2xl">
       {navItems.map((item) => {
         const Icon = item.icon;
         const isActive = activeTab === item.id;

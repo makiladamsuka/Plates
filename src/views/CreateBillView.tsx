@@ -92,14 +92,14 @@ export const CreateBillView: React.FC<CreateBillViewProps> = ({
 
   return (
     <div className="absolute inset-0 z-40 bg-[#ededf1] overflow-y-auto font-['Sora'] animate-in slide-in-from-right duration-300">
-      <div className="relative min-h-full px-[25px] pt-[23px] pb-[100px]">
+      <div className="relative min-h-full px-[24px] pt-[24px] pb-[100px]">
         {/* Back Button */}
-        <button onClick={onClose} className="absolute left-[17px] top-[23px] text-black z-10 w-[30px] h-[30px] flex items-center justify-center">
-          <ChevronLeft className="w-8 h-8" strokeWidth={2} />
+        <button onClick={onClose} className="absolute left-[20px] top-[24px] text-[#1a1a1a] z-10 w-[40px] h-[40px] rounded-full bg-white/50 border border-black/[0.04] flex items-center justify-center hover:bg-white shadow-sm transition-colors">
+          <ChevronLeft className="w-[20px] h-[20px]" strokeWidth={2.5} />
         </button>
 
         {/* Large Container Card */}
-        <div className="w-full bg-[#d9d9d9]/30 min-h-[753px] rounded-[35px] mt-[60px] p-[25px] relative">
+        <div className="w-full bg-white/80 border border-black/[0.04] min-h-[753px] rounded-[32px] mt-[72px] p-[24px] relative shadow-sm">
           
           {/* Title Input */}
           <input
@@ -107,65 +107,65 @@ export const CreateBillView: React.FC<CreateBillViewProps> = ({
             placeholder="Create a bill"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            className="text-[24px] font-semibold text-[#1a1a1a] mb-[25px] bg-transparent border-none outline-none w-full placeholder-neutral-400"
+            className="text-[32px] font-bold text-[#1a1a1a] mb-[20px] tracking-tight leading-tight bg-transparent border-none outline-none w-full placeholder-[#1a1a1a]/30 pr-[60px]"
           />
 
           {/* Details / Category */}
-          <div className="flex gap-[10px] mb-[40px]">
+          <div className="flex gap-[8px] mb-[40px]">
             {categories.map(cat => (
               <button 
                 key={cat}
                 onClick={() => setCategory(cat)}
-                className={`h-[23px] rounded-[30px] flex items-center justify-center px-[10px] ${category === cat ? 'bg-[#f6d6da] border border-black/20' : 'bg-transparent border border-black/20'}`}
+                className={`h-[24px] rounded-full flex items-center justify-center px-[12px] transition-colors ${category === cat ? 'bg-[#f6d6da] border border-black/20' : 'bg-white border border-black/10 shadow-sm'}`}
               >
-                <span className="text-[15px] font-normal text-black leading-none pb-[2px]">{cat}</span>
+                <span className={`text-[13px] font-bold ${category === cat ? 'text-[#1a1a1a]' : 'text-[#1a1a1a]/60'} leading-none pb-[2px]`}>{cat}</span>
               </button>
             ))}
           </div>
 
           {/* Amount Input */}
-          <div className="absolute right-[25px] top-[400px] flex items-center justify-end">
-            <span className="text-[24px] font-semibold text-[#1a1a1a] mr-[5px]">LKR</span>
+          <div className="absolute right-[24px] top-[320px] flex items-center justify-end">
+            <span className="text-[20px] font-bold text-[#1a1a1a] mr-[4px]">LKR</span>
             <input
               type="number"
               placeholder="0"
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
-              className="text-[24px] font-semibold text-[#1a1a1a] bg-transparent border-none outline-none w-[100px] text-right placeholder-neutral-400"
+              className="text-[40px] font-bold text-[#1a1a1a] tracking-tight bg-transparent border-none outline-none w-[120px] text-right placeholder-[#1a1a1a]/20"
             />
           </div>
 
           {/* Mock Friends List (matching Figma) */}
-          <div className="mt-[60px] space-y-[8px]">
+          <div className="mt-[120px] space-y-[12px]">
             {['Agam Munbo', 'Senu Diya', 'Adhan Dilva'].map((name, idx) => (
-              <div key={idx} className="bg-[#d9d9d9] h-[59px] rounded-[30px] flex items-center px-[15px] relative cursor-pointer active:scale-[0.99] transition-transform border border-transparent hover:border-black/10">
-                <span className="text-[14px] font-normal text-black ml-[10px]">{name}</span>
-                <div className="absolute right-[10px] w-[39px] h-[39px] rounded-full bg-neutral-300 flex items-center justify-center">
-                  <span className="text-[14px] font-bold text-black">{name[0]}</span>
+              <div key={idx} className="bg-[#ededf1] border border-black/[0.04] h-[64px] rounded-[32px] flex items-center px-[16px] relative cursor-pointer active:scale-[0.99] transition-transform hover:border-black/10">
+                <span className="text-[15px] font-semibold text-[#1a1a1a] ml-[8px]">{name}</span>
+                <div className="absolute right-[12px] w-[40px] h-[40px] rounded-full bg-white border border-black/10 flex items-center justify-center shadow-sm">
+                  <span className="text-[15px] font-bold text-[#1a1a1a]">{name[0]}</span>
                 </div>
               </div>
             ))}
           </div>
 
           {/* Bottom Action Area */}
-          <div className="absolute bottom-[30px] left-0 w-full px-[25px]">
-            <div className="flex justify-between items-center mb-[15px]">
-              <span className="text-[20px] font-semibold text-[#1a1a1a]">Your Share</span>
-              <span className="text-[20px] font-semibold text-[#ededf1] bg-[#1a1a1a] px-[15px] py-[5px] rounded-full">
-                Pay LKR {amount ? Math.round(parseFloat(amount) / 4) : 0}
+          <div className="absolute bottom-[32px] left-0 w-full px-[24px]">
+            <div className="flex justify-between items-center mb-[16px]">
+              <span className="text-[20px] font-bold text-[#1a1a1a] tracking-tight">Your Share</span>
+              <span className="text-[18px] font-bold text-white bg-[#1a1a1a] px-[20px] py-[10px] rounded-full shadow-md">
+                LKR {amount ? Math.round(parseFloat(amount) / 4).toLocaleString() : 0}
               </span>
             </div>
 
             {/* Slide to create */}
             <div 
               ref={sliderRef}
-              className="w-full h-[74px] rounded-[37px] bg-[#d9d9d9] border border-black/10 relative flex items-center overflow-hidden"
+              className="w-full h-[74px] rounded-full bg-gradient-to-r from-[#1a1a1a]/10 to-[#1a1a1a]/5 border border-black/5 relative flex items-center overflow-hidden"
             >
-              <p className="absolute w-full text-center text-[18px] font-bold text-black pointer-events-none">
-                Slide to create
+              <p className="absolute w-full text-center text-[16px] font-bold text-[#1a1a1a]/60 pointer-events-none tracking-wide">
+                Slide to Create
               </p>
               <div
-                className="absolute h-[50px] w-[50px] rounded-full bg-[#f6d6da] flex items-center justify-center cursor-grab active:cursor-grabbing shadow-sm z-10 transition-transform"
+                className="absolute h-[50px] w-[50px] rounded-full bg-[#1a1a1a] flex items-center justify-center cursor-grab active:cursor-grabbing shadow-lg z-10 transition-transform"
                 style={{ 
                   transform: `translateX(${sliderPos}px)`,
                   left: `${padding}px`,
@@ -174,7 +174,7 @@ export const CreateBillView: React.FC<CreateBillViewProps> = ({
                 onMouseDown={() => setIsDragging(true)}
                 onTouchStart={() => setIsDragging(true)}
               >
-                <ChevronsRight className="text-black w-6 h-6" />
+                <ChevronsRight className="text-white w-6 h-6" />
               </div>
             </div>
           </div>

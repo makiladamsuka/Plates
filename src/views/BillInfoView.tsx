@@ -24,54 +24,54 @@ export const BillInfoView: React.FC<BillInfoViewProps> = ({
 
   return (
     <div className="absolute inset-0 z-40 bg-[#ededf1] overflow-y-auto font-['Sora'] pb-32 animate-in slide-in-from-right duration-300">
-      <div className="relative min-h-full px-[25px] pt-[23px]">
+      <div className="relative min-h-full px-[24px] pt-[24px]">
         {/* Back Button */}
-        <button onClick={onClose} className="absolute left-[17px] top-[23px] text-black z-10 w-[30px] h-[30px] flex items-center justify-center">
-          <ChevronLeft className="w-8 h-8" strokeWidth={2} />
+        <button onClick={onClose} className="absolute left-[20px] top-[24px] text-[#1a1a1a] z-10 w-[40px] h-[40px] rounded-full bg-white/50 border border-black/[0.04] flex items-center justify-center hover:bg-white shadow-sm transition-colors">
+          <ChevronLeft className="w-[20px] h-[20px]" strokeWidth={2.5} />
         </button>
 
         {/* Status Pending Pill */}
         {isPending && (
-          <div className="absolute top-[23px] right-[25px] z-10">
-            <div className="bg-[#f5c744] h-[30px] rounded-[30px] flex items-center justify-center px-[16px]">
-              <span className="text-[13px] font-semibold text-black leading-none pb-[1px]">Pending</span>
+          <div className="absolute top-[28px] right-[24px] z-10">
+            <div className="bg-[#f5c744] h-[32px] rounded-full flex items-center justify-center px-[16px] shadow-sm">
+              <span className="text-[12px] font-bold text-[#1a1a1a] leading-none pb-[1px] uppercase tracking-wider">Pending</span>
             </div>
           </div>
         )}
 
-        {/* Large Container Card (Assuming white/grey background based on Figma bounds) */}
-        <div className="w-full bg-[#d9d9d9]/30 min-h-[753px] rounded-[35px] mt-[60px] p-[25px] relative">
+        {/* Large Container Card */}
+        <div className="w-full bg-white/80 border border-black/[0.04] min-h-[753px] rounded-[32px] mt-[72px] p-[24px] relative shadow-sm">
           
           {/* Title */}
-          <h1 className="text-[24px] font-semibold text-[#1a1a1a] mb-[25px]">
+          <h1 className="text-[32px] font-bold text-[#1a1a1a] mb-[20px] tracking-tight leading-tight pr-[60px]">
             {bill.title}
           </h1>
 
           {/* Details */}
-          <div className="flex flex-col gap-[7px] mb-[40px]">
-            <div className={`${tagColor} h-[23px] rounded-[30px] flex items-center justify-center px-[10px] w-fit`}>
-              <span className="text-[15px] font-normal text-black leading-none pb-[2px]">{bill.category}</span>
+          <div className="flex flex-col gap-[8px] mb-[40px]">
+            <div className={`${tagColor} h-[24px] rounded-full flex items-center justify-center px-[12px] w-fit`}>
+              <span className="text-[13px] font-bold text-[#1a1a1a] leading-none pb-[2px]">{bill.category}</span>
             </div>
-            <p className="text-[15px] font-normal text-black">{bill.date}</p>
-            <p className="text-[15px] font-normal text-black">Created by @username</p>
+            <p className="text-[14px] font-medium text-[#1a1a1a]/60">{bill.date}</p>
+            <p className="text-[14px] font-medium text-[#1a1a1a]/60">Created by <span className="font-bold text-[#1a1a1a]">@username</span></p>
           </div>
 
           {/* Total Amount */}
-          <div className="absolute right-[25px] top-[400px]">
-            <span className="text-[24px] font-semibold text-[#1a1a1a]">LKR {bill.amount}</span>
+          <div className="absolute right-[24px] top-[320px]">
+            <span className="text-[40px] font-bold text-[#1a1a1a] tracking-tight">LKR {bill.amount.toLocaleString()}</span>
           </div>
 
           {/* Friends List section */}
-          <div className="mt-[60px] space-y-[8px]">
+          <div className="mt-[120px] space-y-[12px]">
             {bill.participants.map((p, idx) => (
-              <div key={idx} className="bg-[#d9d9d9] h-[59px] rounded-[30px] flex items-center px-[15px] relative">
-                <span className="text-[14px] font-normal text-black ml-[10px]">{p.name}</span>
-                <span className="absolute right-[65px] text-[20px] font-semibold text-[#1a1a1a]">LKR {p.share}</span>
+              <div key={idx} className="bg-[#ededf1] border border-black/[0.04] h-[64px] rounded-[32px] flex items-center px-[16px] relative">
+                <span className="text-[15px] font-semibold text-[#1a1a1a] ml-[8px]">{p.name}</span>
+                <span className="absolute right-[70px] text-[18px] font-bold text-[#1a1a1a] tracking-tight">LKR {p.share.toLocaleString()}</span>
                 {p.avatar ? (
-                  <img src={p.avatar} alt="" className="absolute right-[10px] w-[39px] h-[39px] rounded-full object-cover" />
+                  <img src={p.avatar} alt="" className="absolute right-[12px] w-[40px] h-[40px] rounded-full object-cover shadow-sm" />
                 ) : (
-                  <div className="absolute right-[10px] w-[39px] h-[39px] rounded-full bg-neutral-300 flex items-center justify-center">
-                    <span className="text-[14px] font-bold text-black">{p.name[0]}</span>
+                  <div className="absolute right-[12px] w-[40px] h-[40px] rounded-full bg-white border border-black/10 flex items-center justify-center shadow-sm">
+                    <span className="text-[15px] font-bold text-[#1a1a1a]">{p.name[0]}</span>
                   </div>
                 )}
               </div>
@@ -79,19 +79,19 @@ export const BillInfoView: React.FC<BillInfoViewProps> = ({
           </div>
 
           {/* Bottom Action Area */}
-          <div className="absolute bottom-[30px] left-0 w-full px-[25px]">
+          <div className="absolute bottom-[32px] left-0 w-full px-[24px]">
             <div className="flex justify-between items-center">
-              <span className="text-[20px] font-semibold text-[#1a1a1a]">Your Share</span>
+              <span className="text-[20px] font-bold text-[#1a1a1a] tracking-tight">Your Share</span>
               {isPending ? (
                 <button
                   onClick={onPay}
-                  className="text-[20px] font-semibold text-[#ededf1] bg-[#1a1a1a] px-[15px] py-[5px] rounded-full active:scale-95 transition-transform"
+                  className="text-[18px] font-bold text-white bg-[#1a1a1a] px-[20px] py-[10px] rounded-full active:scale-95 transition-transform shadow-lg"
                 >
-                  Pay LKR {userShare}
+                  Pay LKR {userShare.toLocaleString()}
                 </button>
               ) : (
-                <span className="text-[20px] font-semibold text-[#ededf1] bg-[#1a1a1a] px-[15px] py-[5px] rounded-full">
-                  Paid LKR {userShare}
+                <span className="text-[18px] font-bold text-white bg-[#1a1a1a] px-[20px] py-[10px] rounded-full opacity-50 cursor-not-allowed">
+                  Paid LKR {userShare.toLocaleString()}
                 </span>
               )}
             </div>

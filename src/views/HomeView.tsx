@@ -35,29 +35,29 @@ export const HomeView: React.FC<HomeViewProps> = ({
     }, 0);
 
   return (
-    <div className="bg-[#ededf1] min-h-screen relative font-['Sora'] pb-32 pt-[36px] px-[22px]">
-      <h1 className="text-[48px] font-bold text-black leading-tight mb-[25px]">
+    <div className="bg-[#ededf1] absolute inset-0 z-10 h-full w-full font-['Sora'] overflow-y-auto pb-32 pt-[48px] px-[24px]">
+      <h1 className="text-[40px] font-bold text-[#1a1a1a] tracking-tight leading-tight mb-[32px]">
         Home
       </h1>
 
       {/* Overview Balance Cards */}
-      <div className="grid grid-cols-2 gap-[15px] mb-[25px]">
-        <div className="bg-[#d9d9d9] rounded-[25px] p-[20px] shadow-sm">
-          <div className="flex items-center gap-[5px] text-[14px] text-[#4c8c3c] font-semibold mb-[5px]">
-            <ArrowDownLeft className="w-4 h-4" />
-            <span>Owed to You</span>
+      <div className="grid grid-cols-2 gap-[16px] mb-[32px]">
+        <div className="bg-white/80 rounded-[24px] p-[20px] shadow-sm border border-black/[0.04]">
+          <div className="flex items-center gap-[6px] text-[13px] text-[#4c8c3c] font-semibold mb-[8px]">
+            <ArrowDownLeft className="w-4 h-4" strokeWidth={2.5} />
+            <span className="tracking-wide uppercase text-[11px] font-bold">Owed to You</span>
           </div>
-          <p className="text-[24px] font-bold text-[#1a1a1a]">
+          <p className="text-[24px] font-bold text-[#1a1a1a] tracking-tight">
             LKR {owedToYouTotal.toLocaleString()}
           </p>
         </div>
 
-        <div className="bg-[#d9d9d9] rounded-[25px] p-[20px] shadow-sm">
-          <div className="flex items-center gap-[5px] text-[14px] text-[#1a1a1a] font-semibold mb-[5px]">
-            <ArrowUpRight className="w-4 h-4" />
-            <span>You Owe</span>
+        <div className="bg-white/80 rounded-[24px] p-[20px] shadow-sm border border-black/[0.04]">
+          <div className="flex items-center gap-[6px] text-[13px] text-[#1a1a1a] font-semibold mb-[8px]">
+            <ArrowUpRight className="w-4 h-4" strokeWidth={2.5} />
+            <span className="tracking-wide uppercase text-[11px] font-bold">You Owe</span>
           </div>
-          <p className="text-[24px] font-bold text-[#1a1a1a]">
+          <p className="text-[24px] font-bold text-[#1a1a1a] tracking-tight">
             LKR {youOweTotal.toLocaleString()}
           </p>
         </div>
@@ -67,25 +67,27 @@ export const HomeView: React.FC<HomeViewProps> = ({
       {needsApproval && (
         <div
           onClick={() => onSelectBill(needsApproval)}
-          className="bg-[#f5c744] text-black rounded-[25px] p-[20px] cursor-pointer active:scale-[0.99] transition-transform shadow-sm mb-[25px]"
+          className="bg-[#f5c744] text-[#1a1a1a] rounded-[24px] p-[24px] cursor-pointer active:scale-[0.99] transition-transform shadow-sm mb-[32px]"
         >
-          <div className="flex items-center gap-[5px] mb-[10px]">
-            <ShieldAlert className="w-5 h-5 text-black" />
-            <span className="text-[14px] font-bold tracking-wider uppercase">Action Needed</span>
+          <div className="flex items-center justify-between mb-[12px]">
+            <div className="flex items-center gap-[6px]">
+              <ShieldAlert className="w-5 h-5 text-[#1a1a1a]" strokeWidth={2.5} />
+              <span className="text-[12px] font-bold tracking-widest uppercase">Action Needed</span>
+            </div>
+            <ArrowUpRight className="w-5 h-5 opacity-50" strokeWidth={2.5} />
           </div>
-          <h3 className="text-[20px] font-semibold leading-snug mb-[5px]">{needsApproval.title}</h3>
-          <p className="text-[15px] font-normal text-black/80">
-            {needsApproval.creator} requested LKR{' '}
-            {needsApproval.participants.find((p) => p.name.includes('You'))?.share || 1200}
+          <h3 className="text-[22px] font-bold leading-tight mb-[4px] tracking-tight">{needsApproval.title}</h3>
+          <p className="text-[15px] font-medium text-[#1a1a1a]/80">
+            {needsApproval.creator} requested LKR {needsApproval.participants.find((p) => p.name.includes('You'))?.share || 1200}
           </p>
         </div>
       )}
 
       {/* Recent Activity Section */}
       <div>
-        <div className="flex justify-between items-center mb-[15px]">
-          <h2 className="text-[18px] font-semibold text-[#1a1a1a]">Recent Activity</h2>
-          <button onClick={onNavigateToBills} className="text-[15px] font-normal text-black underline">
+        <div className="flex justify-between items-end mb-[20px]">
+          <h2 className="text-[20px] font-bold text-[#1a1a1a] tracking-tight">Recent Activity</h2>
+          <button onClick={onNavigateToBills} className="text-[14px] font-semibold text-[#1a1a1a] underline decoration-2 underline-offset-4 opacity-70 hover:opacity-100 transition-opacity pb-[2px]">
             See all
           </button>
         </div>

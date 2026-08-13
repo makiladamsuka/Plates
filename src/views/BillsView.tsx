@@ -27,29 +27,29 @@ export const BillsView: React.FC<BillsViewProps> = ({
   ];
 
   return (
-    <div className="bg-[#ededf1] min-h-screen relative font-['Sora'] pb-32">
+    <div className="bg-[#ededf1] absolute inset-0 z-10 h-full w-full font-['Sora'] overflow-y-auto pb-32">
       {/* Header */}
-      <div className="pt-[36px] px-[22px] pb-[10px] flex justify-between items-start relative">
-        <h1 className="text-[48px] font-bold text-black leading-tight h-[78px] w-[296px]">
+      <div className="pt-[48px] px-[24px] pb-[16px] flex justify-between items-start">
+        <h1 className="text-[40px] font-bold text-[#1a1a1a] tracking-tight leading-tight">
           Bills
         </h1>
-        <button className="w-[24px] h-[24px] mt-[20px] mr-[10px] text-black">
-          <Search className="w-full h-full" />
+        <button className="w-[40px] h-[40px] rounded-full bg-white/50 border border-black/[0.04] flex items-center justify-center text-[#1a1a1a] shadow-sm hover:bg-white/80 transition-colors">
+          <Search className="w-[18px] h-[18px]" strokeWidth={2.5} />
         </button>
       </div>
 
       {/* Sort Filter Pills */}
-      <div className="flex items-center gap-[15px] overflow-x-auto no-scrollbar pl-[22px] pr-[22px] mt-[5px]">
+      <div className="flex items-center gap-[12px] overflow-x-auto no-scrollbar px-[24px] pb-[8px]">
         {sortOptions.map((opt) => {
           const isActive = activeSort === opt.id;
           return (
             <button
               key={opt.id}
               onClick={() => onSortChange(opt.id)}
-              className={`h-[32px] px-[20px] rounded-[35px] text-[18px] font-semibold transition-all shrink-0 ${
+              className={`h-[36px] px-[20px] rounded-full text-[14px] font-bold transition-all shrink-0 ${
                 isActive
-                  ? 'bg-[#1a1a1a] text-[#ededf1]'
-                  : 'bg-[#d9d9d9] text-black hover:bg-[#d0d0d0]'
+                  ? 'bg-[#1a1a1a] text-white shadow-md'
+                  : 'bg-white/80 text-[#1a1a1a] hover:bg-white border border-black/[0.04] shadow-sm'
               }`}
             >
               {opt.label}
@@ -59,7 +59,7 @@ export const BillsView: React.FC<BillsViewProps> = ({
       </div>
 
       {/* Bill List */}
-      <div className="mt-[25px] px-[18px] space-y-[15px] relative z-10">
+      <div className="mt-[16px] px-[24px] space-y-[16px]">
         {bills.length === 0 ? (
           <div className="text-center py-16 text-neutral-500">
             <p className="text-[15px] font-medium">No bills match your search.</p>
