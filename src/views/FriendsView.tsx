@@ -104,7 +104,7 @@ export const FriendsView: React.FC<FriendsViewProps> = ({
                 </div>
 
                 {/* Amount / Action */}
-                {!friend.isPendingRequest && (
+                {!friend.isPendingRequest ? (
                   <div className="absolute right-[20px] top-[32px] flex items-center gap-[4px]">
                     {isOwed ? (
                       <ArrowUpRight className={`w-5 h-5 stroke-[2.5] ${isDark ? 'text-emerald-400' : 'text-[#4c8c3c]'}`} />
@@ -115,6 +115,27 @@ export const FriendsView: React.FC<FriendsViewProps> = ({
                       LKR {Math.abs(friend.balance).toLocaleString()}
                     </span>
                   </div>
+                ) : (
+                  <div className="absolute right-[20px] top-[24px] flex items-center gap-[10px]">
+                    <button 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        // Reject logic here
+                      }}
+                      className="w-[40px] h-[40px] rounded-full bg-red-100 flex items-center justify-center text-red-600 hover:bg-red-200 transition-colors"
+                    >
+                      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M13 1L1 13M1 1L13 13" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                    </button>
+                    <button 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onAcceptRequest(friend.id);
+                      }}
+                      className="w-[40px] h-[40px] rounded-full bg-[#1a1a1a] flex items-center justify-center text-white hover:bg-black transition-colors"
+                    >
+                      <svg width="16" height="12" viewBox="0 0 16 12" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M2 5.5L6 9.5L14 1.5" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                    </button>
+                  </div>
                 )}
               </div>
             );
@@ -123,8 +144,8 @@ export const FriendsView: React.FC<FriendsViewProps> = ({
       </div>
 
       {/* Floating Add Button (Exact match from Figma) */}
-      <div className="absolute right-[15px] bottom-[110px] w-[80px] h-[80px] bg-[#1a1a1a] dark:bg-white rounded-[24px] shadow-lg flex items-center justify-center cursor-pointer z-20">
-        <Plus className={`w-8 h-8 ${isDark ? 'text-black' : 'text-white'}`} />
+      <div className="absolute right-[20px] bottom-[110px] w-[64px] h-[64px] bg-[#1a1a1a] rounded-full shadow-lg flex items-center justify-center cursor-pointer z-20 hover:scale-105 active:scale-95 transition-transform">
+        <Plus className="w-8 h-8 text-white" />
       </div>
 
       {/* Pending Request Popup (Figma 26:67) */}
