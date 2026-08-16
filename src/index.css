@@ -1,101 +1,13 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 @import url('https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&display=swap');
-
-:root {
-  font-family: 'Sora', sans-serif;
-  color-scheme: light;
-  
-  /* Figma Color Palette */
-  --ink-black: #141414;
-  --bg-color: #F8F8F8;
-  --yellow: #FDD356;
-  --pastel-pink: #FCD3D3;
-  --pastel-green: #D9E8D3;
-  --deep-green: #4F7F3B;
-  --surface-white: #FFFFFF;
-  --text-gray: #6b7280;
-  --border-color: #E5E7EB;
-}
-
-* {
-  box-sizing: border-box;
-}
 
 body {
   margin: 0;
   padding: 0;
-  background-color: var(--bg-color);
-  color: var(--ink-black);
   font-family: 'Sora', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-}
-
-/* Mobile-first App Container */
-#root {
-  max-width: 480px;
-  margin: 0 auto;
-  min-height: 100vh;
-  background-color: var(--bg-color);
-  position: relative;
-  box-shadow: 0 0 20px rgba(0,0,0,0.05);
-  overflow-x: hidden;
-  padding-bottom: 80px; /* Space for bottom nav */
-}
-
-/* Custom scrollbar */
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-::-webkit-scrollbar-thumb {
-  background: rgba(0, 0, 0, 0.15);
-  border-radius: 9999px;
-}
-
-.no-scrollbar::-webkit-scrollbar {
-  display: none;
-}
-.no-scrollbar {
-  -ms-overflow-style: none;
-  scrollbar-width: none;
-}
-
-/* Common Layout Utils */
-.flex-row { display: flex; flex-direction: row; }
-.flex-col { display: flex; flex-direction: column; }
-.items-center { align-items: center; }
-.justify-between { justify-content: space-between; }
-.justify-center { justify-content: center; }
-.gap-2 { gap: 0.5rem; }
-.gap-4 { gap: 1rem; }
-
-/* Interactive elements */
-button {
-  font-family: inherit;
-  border: none;
-  cursor: pointer;
-  background: none;
-  padding: 0;
-}
-
-.btn-primary {
-  background-color: var(--ink-black);
-  color: white;
-  border-radius: 9999px;
-  padding: 1rem 2rem;
-  font-weight: 600;
-  width: 100%;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
-.page-container {
-  padding: 1.5rem;
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
 }
