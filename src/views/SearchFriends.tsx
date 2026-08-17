@@ -62,7 +62,7 @@ export function SearchFriends({ session, onBack }: SearchFriendsProps) {
   };
 
   return (
-    <div className="min-h-screen bg-[#EDEDF1] pb-36 font-['Sora'] relative">
+    <div className="min-h-screen bg-[#EDEDF1] pb-36 relative">
       
       {/* Top Header */}
       <div className="px-6 pt-6 pb-2">

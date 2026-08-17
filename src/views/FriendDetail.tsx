@@ -37,7 +37,7 @@ export function FriendDetail({ friendId, onBack, onBillClick }: FriendDetailProp
   if (!friend) return null;
 
   return (
-    <div className="min-h-screen bg-[#EDEDF1] pb-32 font-['Sora'] relative overflow-hidden">
+    <div className="min-h-screen bg-[#EDEDF1] pb-32 relative overflow-hidden">
       
       {/* Header Area */}
       <div className="pt-6 px-6 relative">
@@ -50,7 +50,7 @@ export function FriendDetail({ friendId, onBack, onBillClick }: FriendDetailProp
 
         <div className="flex justify-between items-start">
           <div className="flex flex-col">
-            <h1 className="text-[#1A1A1A] text-2xl font-semibold">{friend.full_name}</h1>
+            <h1 className="text-[#1A1A1A] text-2xl font-bold font-display">{friend.full_name || friend.name}</h1>
             <div className="flex items-center gap-4 mt-2">
               {friend.avatar_url ? (
                 <img src={friend.avatar_url} alt="" className="w-[50px] h-[50px] rounded-full object-cover shrink-0" />
