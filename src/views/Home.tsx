@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ArrowDownLeft, ArrowUpRight, Plus, UserPlus, ChevronRight, Check, MessageSquare } from 'lucide-react';
+import { ArrowDownLeft, ArrowUpRight, Plus, UserPlus, ChevronRight, Check } from 'lucide-react';
 import { NewBillModal } from '../components/NewBillModal';
 import type { Bill, Friend } from '../data/mockData';
 
@@ -38,118 +38,19 @@ export function Home({
   const pendingFriendRequests = friends.filter(f => f.isPendingRequest);
 
   return (
-    <div className="min-h-screen bg-[#EDEDF1] pb-36 pt-0 font-sans-app">
+    <div className="min-h-screen bg-[#EDEDF1] pb-36 pt-0">
       
-      {/* Top Header Container (Matching 'Week 3' header from screenshot) */}
+      {/* Top Header Container */}
       <div className="px-6 pt-10 pb-4 h-[88px] flex justify-between items-center max-w-[480px] mx-auto">
-        <h1 className="text-black text-5xl font-bold font-display tracking-tight leading-none">Week 3</h1>
-        <div className="w-10 h-10 rounded-full flex items-center justify-center text-black cursor-pointer hover:bg-black/5 transition-colors">
-          <MessageSquare size={24} strokeWidth={2} />
+        <h1 className="text-black text-5xl font-bold font-display tracking-tight leading-none">Plates</h1>
+        <div className="w-10 h-10 rounded-full bg-[#D9D9D9] flex items-center justify-center font-bold text-black text-sm shadow-sm">
+          ME
         </div>
       </div>
 
       <div className="max-w-[480px] mx-auto px-5 flex flex-col gap-6">
 
-        {/* Top 4-Square Tile Row (Exact layout from top of reference screenshot) */}
-        <div className="grid grid-cols-4 gap-2.5">
-          {/* Tile 1: Mon */}
-          <div 
-            onClick={() => bills[0] && onBillClick?.(bills[0].id)}
-            className="aspect-square bg-[#F6D6DA] rounded-[22px] p-2.5 flex flex-col justify-end relative cursor-pointer active:scale-95 transition-transform shadow-xs overflow-hidden"
-          >
-            <span className="text-[11px] font-bold text-[#1A1A1A]/80 bg-white/60 px-2 py-0.5 rounded-md w-fit backdrop-blur-xs">
-              Mon
-            </span>
-          </div>
-
-          {/* Tile 2: Tue */}
-          <div 
-            onClick={() => bills[1] && onBillClick?.(bills[1].id)}
-            className="aspect-square bg-[#1A1A1A] text-white rounded-[22px] p-2.5 flex flex-col justify-end relative cursor-pointer active:scale-95 transition-transform shadow-xs overflow-hidden"
-          >
-            <span className="text-[11px] font-bold text-white/90 bg-white/20 px-2 py-0.5 rounded-md w-fit backdrop-blur-xs">
-              Tue
-            </span>
-          </div>
-
-          {/* Tile 3: Wed */}
-          <div 
-            onClick={() => bills[2] && onBillClick?.(bills[2].id)}
-            className="aspect-square bg-[#CDE1FF] rounded-[22px] p-2.5 flex flex-col justify-end relative cursor-pointer active:scale-95 transition-transform shadow-xs overflow-hidden"
-          >
-            <span className="text-[11px] font-bold text-[#1A1A1A]/80 bg-white/60 px-2 py-0.5 rounded-md w-fit backdrop-blur-xs">
-              Wed
-            </span>
-          </div>
-
-          {/* Tile 4: + Square Container */}
-          <button 
-            onClick={() => setIsNewBillModalOpen(true)}
-            className="aspect-square bg-[#D9D9D9] rounded-[22px] flex items-center justify-center cursor-pointer active:scale-95 transition-transform hover:bg-zinc-300 shadow-xs"
-          >
-            <Plus size={26} strokeWidth={2.5} className="text-[#1A1A1A]" />
-          </button>
-        </div>
-
-        {/* 2-Column Friend Cards Feed (Exact layout from lower section of reference screenshot) */}
-        <div className="grid grid-cols-2 gap-4">
-          {/* Column 1 Card */}
-          <div 
-            onClick={() => bills[0] && onBillClick?.(bills[0].id)}
-            className="flex flex-col gap-2 cursor-pointer group"
-          >
-            {/* Header: Avatar + Username */}
-            <div className="flex items-center gap-2 px-1">
-              <div 
-                className="w-6 h-6 rounded-full opacity-60" 
-                style={{ backgroundColor: friends[0]?.color || '#F6D6DA' }}
-              />
-              <span className="text-xs font-semibold text-[#1A1A1A]">
-                {friends[0]?.username?.replace('@', '') || 'adhenditha'}
-              </span>
-            </div>
-
-            {/* Tall Card with 6 new badge */}
-            <div className="w-full h-[260px] bg-[#1A1A1A] rounded-[28px] p-4 relative flex flex-col justify-between overflow-hidden shadow-sm transition-transform group-active:scale-[0.98]">
-              <div className="flex justify-end">
-                <span className="bg-[#EF4444] text-white text-[11px] font-bold px-2.5 py-0.5 rounded-full shadow-sm">
-                  {pendingBills.length > 0 ? `${pendingBills.length} new` : 'New'}
-                </span>
-              </div>
-              <div className="flex flex-col gap-0.5 text-white z-10">
-                <span className="text-base font-bold truncate">{bills[0]?.title || 'Dinner at Senu'}</span>
-                <span className="text-white/70 text-xs font-normal">LKR {bills[0]?.total || 4800}</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Column 2 Card */}
-          <div 
-            onClick={() => bills[1] && onBillClick?.(bills[1].id)}
-            className="flex flex-col gap-2 cursor-pointer group"
-          >
-            {/* Header: Avatar + Username */}
-            <div className="flex items-center gap-2 px-1">
-              <div 
-                className="w-6 h-6 rounded-full opacity-60" 
-                style={{ backgroundColor: friends[1]?.color || '#D7ECD1' }}
-              />
-              <span className="text-xs font-semibold text-[#1A1A1A]">
-                {friends[1]?.username?.replace('@', '') || 'ayanmunoz'}
-              </span>
-            </div>
-
-            {/* Tall Card */}
-            <div className="w-full h-[260px] bg-[#D7ECD1] rounded-[28px] p-4 relative flex flex-col justify-between overflow-hidden shadow-sm transition-transform group-active:scale-[0.98]">
-              <div className="flex flex-col gap-0.5 text-[#1A1A1A] mt-auto z-10">
-                <span className="text-base font-bold truncate">{bills[1]?.title || 'Groceries'}</span>
-                <span className="text-black/70 text-xs font-normal">LKR {bills[1]?.total || 3600}</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Net Balance Overview Card */}
+        {/* 1. Net Balance Overview Card */}
         <div className="w-full bg-[#D9D9D9] rounded-[30px] p-6 shadow-sm flex flex-col gap-4">
           <div className="flex justify-between items-start">
             <div className="flex flex-col">
@@ -186,7 +87,7 @@ export function Home({
           </div>
         </div>
 
-        {/* Quick Action Buttons */}
+        {/* 2. Quick Action Buttons */}
         <div className="flex gap-3">
           <button 
             onClick={() => setIsNewBillModalOpen(true)}
@@ -205,7 +106,7 @@ export function Home({
           </button>
         </div>
 
-        {/* Waiting on You Section */}
+        {/* 3. Waiting on You Section */}
         <div className="flex flex-col gap-3">
           <h2 className="text-[#1A1A1A] text-2xl font-bold font-display tracking-tight px-1">
             Waiting on You
@@ -265,6 +166,84 @@ export function Home({
                 All caught up! No pending bills or requests.
               </div>
             )}
+          </div>
+        </div>
+
+        {/* 4. Recent Plates Horizontal Carousel */}
+        <div className="flex flex-col gap-3">
+          <div className="flex justify-between items-end px-1">
+            <h2 className="text-[#1A1A1A] text-2xl font-bold font-display tracking-tight">
+              Recent Plates
+            </h2>
+            <span className="text-xs font-medium text-black/40">Swipe left →</span>
+          </div>
+
+          {/* Horizontal Scroll Feed */}
+          <div className="flex gap-3.5 overflow-x-auto no-scrollbar pb-3 pt-1 -mx-5 px-5 snap-x snap-mandatory">
+            {bills.map((bill) => {
+              const tagColors: Record<string, { bg: string, text: string }> = {
+                'Restaurant': { bg: '#F6D6DA', text: '#1A1A1A' },
+                'Grocery': { bg: '#D7ECD1', text: '#1A1A1A' },
+                'Entertainment': { bg: '#CDE1FF', text: '#1A1A1A' },
+              };
+              const tagStyle = tagColors[bill.category] || { bg: '#E5E7EB', text: '#1A1A1A' };
+
+              return (
+                <div
+                  key={`carousel-${bill.id}`}
+                  onClick={() => onBillClick?.(bill.id)}
+                  className="w-[210px] h-[210px] shrink-0 bg-[#D9D9D9] rounded-[28px] p-4.5 flex flex-col justify-between shadow-sm snap-start cursor-pointer active:scale-[0.98] hover:bg-zinc-300/80 transition-all relative overflow-hidden"
+                >
+                  {/* Top Bar inside Card */}
+                  <div className="flex justify-between items-center z-10">
+                    <span 
+                      className="text-[11px] font-semibold px-2.5 py-1 rounded-full"
+                      style={{ backgroundColor: tagStyle.bg, color: tagStyle.text }}
+                    >
+                      {bill.category}
+                    </span>
+                    <span 
+                      className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                        bill.status === 'Pending' ? 'bg-[#F5C744] text-black' : 'bg-[#4C8C3C] text-white'
+                      }`}
+                    >
+                      {bill.status}
+                    </span>
+                  </div>
+
+                  {/* Middle Content */}
+                  <div className="flex flex-col gap-1 z-10 mt-2">
+                    <h3 className="text-[#1A1A1A] text-lg font-bold leading-snug line-clamp-2">
+                      {bill.title}
+                    </h3>
+                    <span className="text-black/50 text-xs font-normal">
+                      {new Date(bill.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                    </span>
+                  </div>
+
+                  {/* Bottom Footer: Amount & Split count */}
+                  <div className="flex justify-between items-end z-10 border-t border-black/10 pt-3 mt-1">
+                    <div className="flex flex-col">
+                      <span className="text-black/50 text-[10px] font-semibold uppercase tracking-wider">Total</span>
+                      <span className="text-[#1A1A1A] text-lg font-extrabold tracking-tight">
+                        LKR {bill.total}
+                      </span>
+                    </div>
+
+                    <div className="flex -space-x-1.5 overflow-hidden">
+                      {bill.participants.slice(0, 3).map((p, i) => (
+                        <div 
+                          key={i} 
+                          className="w-6 h-6 rounded-full border border-[#EDEDF1] bg-black/20 flex items-center justify-center text-[9px] font-bold text-black shrink-0"
+                        >
+                          {p.friendId === 'me' ? 'Y' : p.friendId.substring(0, 1).toUpperCase()}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
 
