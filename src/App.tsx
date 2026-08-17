@@ -4,6 +4,7 @@ import { BillsList } from './views/BillsList';
 import { BillDetail } from './views/BillDetail';
 import { FriendsList } from './views/FriendsList';
 import { FriendDetail } from './views/FriendDetail';
+import { SearchFriends } from './views/SearchFriends';
 import { BottomNav } from './components/BottomNav';
 import { IncomingBillModal } from './components/IncomingBillModal';
 import { MOCK_BILLS, MOCK_FRIENDS } from './data/mockData';
@@ -16,6 +17,7 @@ function App() {
   const [selectedBillId, setSelectedBillId] = useState<string | null>(null);
   
   // Friends tab state
+  const [friendsView, setFriendsView] = useState<'list' | 'detail' | 'search'>('list');
   const [selectedFriendId, setSelectedFriendId] = useState<string | null>(null);
 
   const handleAddBill = (newBill: Bill) => {
@@ -31,10 +33,15 @@ function App() {
       {currentTab === 'home' && <Home />}
       
       {currentTab === 'friends' && (
-        selectedFriendId && selectedFriend ? (
+        friendsView === 'search' ? (
+          <SearchFriends onBack={() => setFriendsView('list')} />
+        ) : friendsView === 'detail' && selectedFriend ? (
           <FriendDetail 
             friend={selectedFriend}
-            onBack={() => setSelectedFriendId(null)}
+            onBack={() => {
+              setFriendsView('list');
+              setSelectedFriendId(null);
+            }}
             onBillClick={(billId) => {
               setSelectedBillId(billId);
               setCurrentView('detail');
@@ -42,7 +49,13 @@ function App() {
             }}
           />
         ) : (
-          <FriendsList onFriendClick={(id) => setSelectedFriendId(id)} />
+          <FriendsList 
+            onFriendClick={(id) => {
+              setSelectedFriendId(id);
+              setFriendsView('detail');
+            }}
+            onSearchClick={() => setFriendsView('search')}
+          />
         )
       )}
       
@@ -78,6 +91,10 @@ function App() {
         onTabChange={(tab) => {
           setCurrentTab(tab);
           if (tab === 'bills') setCurrentView('list');
+          if (tab === 'friends') {
+            setFriendsView('list');
+            setSelectedFriendId(null);
+          }
         }} 
       />
       
