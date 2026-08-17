@@ -116,13 +116,14 @@ export function NewBillModal({ isOpen, onClose, onSuccess }: NewBillModalProps) 
         title: billName || 'New Bill',
         category: tag || 'Other',
         total: parsedAmount,
+        creatorId: userId,
         participants: splits.map(s => ({ friendId: s.id, share: s.share }))
       });
       if (onSuccess) onSuccess();
       handleClose();
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error creating bill:', err);
-      alert('Failed to create bill');
+      alert(err.message || 'Failed to create bill');
     } finally {
       setIsCreating(false);
     }

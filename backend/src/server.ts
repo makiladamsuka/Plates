@@ -11,15 +11,31 @@ const port = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json());
 
-// Fetch all bills
+// =============== BILLS ROUTES ===============
+
+// Fetch all bills (optionally filter by userId)
 app.get('/api/bills', async (req, res) => {
   try {
-    const { data, error } = await supabase
+    const { userId } = req.query;
+    
+    let query = supabase
       .from('bills')
       .select('*, participants(*)');
+
+    const { data, error } = await query;
       
     if (error) throw error;
-    res.json(data);
+
+    // Filter bills where user is a participant if userId is provided
+    let filteredData = data;
+    if (userId) {
+      filteredData = (data || []).filter((bill: any) => 
+        bill.creator_id === userId ||
+        (bill.participants || []).some((p: any) => p.friend_id === userId)
+      );
+    }
+
+    res.json(filteredData || []);
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }
@@ -45,12 +61,18 @@ app.get('/api/bills/:id', async (req, res) => {
 // Create a new bill
 app.post('/api/bills', async (req, res) => {
   try {
-    const { title, category, total, status, participants } = req.body;
+    const { title, category, total, status, creatorId, participants } = req.body;
     
     // Create the bill
     const { data: bill, error: billError } = await supabase
       .from('bills')
-      .insert([{ title, category, total, status }])
+      .insert([{ 
+        title, 
+        category, 
+        total, 
+        status: status || 'Pending',
+        creator_id: creatorId || null
+      }])
       .select()
       .single();
       
@@ -58,12 +80,16 @@ app.post('/api/bills', async (req, res) => {
     
     // Create participants if provided
     if (participants && participants.length > 0) {
-      const participantInserts = participants.map((p: any) => ({
-        bill_id: bill.id,
-        friend_id: p.friendId,
-        share: p.share,
-        paid: p.paid || false
-      }));
+      const participantInserts = participants.map((p: any) => {
+        const isCreator = creatorId && p.friendId === creatorId;
+        return {
+          bill_id: bill.id,
+          friend_id: p.friendId,
+          share: p.share,
+          paid: p.paid || false,
+          accepted: isCreator ? true : false // Creator auto-accepts; friends need to accept!
+        };
+      });
       
       const { error: partError } = await supabase
         .from('participants')
@@ -72,7 +98,7 @@ app.post('/api/bills', async (req, res) => {
       if (partError) throw partError;
     }
     
-    // Fetch the complete bill with participants
+    // Fetch complete bill with participants
     const { data: completeBill, error: fetchError } = await supabase
       .from('bills')
       .select('*, participants(*)')
@@ -82,6 +108,45 @@ app.post('/api/bills', async (req, res) => {
     if (fetchError) throw fetchError;
     
     res.status(201).json(completeBill);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Accept incoming bill request
+app.post('/api/bills/:id/accept', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { userId } = req.body;
+    
+    const { data, error } = await supabase
+      .from('participants')
+      .update({ accepted: true })
+      .eq('bill_id', id)
+      .eq('friend_id', userId)
+      .select();
+      
+    if (error) throw error;
+    res.json({ message: 'Bill accepted', data });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Decline incoming bill request
+app.post('/api/bills/:id/decline', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { userId } = req.body;
+    
+    const { error } = await supabase
+      .from('participants')
+      .delete()
+      .eq('bill_id', id)
+      .eq('friend_id', userId);
+      
+    if (error) throw error;
+    res.json({ message: 'Bill declined' });
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }
@@ -166,7 +231,7 @@ app.post('/api/friends', async (req, res) => {
     const { userId, friendId } = req.body;
     const { data, error } = await supabase
       .from('friends')
-      .insert({ user_id: userId, friend_id: friendId })
+      .insert({ user_id: userId, friend_id: friendId, status: 'pending' })
       .select();
     
     if (error) {

@@ -1,10 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { ArrowDownLeft, ArrowUpRight, Plus, UserPlus, ChevronRight, Check } from 'lucide-react';
 import { NewBillModal } from '../components/NewBillModal';
+import { IncomingBillModal } from '../components/IncomingBillModal';
 import { api } from '../services/api';
+import { supabase } from '../lib/supabase';
 import type { Bill, Friend } from '../data/mockData';
 
 interface HomeProps {
+  session?: any;
   bills?: Bill[];
   friends?: Friend[];
   onAddBill?: (bill: Bill) => void;
@@ -14,6 +17,7 @@ interface HomeProps {
 }
 
 export function Home({ 
+  session,
   bills: initialBills, 
   friends = [], 
   onAddBill, 
@@ -22,11 +26,25 @@ export function Home({
   onApproveFriend 
 }: HomeProps) {
   const [isNewBillModalOpen, setIsNewBillModalOpen] = useState(false);
+  const [selectedIncomingBill, setSelectedIncomingBill] = useState<any>(null);
   const [bills, setBills] = useState<any[]>(initialBills || []);
+  const [userId, setUserId] = useState<string>(session?.user?.id || '');
+
+  const fetchBills = () => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      const uid = session?.user?.id;
+      if (uid) {
+        setUserId(uid);
+        api.getBills(uid).then(setBills).catch(console.error);
+      } else {
+        api.getBills().then(setBills).catch(console.error);
+      }
+    });
+  };
 
   useEffect(() => {
     if (!initialBills) {
-      api.getBills().then(setBills).catch(console.error);
+      fetchBills();
     }
   }, [initialBills]);
 
@@ -121,6 +139,30 @@ export function Home({
           </h2>
 
           <div className="flex flex-col gap-3">
+            {/* Incoming Bill Requests awaiting approval */}
+            {bills.filter(b => {
+              const myPart = (b.participants || []).find((p: any) => p.friend_id === userId);
+              return myPart && myPart.accepted === false;
+            }).map(bill => (
+              <div 
+                key={`incoming-${bill.id}`}
+                onClick={() => setSelectedIncomingBill(bill)}
+                className="w-full bg-[#F5C744]/20 border border-[#F5C744] rounded-[25px] p-4 flex items-center justify-between shadow-sm cursor-pointer hover:bg-[#F5C744]/30 transition-colors"
+              >
+                <div className="flex flex-col gap-1 min-w-0 pr-2">
+                  <span className="text-[#1A1A1A] text-base font-semibold truncate">{bill.title}</span>
+                  <span className="text-black/70 text-xs font-medium">Incoming Bill Request · LKR {bill.total}</span>
+                </div>
+
+                <div className="flex items-center gap-2 shrink-0">
+                  <span className="bg-[#1A1A1A] text-amber-300 text-xs font-semibold px-3 py-1.5 rounded-full">
+                    Review
+                  </span>
+                  <ChevronRight size={18} className="text-black/40" />
+                </div>
+              </div>
+            ))}
+
             {/* Pending Friend Requests */}
             {pendingFriendRequests.map(friend => (
               <div 
@@ -169,7 +211,7 @@ export function Home({
               </div>
             ))}
 
-            {pendingFriendRequests.length === 0 && pendingBills.length === 0 && (
+            {pendingFriendRequests.length === 0 && pendingBills.length === 0 && bills.filter(b => (b.participants || []).some((p: any) => p.friend_id === userId && p.accepted === false)).length === 0 && (
               <div className="bg-[#D9D9D9]/50 rounded-[25px] p-6 text-center text-black/50 text-sm">
                 All caught up! No pending bills or requests.
               </div>
@@ -191,7 +233,10 @@ export function Home({
             className="-mx-5 flex gap-3.5 overflow-x-auto no-scrollbar pb-4 pt-1 snap-x snap-mandatory"
             style={{ paddingLeft: '20px' }}
           >
-            {bills.map((bill) => {
+            {bills.filter(b => {
+              const myPart = (b.participants || []).find((p: any) => p.friend_id === userId);
+              return !myPart || myPart.accepted !== false;
+            }).map((bill) => {
               const tagColors: Record<string, { bg: string, text: string }> = {
                 'Restaurant': { bg: '#F6D6DA', text: '#1A1A1A' },
                 'Grocery': { bg: '#D7ECD1', text: '#1A1A1A' },
@@ -212,7 +257,7 @@ export function Home({
 
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="text-black/50 text-xs font-normal">
-                      {new Date(bill.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                      {new Date(bill.createdAt || bill.created_at || Date.now()).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                     </span>
                     <span
                       className="text-[11px] font-semibold px-2 py-0.5 rounded-full"
@@ -236,12 +281,12 @@ export function Home({
                       </span>
                     </div>
                     <div className="flex -space-x-1.5">
-                      {bill.participants.slice(0, 3).map((p, i) => (
+                      {(bill.participants || []).slice(0, 3).map((p: any, i: number) => (
                         <div
                           key={i}
                           className="w-6 h-6 rounded-full border border-[#EDEDF1] bg-black/20 flex items-center justify-center text-[9px] font-bold text-black shrink-0"
                         >
-                          {p.friendId === 'me' ? 'Y' : p.friendId.substring(0, 1).toUpperCase()}
+                          {p.friend_id === userId ? 'Y' : 'P'}
                         </div>
                       ))}
                     </div>
@@ -249,7 +294,7 @@ export function Home({
                 </div>
               );
             })}
-            {/* Trailing spacer — browsers ignore padding-right on overflow-x containers */}
+            {/* Trailing spacer */}
             <div className="shrink-0" style={{ width: '20px' }} />
           </div>
         </div>
@@ -260,7 +305,16 @@ export function Home({
       <NewBillModal 
         isOpen={isNewBillModalOpen}
         onClose={() => setIsNewBillModalOpen(false)}
-        onAddBill={onAddBill}
+        onSuccess={fetchBills}
+      />
+
+      {/* Incoming Bill Modal (Accept/Decline) */}
+      <IncomingBillModal 
+        isOpen={!!selectedIncomingBill}
+        onClose={() => setSelectedIncomingBill(null)}
+        bill={selectedIncomingBill}
+        userId={userId}
+        onSuccess={fetchBills}
       />
     </div>
   );
