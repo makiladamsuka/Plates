@@ -1,26 +1,34 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ArrowDownLeft, ArrowUpRight, Plus, UserPlus, ChevronRight, Check } from 'lucide-react';
 import { NewBillModal } from '../components/NewBillModal';
+import { api } from '../services/api';
 import type { Bill, Friend } from '../data/mockData';
 
 interface HomeProps {
-  bills: Bill[];
-  friends: Friend[];
-  onAddBill: (bill: Bill) => void;
+  bills?: Bill[];
+  friends?: Friend[];
+  onAddBill?: (bill: Bill) => void;
   onBillClick?: (id: string) => void;
   onSearchClick?: () => void;
   onApproveFriend?: (id: string) => void;
 }
 
 export function Home({ 
-  bills, 
-  friends, 
+  bills: initialBills, 
+  friends = [], 
   onAddBill, 
   onBillClick, 
   onSearchClick,
   onApproveFriend 
 }: HomeProps) {
   const [isNewBillModalOpen, setIsNewBillModalOpen] = useState(false);
+  const [bills, setBills] = useState<any[]>(initialBills || []);
+
+  useEffect(() => {
+    if (!initialBills) {
+      api.getBills().then(setBills).catch(console.error);
+    }
+  }, [initialBills]);
 
   // Compute total balances
   const totalYouAreOwed = friends

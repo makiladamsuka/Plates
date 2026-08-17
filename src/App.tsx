@@ -56,9 +56,6 @@ function App() {
       {/* Views */}
       {currentTab === 'home' && (
         <Home 
-          bills={bills}
-          friends={friends}
-          onAddBill={handleAddBill}
           onBillClick={(id) => {
             setSelectedBillId(id);
             setCurrentView('detail');
@@ -68,7 +65,6 @@ function App() {
             setFriendsView('search');
             setCurrentTab('friends');
           }}
-          onApproveFriend={handleApproveFriend}
         />
       )}
       
