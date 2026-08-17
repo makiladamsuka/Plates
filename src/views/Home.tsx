@@ -235,7 +235,17 @@ export function Home({
             className="-mx-5 flex gap-3.5 overflow-x-auto no-scrollbar pb-4 pt-1 snap-x snap-mandatory"
             style={{ paddingLeft: '20px' }}
           >
-            {bills.map((bill) => {
+            {[...bills]
+              .sort((a, b) => {
+                const aIsPending = a.status !== 'Settled';
+                const bIsPending = b.status !== 'Settled';
+                if (aIsPending && !bIsPending) return -1;
+                if (!aIsPending && bIsPending) return 1;
+                const timeA = new Date(a.created_at || a.createdAt || Date.now()).getTime();
+                const timeB = new Date(b.created_at || b.createdAt || Date.now()).getTime();
+                return timeB - timeA;
+              })
+              .map((bill) => {
               const tagColors: Record<string, { bg: string, text: string }> = {
                 'Restaurant': { bg: '#F6D6DA', text: '#1A1A1A' },
                 'Grocery': { bg: '#D7ECD1', text: '#1A1A1A' },
