@@ -13,12 +13,12 @@ export function NewBillModal({ isOpen, onClose, onAddBill }: NewBillModalProps) 
   const [step, setStep] = useState(1);
   const [amount, setAmount] = useState('');
   const [billName, setBillName] = useState('');
-  const [tag, setTag] = useState('');
+  const [tag, setTag] = useState('Restaurant');
   const [selectedFriends, setSelectedFriends] = useState<Friend[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [isEditingSplits, setIsEditingSplits] = useState(false);
   const [customSplits, setCustomSplits] = useState<Record<string, string>>({});
-  
+
   const amountInputRef = useRef<HTMLInputElement>(null);
   const nameInputRef = useRef<HTMLInputElement>(null);
 
@@ -30,7 +30,7 @@ export function NewBillModal({ isOpen, onClose, onAddBill }: NewBillModalProps) 
     setStep(1);
     setAmount('');
     setBillName('');
-    setTag('');
+    setTag('Restaurant');
     setSelectedFriends([]);
     setSearchQuery('');
     setIsEditingSplits(false);

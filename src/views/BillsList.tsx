@@ -28,7 +28,7 @@ const formatTime = (ts: number) => {
   return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 };
 
-export function BillsList({ bills, onAddBill, onBillClick }: { bills: Bill[], onAddBill: (bill: Bill) => void, onBillClick?: () => void }) {
+export function BillsList({ bills, onAddBill, onBillClick }: { bills: Bill[], onAddBill: (bill: Bill) => void, onBillClick?: (id: string) => void }) {
   const [isNewBillModalOpen, setIsNewBillModalOpen] = useState(false);
   
   const [showHeader, setShowHeader] = useState(true);
@@ -101,7 +101,7 @@ export function BillsList({ bills, onAddBill, onBillClick }: { bills: Bill[], on
           {bills.map(bill => (
             <div 
               key={bill.id}
-              onClick={onBillClick}
+              onClick={() => onBillClick?.(bill.id)}
               className="w-full bg-zinc-300 rounded-[35px] p-6 relative flex flex-col gap-2 shadow-sm cursor-pointer transition-colors"
             >
               <div className="flex justify-between items-start">

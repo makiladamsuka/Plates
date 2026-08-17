@@ -1,71 +1,102 @@
 import React, { useState } from 'react';
 import { ConfirmTransferModal } from '../components/ConfirmTransferModal';
+import type { Bill } from '../data/mockData';
 
 interface BillDetailProps {
   onBack: () => void;
+  bill?: Bill;
 }
 
-export function BillDetail({ onBack }: BillDetailProps) {
+const getTagColor = (category: string) => {
+  switch (category) {
+    case 'Restaurant': return 'bg-rose-200';
+    case 'Grocery': return 'bg-neutral-300';
+    case 'Entertainment': return 'bg-blue-200';
+    default: return 'bg-zinc-200';
+  }
+};
+
+const formatTime = (ts: number) => {
+  const date = new Date(ts);
+  const now = new Date();
+  if (date.toDateString() === now.toDateString()) {
+    let hours = date.getHours();
+    const ampm = hours >= 12 ? 'pm' : 'am';
+    hours = hours % 12;
+    hours = hours ? hours : 12; 
+    return `Today     ${hours}${ampm}`;
+  }
+  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+};
+
+export function BillDetail({ onBack, bill }: BillDetailProps) {
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
 
+  if (!bill) return null;
+
+  // Find user's share for the pay button
+  const myShare = bill.participants.find(p => p.friendId === 'me')?.share || 0;
+
   return (
-    <div className="min-h-screen bg-gray-100 pb-32">
-      {/* Header / Top Section */}
-      <div className="px-6 pt-10 pb-6 relative">
-        {/* Back Button */}
-        <button onClick={onBack} className="w-8 h-8 flex items-center justify-center -ml-2 mb-2">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-black">
-            <polyline points="15 18 9 12 15 6" />
-          </svg>
-        </button>
-
-        <div className="flex justify-between items-start mt-4">
-          <h1 className="text-zinc-900 text-3xl font-semibold font-['Sora'] leading-tight w-2/3">Dinner at Senu</h1>
-          {/* Pending Pill */}
-          <div className="bg-amber-300 rounded-[30px] px-3 py-1 mt-1">
-            <span className="text-black text-xs font-semibold font-['Sora']">Pending</span>
+    <div className="min-h-screen bg-[#EDEDF1] pb-40 font-['Sora'] relative overflow-hidden">
+      
+      {/* Header Section */}
+      <div className="pt-6 pb-2 relative">
+        <div className="flex justify-between items-start w-full px-6">
+          {/* Back Button */}
+          <button onClick={onBack} className="absolute left-6 top-6 w-8 h-8 flex items-center justify-center">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-[#1A1A1A]">
+              <polyline points="15 18 9 12 15 6" />
+            </svg>
+          </button>
+          
+          {/* Title */}
+          <h1 className="text-[#1A1A1A] text-[24px] font-semibold leading-tight break-words ml-[43px]">{bill.title}</h1>
+          
+          {/* Status Pill */}
+          <div className="bg-[#F5C744] rounded-[30px] px-4 py-1.5 flex items-center justify-center shrink-0">
+            <span className="text-black text-[13px] font-semibold">{bill.status}</span>
           </div>
         </div>
-
-        <div className="flex items-center gap-3 mt-4">
-          {/* Tag */}
-          <div className="bg-rose-200 rounded-[30px] px-3 py-1 flex items-center justify-center">
-            <span className="text-black text-base font-normal font-['Sora']">Restaurant</span>
+        
+        {/* Tags and Meta */}
+        <div className="mt-5 px-6 flex flex-col gap-2">
+          <div className={`${getTagColor(bill.category)} rounded-[30px] px-4 py-1.5 w-fit flex items-center justify-center -ml-1`}>
+            <span className="text-black text-[15px] font-normal">{bill.category}</span>
           </div>
+          <div className="text-black text-[15px] font-normal ml-1 mt-1">{formatTime(bill.createdAt)}</div>
+          <div className="text-black text-[15px] font-normal ml-1">Created by @username</div>
         </div>
-
-        <div className="text-black text-base font-normal font-['Sora'] mt-3">Today 11pm</div>
-        <div className="text-black text-base font-normal font-['Sora'] mt-1">Created by @username</div>
       </div>
 
       {/* Friends List Section */}
-      <div className="px-6 mt-4 flex flex-col gap-3">
-        {[1, 2, 3].map((item) => (
-          <div key={item} className="w-full bg-zinc-300 rounded-[30px] p-4 flex items-center justify-between shadow-sm">
-            <div className="flex items-center gap-4">
-              <div className="w-10 h-10 opacity-30 bg-rose-200 rounded-full" />
-              <span className="text-black text-sm font-normal font-['Sora']">Agam Munbo</span>
-            </div>
-            <div className="text-zinc-900 text-xl font-semibold font-['Sora']">LKR 1200</div>
+      <div className="px-6 mt-6 flex flex-col gap-3 relative">
+        {bill.participants.map((participant, i) => (
+          <div key={i} className="w-full h-[59px] bg-[#D9D9D9] rounded-[30px] px-3 flex items-center shadow-sm relative">
+             <div className="w-[35px] h-[35px] opacity-30 bg-[#F6D6DA] rounded-full absolute left-3" />
+             <div className="flex justify-between w-full pl-12 pr-4 z-10 items-center">
+               <span className="text-black text-[14px] font-normal">
+                 {participant.friendId === 'me' ? 'You' : `Friend ${participant.friendId.substring(0,4)}`}
+               </span>
+               <span className="text-[#1A1A1A] text-[20px] font-semibold">LKR {participant.share.toFixed(0)}</span>
+             </div>
           </div>
         ))}
       </div>
 
-      <div className="px-6 mt-8 flex justify-end">
-         <div className="text-zinc-900 text-3xl font-semibold font-['Sora']">LKR 4800</div>
+      {/* Total Amount */}
+      <div className="px-8 mt-10 flex justify-end">
+         <div className="text-[#1A1A1A] text-[24px] font-semibold">LKR {bill.total}</div>
       </div>
 
-      {/* Floating Pay Button */}
-      <div className="fixed bottom-[140px] left-0 w-full px-6 z-40 pointer-events-none flex justify-center">
-        <div className="w-full max-w-[432px] h-20 bg-zinc-900 rounded-[50px] flex items-center justify-between px-8 shadow-xl pointer-events-auto">
-          <span className="text-gray-100 text-xl font-semibold font-['Sora']">Your Share</span>
-          <button 
-            onClick={() => setIsConfirmModalOpen(true)}
-            className="text-gray-100 text-xl font-semibold font-['Sora'] hover:text-amber-300 transition-colors"
-          >
-            Pay LKR 1200
-          </button>
-        </div>
+      {/* Floating Action Bar */}
+      <div className="fixed bottom-[30px] left-0 w-full z-[55] flex justify-center px-4 pointer-events-none">
+        <button 
+          onClick={() => setIsConfirmModalOpen(true)}
+          className="w-full max-w-[365px] h-[74px] bg-[#1A1A1A] rounded-[50px] flex items-center justify-center pointer-events-auto shadow-lg active:scale-[0.98] transition-transform"
+        >
+          <span className="text-[#EDEDF1] text-[20px] font-semibold">Pay  LKR {myShare.toFixed(0)}</span>
+        </button>
       </div>
 
       <ConfirmTransferModal 
@@ -73,12 +104,10 @@ export function BillDetail({ onBack }: BillDetailProps) {
         onClose={() => setIsConfirmModalOpen(false)}
         onConfirm={() => {
           setIsConfirmModalOpen(false);
-          // In a real app, dispatch payment success here
         }}
-        amount={1200}
+        amount={myShare}
         username="@senup"
       />
-
 
     </div>
   );
