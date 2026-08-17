@@ -17,61 +17,80 @@ export function FriendsList({
   const [showHeader, setShowHeader] = useState(true);
   const [activeTab, setActiveTab] = useState<'all' | 'pending'>('all');
   const [incomingFriend, setIncomingFriend] = useState<any>(null);
-  const [friendsList, setFriendsList] = useState<any[]>([]);
+  const [acceptedFriends, setAcceptedFriends] = useState<any[]>([]);
+  const [pendingRequests, setPendingRequests] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const lastScrollY = React.useRef(0);
 
   useEffect(() => {
-    fetchFriends();
+    fetchFriendsAndRequests();
   }, [session]);
 
-  const fetchFriends = async () => {
+  const fetchFriendsAndRequests = async () => {
     if (!session?.user) return;
     setIsLoading(true);
     try {
-      const { data, error } = await supabase
+      // 1. Fetch Accepted Friends for the current user
+      const { data: acceptedData, error: acceptedError } = await supabase
         .from('friends')
         .select(`
-          *,
-          friend:profiles!friends_friend_id_fkey (
+          friend_id,
+          status,
+          profiles:friend_id (
             id,
             full_name,
             avatar_url,
             email
           )
         `)
-        .eq('user_id', session.user.id);
-      
-      if (error) {
-        // Fallback simple fetch if join fails
-        const { data: simpleData } = await supabase
-          .from('friends')
-          .select(`
-            friend_id,
-            profiles:friend_id (
-              id,
-              full_name,
-              avatar_url,
-              email
-            )
-          `)
-          .eq('user_id', session.user.id);
-        setFriendsList(simpleData?.map((d: any) => d.profiles) || []);
-      } else {
-        const friends = data?.map((f: any) => ({
-          id: f.friend?.id || f.friend_id,
-          name: f.friend?.full_name || 'Friend',
-          username: f.friend?.email || '',
-          color: '#D9D9D9',
-          balance: 0,
-          isPendingRequest: f.status === 'pending',
-          avatar_url: f.friend?.avatar_url,
-        })) || [];
-        setFriendsList(friends);
+        .eq('user_id', session.user.id)
+        .or('status.eq.accepted,status.is.null');
+
+      if (!acceptedError && acceptedData) {
+        const friends = acceptedData
+          .filter((d: any) => d.profiles)
+          .map((d: any) => ({
+            id: d.profiles.id,
+            name: d.profiles.full_name || 'Friend',
+            username: d.profiles.email || '',
+            avatar_url: d.profiles.avatar_url,
+            balance: 0,
+            isPendingRequest: false,
+          }));
+        setAcceptedFriends(friends);
+      }
+
+      // 2. Fetch Pending Friend Requests sent TO the current user (where friend_id = session.user.id)
+      const { data: pendingData, error: pendingError } = await supabase
+        .from('friends')
+        .select(`
+          user_id,
+          status,
+          profiles:user_id (
+            id,
+            full_name,
+            avatar_url,
+            email
+          )
+        `)
+        .eq('friend_id', session.user.id)
+        .eq('status', 'pending');
+
+      if (!pendingError && pendingData) {
+        const pending = pendingData
+          .filter((d: any) => d.profiles)
+          .map((d: any) => ({
+            id: d.profiles.id,
+            name: d.profiles.full_name || 'User',
+            username: d.profiles.email || '',
+            avatar_url: d.profiles.avatar_url,
+            balance: 0,
+            isPendingRequest: true,
+          }));
+        setPendingRequests(pending);
       }
     } catch (err) {
       console.error('Error fetching friends:', err);
-      setFriendsList([]);
     } finally {
       setIsLoading(false);
     }
@@ -94,35 +113,47 @@ export function FriendsList({
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  const handleApprove = async (id: string) => {
+  const handleApprove = async (requesterId: string) => {
     try {
+      // Step A: Mark incoming request as accepted
       await supabase
         .from('friends')
         .update({ status: 'accepted' })
-        .eq('user_id', session.user.id)
-        .eq('friend_id', id);
+        .eq('user_id', requesterId)
+        .eq('friend_id', session.user.id);
+
+      // Step B: Insert reciprocal relationship so current user sees requester in their friends list
+      await supabase
+        .from('friends')
+        .upsert({
+          user_id: session.user.id,
+          friend_id: requesterId,
+          status: 'accepted'
+        }, { onConflict: 'user_id,friend_id' });
+
       setIncomingFriend(null);
-      fetchFriends();
+      fetchFriendsAndRequests();
     } catch (err) {
-      console.error('Error approving friend:', err);
+      console.error('Error accepting request:', err);
     }
   };
 
-  const handleDecline = async (id: string) => {
+  const handleDecline = async (requesterId: string) => {
     try {
       await supabase
         .from('friends')
         .delete()
-        .eq('user_id', session.user.id)
-        .eq('friend_id', id);
+        .eq('user_id', requesterId)
+        .eq('friend_id', session.user.id);
+
       setIncomingFriend(null);
-      fetchFriends();
+      fetchFriendsAndRequests();
     } catch (err) {
-      console.error('Error declining friend:', err);
+      console.error('Error declining request:', err);
     }
   };
 
-  const filteredFriends = friendsList.filter(f => activeTab === 'pending' ? f.isPendingRequest : !f.isPendingRequest);
+  const displayList = activeTab === 'pending' ? pendingRequests : acceptedFriends;
 
   return (
     <div className="min-h-screen bg-[#EDEDF1] pb-32 pt-[160px]">
@@ -150,7 +181,7 @@ export function FriendsList({
               onClick={() => setActiveTab('pending')}
               className={`h-8 px-5 rounded-[35px] text-lg font-semibold whitespace-nowrap flex items-center justify-center transition-colors cursor-pointer ${activeTab === 'pending' ? 'bg-[#1A1A1A] text-[#EDEDF1]' : 'bg-[#D9D9D9] text-black'}`}
             >
-              Pending
+              Pending {pendingRequests.length > 0 && `(${pendingRequests.length})`}
             </button>
           </div>
         </div>
@@ -163,8 +194,8 @@ export function FriendsList({
         <div className="px-5 flex flex-col gap-3.5">
           {isLoading ? (
             <div className="text-center mt-10 text-black/50">Loading friends...</div>
-          ) : filteredFriends.length > 0 ? (
-            filteredFriends.map((friend) => (
+          ) : displayList.length > 0 ? (
+            displayList.map((friend) => (
               <div 
                 key={friend.id}
                 onClick={() => {
@@ -197,16 +228,18 @@ export function FriendsList({
                 {activeTab === 'pending' ? (
                   <div className="flex items-center gap-3 shrink-0 pr-1" onClick={(e) => e.stopPropagation()}>
                     <button 
-                      onClick={() => setIncomingFriend(friend)}
-                      className="w-[32px] h-[32px] flex items-center justify-center rounded-full active:scale-95 transition-transform bg-[#EDEDF1] border border-black/10 shadow-sm cursor-pointer"
+                      onClick={() => handleApprove(friend.id)}
+                      title="Accept Request"
+                      className="w-[32px] h-[32px] flex items-center justify-center rounded-full active:scale-95 transition-transform bg-[#EDEDF1] border border-black/10 shadow-sm cursor-pointer hover:bg-[#4C8C3C] hover:text-white group"
                     >
-                      <Check size={18} strokeWidth={3} className="text-[#4C8C3C]" />
+                      <Check size={18} strokeWidth={3} className="text-[#4C8C3C] group-hover:text-white" />
                     </button>
                     <button 
                       onClick={() => handleDecline(friend.id)}
-                      className="w-[32px] h-[32px] flex items-center justify-center rounded-full active:scale-95 transition-transform bg-[#EDEDF1] border border-black/10 shadow-sm cursor-pointer"
+                      title="Decline Request"
+                      className="w-[32px] h-[32px] flex items-center justify-center rounded-full active:scale-95 transition-transform bg-[#EDEDF1] border border-black/10 shadow-sm cursor-pointer hover:bg-[#F6D6DA] group"
                     >
-                      <X size={16} strokeWidth={3} className="text-[#F6D6DA]" />
+                      <X size={16} strokeWidth={3} className="text-[#F6D6DA] group-hover:text-red-600" />
                     </button>
                   </div>
                 ) : (
@@ -227,7 +260,7 @@ export function FriendsList({
             ))
           ) : (
             <div className="text-center mt-10 text-black/50">
-              {activeTab === 'pending' ? 'No pending requests.' : 'No friends found. Tap + to add friends!'}
+              {activeTab === 'pending' ? 'No pending friend requests.' : 'No friends found. Tap + to search and add friends!'}
             </div>
           )}
         </div>

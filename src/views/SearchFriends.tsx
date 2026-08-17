@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Search, ChevronLeft, UserPlus, Check } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
@@ -12,6 +12,19 @@ export function SearchFriends({ session, onBack }: SearchFriendsProps) {
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [addedIds, setAddedIds] = useState<string[]>([]);
   const [isSearching, setIsSearching] = useState(false);
+
+  useEffect(() => {
+    if (!session?.user) return;
+    supabase
+      .from('friends')
+      .select('friend_id')
+      .eq('user_id', session.user.id)
+      .then(({ data }) => {
+        if (data) {
+          setAddedIds(data.map(d => d.friend_id));
+        }
+      });
+  }, [session]);
 
   const handleSearch = async (query: string) => {
     setSearchQuery(query);
@@ -44,20 +57,21 @@ export function SearchFriends({ session, onBack }: SearchFriendsProps) {
         .from('friends')
         .insert({
           user_id: session.user.id,
-          friend_id: friendId
+          friend_id: friendId,
+          status: 'pending'
         });
       
       if (error) {
         if (error.code === '23505') {
-          alert('Already added as friend!');
+          alert('Request already sent!');
         } else {
           throw error;
         }
       }
       setAddedIds(prev => [...prev, friendId]);
     } catch (err) {
-      console.error('Error adding friend:', err);
-      alert('Failed to add friend.');
+      console.error('Error sending request:', err);
+      alert('Failed to send request.');
     }
   };
 
@@ -69,7 +83,7 @@ export function SearchFriends({ session, onBack }: SearchFriendsProps) {
         {/* Back Button */}
         <button 
           onClick={onBack}
-          className="w-8 h-8 flex items-center justify-center -ml-2 mb-4 active:scale-95 transition-transform"
+          className="w-8 h-8 flex items-center justify-center -ml-2 mb-4 active:scale-95 transition-transform cursor-pointer"
         >
           <ChevronLeft size={30} strokeWidth={2.5} className="text-[#1A1A1A]" />
         </button>
@@ -120,9 +134,10 @@ export function SearchFriends({ session, onBack }: SearchFriendsProps) {
                 {/* Action Button */}
                 <button 
                   onClick={() => !isSent && handleSendRequest(user.id)}
-                  className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 transition-all ${
+                  title={isSent ? "Request Sent" : "Send Friend Request"}
+                  className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 transition-all cursor-pointer ${
                     isSent 
-                      ? 'bg-[#4C8C3C] text-white' 
+                      ? 'bg-[#4C8C3C] text-white cursor-default' 
                       : 'bg-[#1A1A1A] text-[#EDEDF1] active:scale-95'
                   }`}
                 >
