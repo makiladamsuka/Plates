@@ -74,4 +74,49 @@ export const MOCK_BILLS: Bill[] = [
       { friendId: 'f6',  share: 1200 },
     ]
   },
+  {
+    id: 'b4',
+    title: 'Coffee Run',
+    category: 'Restaurant',
+    total: 1500,
+    createdAt: Date.now() - 3600000 * 72,
+    status: 'Settled',
+    participants: []
+  },
+  {
+    id: 'b5',
+    title: 'Uber Split',
+    category: 'Entertainment',
+    total: 850,
+    createdAt: Date.now() - 3600000 * 96,
+    status: 'Settled',
+    participants: []
+  },
+  {
+    id: 'b6',
+    title: 'Movie Tickets',
+    category: 'Entertainment',
+    total: 2400,
+    createdAt: Date.now() - 3600000 * 120,
+    status: 'Settled',
+    participants: []
+  },
+  {
+    id: 'b7',
+    title: 'Grocery Run 2',
+    category: 'Grocery',
+    total: 5100,
+    createdAt: Date.now() - 3600000 * 144,
+    status: 'Settled',
+    participants: []
+  },
+  {
+    id: 'b8',
+    title: 'Dinner',
+    category: 'Restaurant',
+    total: 6000,
+    createdAt: Date.now() - 3600000 * 168,
+    status: 'Settled',
+    participants: []
+  }
 ];
