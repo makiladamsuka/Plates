@@ -198,37 +198,34 @@ export function Home({
                 className="w-[200px] h-[205px] shrink-0 bg-[#D9D9D9] rounded-[28px] flex flex-col justify-between shadow-sm snap-start cursor-pointer active:scale-[0.98] hover:bg-zinc-300/80 transition-all relative overflow-hidden"
                 style={{ padding: '16px' }}
               >
-                {/* Top: title + date */}
-                <div className="flex flex-col gap-0.5">
-                  <h3 className="text-[#1A1A1A] text-base font-bold leading-snug line-clamp-2">
-                    {bill.title}
-                  </h3>
+                {/* Top: title */}
+                <h3 className="text-[#1A1A1A] text-base font-bold leading-snug line-clamp-2">
+                  {bill.title}
+                </h3>
+
+                {/* Date + category tag inline */}
+                <div className="flex items-center gap-2 flex-wrap">
                   <span className="text-black/50 text-xs font-normal">
                     {new Date(bill.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                   </span>
-                </div>
-
-                {/* Middle: category + status tags */}
-                <div className="flex justify-between items-center">
                   <span
-                    className="text-[11px] font-semibold px-2.5 py-1 rounded-full"
+                    className="text-[11px] font-semibold px-2 py-0.5 rounded-full"
                     style={{ backgroundColor: tagStyle.bg, color: tagStyle.text }}
                   >
                     {bill.category}
                   </span>
-                  <span
-                    className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                      bill.status === 'Pending' ? 'bg-[#F5C744] text-black' : 'bg-[#4C8C3C] text-white'
-                    }`}
-                  >
-                    {bill.status}
-                  </span>
                 </div>
 
-                {/* Bottom: amount + avatars */}
+                {/* Bottom: status + total + avatars */}
                 <div className="flex justify-between items-end border-t border-black/10 pt-2.5">
-                  <div className="flex flex-col">
-                    <span className="text-black/50 text-[9px] font-semibold uppercase tracking-wider">Total</span>
+                  <div className="flex flex-col gap-1">
+                    <span
+                      className={`text-[10px] font-bold px-2 py-0.5 rounded-full w-fit ${
+                        bill.status === 'Pending' ? 'bg-[#F5C744] text-black' : 'bg-[#4C8C3C] text-white'
+                      }`}
+                    >
+                      {bill.status}
+                    </span>
                     <span className="text-[#1A1A1A] text-base font-extrabold tracking-tight">
                       LKR {bill.total}
                     </span>
@@ -247,8 +244,8 @@ export function Home({
               </div>
             );
           })}
-          {/* Trailing spacer — required because browsers ignore padding-right on overflow-x containers */}
-          <div className="shrink-0" style={{ width: '4px' }} />
+          {/* Trailing spacer — browsers ignore padding-right on overflow-x containers */}
+          <div className="shrink-0" style={{ width: '20px' }} />
         </div>
       </div>
 
