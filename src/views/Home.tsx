@@ -50,6 +50,63 @@ export function Home({
 
       <div className="max-w-[480px] mx-auto px-5 flex flex-col gap-6">
 
+        {/* "This Week's Plates" Carousel (Inspired by reference screenshot) */}
+        <div className="flex flex-col gap-2.5">
+          <div className="flex justify-between items-center px-1">
+            <h2 className="text-[#1A1A1A] text-xl font-bold font-display tracking-tight">This Week</h2>
+            <span className="text-black/50 text-xs font-medium">{bills.length} Plates</span>
+          </div>
+
+          <div className="flex gap-3 overflow-x-auto no-scrollbar pb-1">
+            {/* Card 1: Mon */}
+            <div 
+              onClick={() => bills[0] && onBillClick?.(bills[0].id)}
+              className="w-[110px] h-[120px] rounded-[24px] bg-[#F6D6DA] p-3 flex flex-col justify-between shrink-0 shadow-sm cursor-pointer active:scale-95 transition-transform relative overflow-hidden"
+            >
+              <span className="text-xs font-semibold text-black/70 bg-white/70 px-2 py-0.5 rounded-full w-fit backdrop-blur-xs">Mon</span>
+              <div className="flex flex-col">
+                <span className="text-[#1A1A1A] text-xs font-bold truncate">{bills[0]?.title || 'Dinner'}</span>
+                <span className="text-black/60 text-[10px] font-medium">LKR {bills[0]?.total || 4800}</span>
+              </div>
+            </div>
+
+            {/* Card 2: Tue */}
+            <div 
+              onClick={() => bills[1] && onBillClick?.(bills[1].id)}
+              className="w-[110px] h-[120px] rounded-[24px] bg-[#D7ECD1] p-3 flex flex-col justify-between shrink-0 shadow-sm cursor-pointer active:scale-95 transition-transform relative overflow-hidden"
+            >
+              <span className="text-xs font-semibold text-black/70 bg-white/70 px-2 py-0.5 rounded-full w-fit backdrop-blur-xs">Tue</span>
+              <div className="flex flex-col">
+                <span className="text-[#1A1A1A] text-xs font-bold truncate">{bills[1]?.title || 'Groceries'}</span>
+                <span className="text-black/60 text-[10px] font-medium">LKR {bills[1]?.total || 3600}</span>
+              </div>
+            </div>
+
+            {/* Card 3: Wed */}
+            <div 
+              onClick={() => bills[2] && onBillClick?.(bills[2].id)}
+              className="w-[110px] h-[120px] rounded-[24px] bg-[#CDE1FF] p-3 flex flex-col justify-between shrink-0 shadow-sm cursor-pointer active:scale-95 transition-transform relative overflow-hidden"
+            >
+              <span className="text-xs font-semibold text-black/70 bg-white/70 px-2 py-0.5 rounded-full w-fit backdrop-blur-xs">Wed</span>
+              <div className="flex flex-col">
+                <span className="text-[#1A1A1A] text-xs font-bold truncate">{bills[2]?.title || 'Arcade'}</span>
+                <span className="text-black/60 text-[10px] font-medium">LKR {bills[2]?.total || 2400}</span>
+              </div>
+            </div>
+
+            {/* Card 4: + Add Plate */}
+            <button 
+              onClick={() => setIsNewBillModalOpen(true)}
+              className="w-[90px] h-[120px] rounded-[24px] bg-[#D9D9D9] flex flex-col items-center justify-center gap-1 shrink-0 shadow-sm cursor-pointer active:scale-95 transition-transform hover:bg-zinc-300"
+            >
+              <div className="w-9 h-9 rounded-full bg-[#1A1A1A] text-[#EDEDF1] flex items-center justify-center">
+                <Plus size={20} strokeWidth={2.5} />
+              </div>
+              <span className="text-xs font-semibold text-[#1A1A1A] mt-1">Split</span>
+            </button>
+          </div>
+        </div>
+
         {/* 1. Net Balance Overview Card */}
         <div className="w-full bg-[#D9D9D9] rounded-[30px] p-6 shadow-sm flex flex-col gap-4">
           <div className="flex justify-between items-start">
