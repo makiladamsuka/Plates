@@ -6,9 +6,10 @@ import { MOCK_BILLS } from '../data/mockData';
 interface FriendDetailProps {
   friend: Friend;
   onBack: () => void;
+  onBillClick?: (billId: string) => void;
 }
 
-export function FriendDetail({ friend, onBack }: FriendDetailProps) {
+export function FriendDetail({ friend, onBack, onBillClick }: FriendDetailProps) {
   // Find bills where this friend is a participant
   const sharedBills = MOCK_BILLS.filter(bill => 
     bill.participants.some(p => p.friendId === friend.id)
@@ -71,7 +72,8 @@ export function FriendDetail({ friend, onBack }: FriendDetailProps) {
           return (
             <div 
               key={bill.id}
-              className="w-full h-[56px] bg-[#D9D9D9] rounded-[35px] px-6 flex items-center justify-between"
+              onClick={() => onBillClick?.(bill.id)}
+              className="w-full h-[56px] bg-[#D9D9D9] rounded-[35px] px-6 flex items-center justify-between cursor-pointer hover:bg-zinc-300 transition-colors"
             >
               <span className="text-[#1A1A1A] text-base font-semibold truncate mr-4">
                 {bill.title}

@@ -35,6 +35,11 @@ function App() {
           <FriendDetail 
             friend={selectedFriend}
             onBack={() => setSelectedFriendId(null)}
+            onBillClick={(billId) => {
+              setSelectedBillId(billId);
+              setCurrentView('detail');
+              setCurrentTab('bills');
+            }}
           />
         ) : (
           <FriendsList onFriendClick={(id) => setSelectedFriendId(id)} />
