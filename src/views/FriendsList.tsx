@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, ArrowUpRight, ArrowDownLeft } from 'lucide-react';
+import { Search, ArrowUpRight, ArrowDownLeft, Check, X } from 'lucide-react';
 import { MOCK_FRIENDS } from '../data/mockData';
 import type { Friend } from '../data/mockData';
 
@@ -29,9 +29,8 @@ export function FriendsList() {
   }, []);
 
   // Filter friends based on tab
-  // If pending, only show friends where balance != 0
   const friends = MOCK_FRIENDS.filter(f => f.id !== 'me').filter(f => {
-    if (activeTab === 'pending') return f.balance !== 0;
+    if (activeTab === 'pending') return f.isPendingRequest;
     return true;
   });
 
@@ -97,25 +96,38 @@ export function FriendsList() {
                 </div>
               </div>
 
-              {/* Right Side: Arrow & Amount */}
-              {friend.balance !== 0 && (
-                <div className="flex items-center gap-2 shrink-0">
-                  {friend.balance > 0 ? (
-                    // They owe you -> incoming arrow
-                    <ArrowDownLeft size={24} strokeWidth={2.5} className="text-black" />
-                  ) : (
-                    // You owe them -> outgoing arrow
-                    <ArrowUpRight size={24} strokeWidth={2.5} className="text-black" />
-                  )}
-                  <span className="text-[#1A1A1A] text-xl font-semibold font-['Sora'] whitespace-nowrap">
-                    LKR {Math.abs(friend.balance)}
-                  </span>
+              {/* Right Side: Action Icons OR Balances */}
+              {activeTab === 'pending' ? (
+                <div className="flex items-center gap-4 shrink-0 pr-2">
+                  <button className="w-[30px] h-[30px] flex items-center justify-center rounded-full active:scale-95 transition-transform bg-[#EDEDF1] border border-black/10 shadow-sm">
+                    <Check size={18} strokeWidth={3} className="text-[#4C8C3C]" />
+                  </button>
+                  <button className="w-6 h-6 flex items-center justify-center rounded-full active:scale-95 transition-transform bg-[#EDEDF1] border border-black/10 shadow-sm">
+                    <X size={14} strokeWidth={3} className="text-[#F6D6DA]" />
+                  </button>
                 </div>
+              ) : (
+                friend.balance !== 0 && (
+                  <div className="flex items-center gap-2 shrink-0">
+                    {friend.balance > 0 ? (
+                      // They owe you -> incoming arrow
+                      <ArrowDownLeft size={24} strokeWidth={2.5} className="text-black" />
+                    ) : (
+                      // You owe them -> outgoing arrow
+                      <ArrowUpRight size={24} strokeWidth={2.5} className="text-black" />
+                    )}
+                    <span className="text-[#1A1A1A] text-xl font-semibold font-['Sora'] whitespace-nowrap">
+                      LKR {Math.abs(friend.balance)}
+                    </span>
+                  </div>
+                )
               )}
             </div>
           ))}
           {friends.length === 0 && (
-            <div className="text-center mt-10 text-black/50 font-['Sora']">No friends found.</div>
+            <div className="text-center mt-10 text-black/50 font-['Sora']">
+              {activeTab === 'pending' ? 'No pending requests.' : 'No friends found.'}
+            </div>
           )}
         </div>
       </div>
