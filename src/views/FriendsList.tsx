@@ -92,8 +92,8 @@ export function FriendsList({
       {/* Main Content */}
       <div className="max-w-[480px] mx-auto">
         
-        {/* Friends Cards - Restored to exact #D9D9D9 rounded pill cards */}
-        <div className="px-5 flex flex-col gap-4">
+        {/* Friends Cards - Matching card size, font sizes and spacing of Bills list */}
+        <div className="px-5 flex flex-col gap-3.5">
           {friends.map((friend) => (
             <div 
               key={friend.id}
@@ -104,19 +104,19 @@ export function FriendsList({
                   onFriendClick?.(friend.id);
                 }
               }}
-              className="w-full h-[100px] bg-[#D9D9D9] rounded-[35px] px-5 relative flex items-center justify-between shadow-sm cursor-pointer hover:bg-zinc-300/80 transition-colors"
+              className="w-full bg-[#D9D9D9] rounded-[30px] px-6 py-4.5 relative flex items-center justify-between shadow-sm cursor-pointer hover:bg-zinc-300/80 transition-colors"
             >
               {/* Left Side: Avatar & Details */}
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-3.5">
                 <div 
-                  className="w-[50px] h-[50px] rounded-full opacity-50 shrink-0" 
+                  className="w-[44px] h-[44px] rounded-full opacity-50 shrink-0" 
                   style={{ backgroundColor: friend.color }}
                 />
                 <div className="flex flex-col">
-                  <span className="text-[#1A1A1A] text-2xl font-semibold leading-tight">
+                  <span className="text-[#1A1A1A] text-xl font-semibold leading-tight">
                     {friend.name}
                   </span>
-                  <span className="text-black text-[15px] font-normal mt-1">
+                  <span className="text-black/60 text-xs font-normal mt-0.5">
                     {friend.username}
                   </span>
                 </div>
@@ -124,18 +124,18 @@ export function FriendsList({
 
               {/* Right Side: Action Icons OR Balances */}
               {activeTab === 'pending' ? (
-                <div className="flex items-center gap-4 shrink-0 pr-2" onClick={(e) => e.stopPropagation()}>
+                <div className="flex items-center gap-3 shrink-0 pr-1" onClick={(e) => e.stopPropagation()}>
                   <button 
                     onClick={() => setIncomingFriend(friend)}
-                    className="w-[30px] h-[30px] flex items-center justify-center rounded-full active:scale-95 transition-transform bg-[#EDEDF1] border border-black/10 shadow-sm cursor-pointer"
+                    className="w-[32px] h-[32px] flex items-center justify-center rounded-full active:scale-95 transition-transform bg-[#EDEDF1] border border-black/10 shadow-sm cursor-pointer"
                   >
                     <Check size={18} strokeWidth={3} className="text-[#4C8C3C]" />
                   </button>
                   <button 
                     onClick={() => handleDecline(friend.id)}
-                    className="w-6 h-6 flex items-center justify-center rounded-full active:scale-95 transition-transform bg-[#EDEDF1] border border-black/10 shadow-sm cursor-pointer"
+                    className="w-[32px] h-[32px] flex items-center justify-center rounded-full active:scale-95 transition-transform bg-[#EDEDF1] border border-black/10 shadow-sm cursor-pointer"
                   >
-                    <X size={14} strokeWidth={3} className="text-[#F6D6DA]" />
+                    <X size={16} strokeWidth={3} className="text-[#F6D6DA]" />
                   </button>
                 </div>
               ) : (
@@ -143,12 +143,12 @@ export function FriendsList({
                   <div className="flex items-center gap-2 shrink-0">
                     {friend.balance > 0 ? (
                       // They owe you -> incoming arrow
-                      <ArrowDownLeft size={24} strokeWidth={2.5} className="text-black" />
+                      <ArrowDownLeft size={22} strokeWidth={2.5} className="text-black" />
                     ) : (
                       // You owe them -> outgoing arrow
-                      <ArrowUpRight size={24} strokeWidth={2.5} className="text-black" />
+                      <ArrowUpRight size={22} strokeWidth={2.5} className="text-black" />
                     )}
-                    <span className="text-[#1A1A1A] text-xl font-semibold whitespace-nowrap">
+                    <span className="text-[#1A1A1A] text-2xl font-semibold whitespace-nowrap">
                       LKR {Math.abs(friend.balance)}
                     </span>
                   </div>
