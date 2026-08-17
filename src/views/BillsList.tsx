@@ -1,6 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { NewBillModal } from '../components/NewBillModal';
 
 export function BillsList({ onBillClick }: { onBillClick?: () => void }) {
+  const [isNewBillModalOpen, setIsNewBillModalOpen] = useState(false);
+
   return (
     <div className="min-h-screen bg-gray-100 pb-32">
       {/* Header */}
@@ -86,7 +89,10 @@ export function BillsList({ onBillClick }: { onBillClick?: () => void }) {
       {/* Floating Action Button */}
       <div className="fixed bottom-[140px] left-0 w-full z-40 pointer-events-none flex justify-center">
         <div className="w-full max-w-[480px] relative">
-          <button className="absolute bottom-0 right-6 w-20 h-20 bg-zinc-900 rounded-full flex items-center justify-center shadow-lg pointer-events-auto">
+          <button 
+            onClick={() => setIsNewBillModalOpen(true)}
+            className="absolute bottom-0 right-6 w-20 h-20 bg-zinc-900 rounded-full flex items-center justify-center shadow-lg pointer-events-auto hover:bg-zinc-800 transition-colors"
+          >
             <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-100">
               <line x1="12" y1="5" x2="12" y2="19" />
               <line x1="5" y1="12" x2="19" y2="12" />
@@ -95,6 +101,11 @@ export function BillsList({ onBillClick }: { onBillClick?: () => void }) {
         </div>
       </div>
 
+      {/* New Bill Modal */}
+      <NewBillModal 
+        isOpen={isNewBillModalOpen} 
+        onClose={() => setIsNewBillModalOpen(false)} 
+      />
     </div>
   );
 }
