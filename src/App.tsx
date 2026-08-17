@@ -49,7 +49,23 @@ function App() {
   return (
     <div id="root-container" className="max-w-[480px] mx-auto w-full min-h-screen bg-[#EDEDF1] relative shadow-sm">
       {/* Views */}
-      {currentTab === 'home' && <Home />}
+      {currentTab === 'home' && (
+        <Home 
+          bills={bills}
+          friends={friends}
+          onAddBill={handleAddBill}
+          onBillClick={(id) => {
+            setSelectedBillId(id);
+            setCurrentView('detail');
+            setCurrentTab('bills');
+          }}
+          onSearchClick={() => {
+            setFriendsView('search');
+            setCurrentTab('friends');
+          }}
+          onApproveFriend={handleApproveFriend}
+        />
+      )}
       
       {currentTab === 'friends' && (
         friendsView === 'search' ? (
