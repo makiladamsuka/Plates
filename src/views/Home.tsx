@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ArrowDownLeft, ArrowUpRight, Plus, UserPlus, ChevronRight, Check } from 'lucide-react';
+import { ArrowDownLeft, ArrowUpRight, Plus, UserPlus, ChevronRight, Check, MessageSquare } from 'lucide-react';
 import { NewBillModal } from '../components/NewBillModal';
 import type { Bill, Friend } from '../data/mockData';
 
@@ -38,76 +38,118 @@ export function Home({
   const pendingFriendRequests = friends.filter(f => f.isPendingRequest);
 
   return (
-    <div className="min-h-screen bg-[#EDEDF1] pb-36 pt-0">
+    <div className="min-h-screen bg-[#EDEDF1] pb-36 pt-0 font-sans-app">
       
-      {/* Top Header Container */}
+      {/* Top Header Container (Matching 'Week 3' header from screenshot) */}
       <div className="px-6 pt-10 pb-4 h-[88px] flex justify-between items-center max-w-[480px] mx-auto">
-        <h1 className="text-black text-5xl font-bold font-display tracking-tight leading-none">Plates</h1>
-        <div className="w-10 h-10 rounded-full bg-[#D9D9D9] flex items-center justify-center font-bold text-black text-sm shadow-sm">
-          ME
+        <h1 className="text-black text-5xl font-bold font-display tracking-tight leading-none">Week 3</h1>
+        <div className="w-10 h-10 rounded-full flex items-center justify-center text-black cursor-pointer hover:bg-black/5 transition-colors">
+          <MessageSquare size={24} strokeWidth={2} />
         </div>
       </div>
 
       <div className="max-w-[480px] mx-auto px-5 flex flex-col gap-6">
 
-        {/* "This Week's Plates" Carousel (Inspired by reference screenshot) */}
-        <div className="flex flex-col gap-2.5">
-          <div className="flex justify-between items-center px-1">
-            <h2 className="text-[#1A1A1A] text-xl font-bold font-display tracking-tight">This Week</h2>
-            <span className="text-black/50 text-xs font-medium">{bills.length} Plates</span>
+        {/* Top 4-Square Tile Row (Exact layout from top of reference screenshot) */}
+        <div className="grid grid-cols-4 gap-2.5">
+          {/* Tile 1: Mon */}
+          <div 
+            onClick={() => bills[0] && onBillClick?.(bills[0].id)}
+            className="aspect-square bg-[#F6D6DA] rounded-[22px] p-2.5 flex flex-col justify-end relative cursor-pointer active:scale-95 transition-transform shadow-xs overflow-hidden"
+          >
+            <span className="text-[11px] font-bold text-[#1A1A1A]/80 bg-white/60 px-2 py-0.5 rounded-md w-fit backdrop-blur-xs">
+              Mon
+            </span>
           </div>
 
-          <div className="flex gap-3 overflow-x-auto no-scrollbar pb-1">
-            {/* Card 1: Mon */}
-            <div 
-              onClick={() => bills[0] && onBillClick?.(bills[0].id)}
-              className="w-[110px] h-[120px] rounded-[24px] bg-[#F6D6DA] p-3 flex flex-col justify-between shrink-0 shadow-sm cursor-pointer active:scale-95 transition-transform relative overflow-hidden"
-            >
-              <span className="text-xs font-semibold text-black/70 bg-white/70 px-2 py-0.5 rounded-full w-fit backdrop-blur-xs">Mon</span>
-              <div className="flex flex-col">
-                <span className="text-[#1A1A1A] text-xs font-bold truncate">{bills[0]?.title || 'Dinner'}</span>
-                <span className="text-black/60 text-[10px] font-medium">LKR {bills[0]?.total || 4800}</span>
-              </div>
+          {/* Tile 2: Tue */}
+          <div 
+            onClick={() => bills[1] && onBillClick?.(bills[1].id)}
+            className="aspect-square bg-[#1A1A1A] text-white rounded-[22px] p-2.5 flex flex-col justify-end relative cursor-pointer active:scale-95 transition-transform shadow-xs overflow-hidden"
+          >
+            <span className="text-[11px] font-bold text-white/90 bg-white/20 px-2 py-0.5 rounded-md w-fit backdrop-blur-xs">
+              Tue
+            </span>
+          </div>
+
+          {/* Tile 3: Wed */}
+          <div 
+            onClick={() => bills[2] && onBillClick?.(bills[2].id)}
+            className="aspect-square bg-[#CDE1FF] rounded-[22px] p-2.5 flex flex-col justify-end relative cursor-pointer active:scale-95 transition-transform shadow-xs overflow-hidden"
+          >
+            <span className="text-[11px] font-bold text-[#1A1A1A]/80 bg-white/60 px-2 py-0.5 rounded-md w-fit backdrop-blur-xs">
+              Wed
+            </span>
+          </div>
+
+          {/* Tile 4: + Square Container */}
+          <button 
+            onClick={() => setIsNewBillModalOpen(true)}
+            className="aspect-square bg-[#D9D9D9] rounded-[22px] flex items-center justify-center cursor-pointer active:scale-95 transition-transform hover:bg-zinc-300 shadow-xs"
+          >
+            <Plus size={26} strokeWidth={2.5} className="text-[#1A1A1A]" />
+          </button>
+        </div>
+
+        {/* 2-Column Friend Cards Feed (Exact layout from lower section of reference screenshot) */}
+        <div className="grid grid-cols-2 gap-4">
+          {/* Column 1 Card */}
+          <div 
+            onClick={() => bills[0] && onBillClick?.(bills[0].id)}
+            className="flex flex-col gap-2 cursor-pointer group"
+          >
+            {/* Header: Avatar + Username */}
+            <div className="flex items-center gap-2 px-1">
+              <div 
+                className="w-6 h-6 rounded-full opacity-60" 
+                style={{ backgroundColor: friends[0]?.color || '#F6D6DA' }}
+              />
+              <span className="text-xs font-semibold text-[#1A1A1A]">
+                {friends[0]?.username?.replace('@', '') || 'adhenditha'}
+              </span>
             </div>
 
-            {/* Card 2: Tue */}
-            <div 
-              onClick={() => bills[1] && onBillClick?.(bills[1].id)}
-              className="w-[110px] h-[120px] rounded-[24px] bg-[#D7ECD1] p-3 flex flex-col justify-between shrink-0 shadow-sm cursor-pointer active:scale-95 transition-transform relative overflow-hidden"
-            >
-              <span className="text-xs font-semibold text-black/70 bg-white/70 px-2 py-0.5 rounded-full w-fit backdrop-blur-xs">Tue</span>
-              <div className="flex flex-col">
-                <span className="text-[#1A1A1A] text-xs font-bold truncate">{bills[1]?.title || 'Groceries'}</span>
-                <span className="text-black/60 text-[10px] font-medium">LKR {bills[1]?.total || 3600}</span>
+            {/* Tall Card with 6 new badge */}
+            <div className="w-full h-[260px] bg-[#1A1A1A] rounded-[28px] p-4 relative flex flex-col justify-between overflow-hidden shadow-sm transition-transform group-active:scale-[0.98]">
+              <div className="flex justify-end">
+                <span className="bg-[#EF4444] text-white text-[11px] font-bold px-2.5 py-0.5 rounded-full shadow-sm">
+                  {pendingBills.length > 0 ? `${pendingBills.length} new` : 'New'}
+                </span>
+              </div>
+              <div className="flex flex-col gap-0.5 text-white z-10">
+                <span className="text-base font-bold truncate">{bills[0]?.title || 'Dinner at Senu'}</span>
+                <span className="text-white/70 text-xs font-normal">LKR {bills[0]?.total || 4800}</span>
               </div>
             </div>
+          </div>
 
-            {/* Card 3: Wed */}
-            <div 
-              onClick={() => bills[2] && onBillClick?.(bills[2].id)}
-              className="w-[110px] h-[120px] rounded-[24px] bg-[#CDE1FF] p-3 flex flex-col justify-between shrink-0 shadow-sm cursor-pointer active:scale-95 transition-transform relative overflow-hidden"
-            >
-              <span className="text-xs font-semibold text-black/70 bg-white/70 px-2 py-0.5 rounded-full w-fit backdrop-blur-xs">Wed</span>
-              <div className="flex flex-col">
-                <span className="text-[#1A1A1A] text-xs font-bold truncate">{bills[2]?.title || 'Arcade'}</span>
-                <span className="text-black/60 text-[10px] font-medium">LKR {bills[2]?.total || 2400}</span>
-              </div>
+          {/* Column 2 Card */}
+          <div 
+            onClick={() => bills[1] && onBillClick?.(bills[1].id)}
+            className="flex flex-col gap-2 cursor-pointer group"
+          >
+            {/* Header: Avatar + Username */}
+            <div className="flex items-center gap-2 px-1">
+              <div 
+                className="w-6 h-6 rounded-full opacity-60" 
+                style={{ backgroundColor: friends[1]?.color || '#D7ECD1' }}
+              />
+              <span className="text-xs font-semibold text-[#1A1A1A]">
+                {friends[1]?.username?.replace('@', '') || 'ayanmunoz'}
+              </span>
             </div>
 
-            {/* Card 4: + Add Plate */}
-            <button 
-              onClick={() => setIsNewBillModalOpen(true)}
-              className="w-[90px] h-[120px] rounded-[24px] bg-[#D9D9D9] flex flex-col items-center justify-center gap-1 shrink-0 shadow-sm cursor-pointer active:scale-95 transition-transform hover:bg-zinc-300"
-            >
-              <div className="w-9 h-9 rounded-full bg-[#1A1A1A] text-[#EDEDF1] flex items-center justify-center">
-                <Plus size={20} strokeWidth={2.5} />
+            {/* Tall Card */}
+            <div className="w-full h-[260px] bg-[#D7ECD1] rounded-[28px] p-4 relative flex flex-col justify-between overflow-hidden shadow-sm transition-transform group-active:scale-[0.98]">
+              <div className="flex flex-col gap-0.5 text-[#1A1A1A] mt-auto z-10">
+                <span className="text-base font-bold truncate">{bills[1]?.title || 'Groceries'}</span>
+                <span className="text-black/70 text-xs font-normal">LKR {bills[1]?.total || 3600}</span>
               </div>
-              <span className="text-xs font-semibold text-[#1A1A1A] mt-1">Split</span>
-            </button>
+            </div>
           </div>
         </div>
 
-        {/* 1. Net Balance Overview Card */}
+        {/* Net Balance Overview Card */}
         <div className="w-full bg-[#D9D9D9] rounded-[30px] p-6 shadow-sm flex flex-col gap-4">
           <div className="flex justify-between items-start">
             <div className="flex flex-col">
@@ -144,7 +186,7 @@ export function Home({
           </div>
         </div>
 
-        {/* 2. Quick Action Buttons */}
+        {/* Quick Action Buttons */}
         <div className="flex gap-3">
           <button 
             onClick={() => setIsNewBillModalOpen(true)}
@@ -163,7 +205,7 @@ export function Home({
           </button>
         </div>
 
-        {/* 3. Waiting on You Section */}
+        {/* Waiting on You Section */}
         <div className="flex flex-col gap-3">
           <h2 className="text-[#1A1A1A] text-2xl font-bold font-display tracking-tight px-1">
             Waiting on You
