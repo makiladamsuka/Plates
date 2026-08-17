@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { X, Check } from 'lucide-react';
 import { api } from '../services/api';
+import { supabase } from '../lib/supabase';
 
 interface IncomingBillModalProps {
   isOpen: boolean;
@@ -27,12 +28,24 @@ export function IncomingBillModal({
   const handleAccept = async () => {
     setIsSubmitting(true);
     try {
-      await api.acceptBill(bill.id, userId);
+      // 1. Try API endpoint
+      try {
+        await api.acceptBill(bill.id, userId);
+      } catch (apiErr) {
+        // 2. Direct Supabase fallback
+        const { error } = await supabase
+          .from('participants')
+          .update({ accepted: true })
+          .eq('bill_id', bill.id)
+          .eq('friend_id', userId);
+        if (error) throw error;
+      }
+
       if (onSuccess) onSuccess();
       onClose();
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error accepting bill:', err);
-      alert('Failed to accept bill');
+      alert(err.message || 'Failed to accept bill');
     } finally {
       setIsSubmitting(false);
     }
@@ -41,12 +54,22 @@ export function IncomingBillModal({
   const handleDecline = async () => {
     setIsSubmitting(true);
     try {
-      await api.declineBill(bill.id, userId);
+      try {
+        await api.declineBill(bill.id, userId);
+      } catch (apiErr) {
+        const { error } = await supabase
+          .from('participants')
+          .delete()
+          .eq('bill_id', bill.id)
+          .eq('friend_id', userId);
+        if (error) throw error;
+      }
+
       if (onSuccess) onSuccess();
       onClose();
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error declining bill:', err);
-      alert('Failed to decline bill');
+      alert(err.message || 'Failed to decline bill');
     } finally {
       setIsSubmitting(false);
     }
@@ -70,7 +93,7 @@ export function IncomingBillModal({
               <div className="text-amber-300 text-sm font-semibold mb-2">Incoming Bill Request</div>
               <div className="text-white/70 text-sm">{bill.category} · {bill.participants?.length || 0} Participants</div>
             </div>
-            <button onClick={onClose} className="text-white/60 hover:text-white p-1">
+            <button onClick={onClose} className="text-white/60 hover:text-white p-1 cursor-pointer">
               <X size={24} />
             </button>
           </div>
