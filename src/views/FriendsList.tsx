@@ -62,15 +62,8 @@ export function FriendsList({ onFriendClick, onSearchClick }: FriendsListProps) 
         }`}
       >
         <div className="max-w-[480px] mx-auto">
-          <div className="px-6 pt-10 pb-4 flex justify-between items-center">
+          <div className="px-6 pt-10 pb-4">
             <h1 className="text-black text-5xl font-bold font-['Sora']">Friends</h1>
-            {/* Search Icon */}
-            <button 
-              onClick={onSearchClick}
-              className="w-6 h-6 flex items-center justify-center active:scale-90 transition-transform"
-            >
-              <Search size={24} strokeWidth={2.5} className="text-black" />
-            </button>
           </div>
 
           {/* Filter Tabs */}
