@@ -1,9 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { NewBillModal } from '../components/NewBillModal';
-import { IncomingBillModal } from '../components/IncomingBillModal';
 import { api } from '../services/api';
 import { supabase } from '../lib/supabase';
-import type { Bill } from '../data/mockData';
 
 const getTagColor = (category: string) => {
   switch (category) {
@@ -33,25 +31,31 @@ const formatTime = (ts: any) => {
 
 type SortKey = 'all' | 'highest' | 'lowest' | 'oldest';
 
-export function BillsList({ onBillClick }: { onBillClick?: (id: string) => void }) {
+interface BillsListProps {
+  onBillClick?: (id: string) => void;
+}
+
+export function BillsList({ onBillClick }: BillsListProps) {
   const [bills, setBills] = useState<any[]>([]);
   const [isNewBillModalOpen, setIsNewBillModalOpen] = useState(false);
-  const [selectedBillForDetails, setSelectedBillForDetails] = useState<any>(null);
   const [sortKey, setSortKey] = useState<SortKey>('all');
-  const [userId, setUserId] = useState<string>('');
-  
+  const [showHeader, setShowHeader] = useState(true);
+  const lastScrollY = React.useRef(0);
+
   const fetchBills = () => {
     supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) setUserId(session.user.id);
+      const uid = session?.user?.id;
+      if (uid) {
+        api.getBills(uid).then(setBills).catch(console.error);
+      } else {
+        api.getBills().then(setBills).catch(console.error);
+      }
     });
-    api.getBills().then(setBills).catch(console.error);
   };
 
   useEffect(() => {
     fetchBills();
   }, []);
-  const [showHeader, setShowHeader] = useState(true);
-  const lastScrollY = React.useRef(0);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -73,14 +77,14 @@ export function BillsList({ onBillClick }: { onBillClick?: (id: string) => void 
   const sortedBills = [...bills].sort((a, b) => {
     const timeA = new Date(a.created_at || a.createdAt || Date.now()).getTime();
     const timeB = new Date(b.created_at || b.createdAt || Date.now()).getTime();
-    if (sortKey === 'highest') return b.total - a.total;
-    if (sortKey === 'lowest') return a.total - b.total;
+    if (sortKey === 'highest') return Number(b.total) - Number(a.total);
+    if (sortKey === 'lowest') return Number(a.total) - Number(b.total);
     if (sortKey === 'oldest') return timeA - timeB;
     return timeB - timeA;
   });
 
   return (
-    <div className="min-h-screen bg-[#EDEDF1] pb-32 pt-[160px]">
+    <div className="min-h-screen bg-[#EDEDF1] pb-32 pt-[160px] font-['Sora']">
       
       {/* Fixed Header Container */}
       <div 
@@ -126,40 +130,40 @@ export function BillsList({ onBillClick }: { onBillClick?: (id: string) => void 
         
         {/* Bills Cards */}
         <div className="px-5 mt-2 flex flex-col gap-3.5">
-          {sortedBills.map(bill => (
-            <div 
-              key={bill.id}
-              onClick={() => {
-                setSelectedBillForDetails(bill);
-                if (onBillClick) onBillClick(bill.id);
-              }}
-              className="w-full bg-[#D9D9D9] rounded-[30px] px-6 py-4.5 flex flex-col gap-3 shadow-sm cursor-pointer hover:bg-zinc-300/80 transition-colors"
-            >
-              {/* Top Row: Title + Status Pill */}
-              <div className="flex justify-between items-center gap-3">
-                <h2 className="text-[#1A1A1A] text-xl font-semibold leading-tight truncate">{bill.title}</h2>
-                <div className={`rounded-full px-3.5 py-1 flex items-center justify-center shrink-0 ${
-                  bill.status === 'Accepted' ? 'bg-[#4C8C3C] text-white' : 
-                  bill.status === 'Rejected' || bill.status === 'Declined' ? 'bg-[#F6D6DA] text-red-700 font-bold' : 
-                  'bg-[#F5C744] text-black'
-                }`}>
-                  <span className="text-[12px] font-semibold">{bill.status}</span>
-                </div>
-              </div>
+          {sortedBills.map(bill => {
+            const displayStatus = bill.status === 'Settled' ? 'Settled' : 'Pending';
 
-              {/* Bottom Row: Category Tag, Date & Amount */}
-              <div className="flex items-center justify-between mt-0.5">
-                <div className="flex items-center gap-2.5">
-                  <span className={`${getTagColor(bill.category)} text-black px-3 py-1 rounded-full font-medium text-xs`}>
-                    {bill.category}
-                  </span>
-                  <span className="text-black/60 font-normal text-xs">{formatTime(bill.created_at || bill.createdAt)}</span>
+            return (
+              <div 
+                key={bill.id}
+                onClick={() => onBillClick?.(bill.id)}
+                className="w-full bg-[#D9D9D9] rounded-[30px] px-6 py-4.5 flex flex-col gap-3 shadow-sm cursor-pointer hover:bg-zinc-300/80 transition-colors"
+              >
+                {/* Top Row: Title + Status Pill */}
+                <div className="flex justify-between items-center gap-3">
+                  <h2 className="text-[#1A1A1A] text-xl font-semibold leading-tight truncate">{bill.title}</h2>
+                  <div className={`rounded-full px-3.5 py-1 flex items-center justify-center shrink-0 ${
+                    displayStatus === 'Settled' ? 'bg-[#4C8C3C] text-white' : 'bg-[#F5C744] text-black'
+                  }`}>
+                    <span className="text-[12px] font-semibold">{displayStatus}</span>
+                  </div>
                 </div>
-                <span className="text-[#1A1A1A] text-2xl font-semibold">LKR {bill.total}</span>
+
+                {/* Bottom Row: Category Tag, Date & Amount */}
+                <div className="flex items-center justify-between mt-0.5">
+                  <div className="flex items-center gap-2.5">
+                    <span className={`${getTagColor(bill.category)} text-black px-3 py-1 rounded-full font-medium text-xs`}>
+                      {bill.category}
+                    </span>
+                    <span className="text-black/60 font-normal text-xs">{formatTime(bill.created_at || bill.createdAt)}</span>
+                  </div>
+                  <span className="text-[#1A1A1A] text-2xl font-semibold">LKR {bill.total}</span>
+                </div>
               </div>
-            </div>
-          ))}
-          {bills.length === 0 && (
+            );
+          })}
+
+          {sortedBills.length === 0 && (
             <div className="text-center mt-10 text-black/50">No bills found. Create one!</div>
           )}
         </div>
@@ -188,15 +192,6 @@ export function BillsList({ onBillClick }: { onBillClick?: (id: string) => void 
           setIsNewBillModalOpen(false);
           fetchBills();
         }}
-      />
-
-      {/* Bill Details Modal (Read-Only Sheet matching screenshot design) */}
-      <IncomingBillModal 
-        isOpen={!!selectedBillForDetails}
-        onClose={() => setSelectedBillForDetails(null)}
-        bill={selectedBillForDetails}
-        userId={userId}
-        readOnly={true}
       />
     </div>
   );
