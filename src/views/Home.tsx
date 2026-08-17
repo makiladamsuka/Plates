@@ -48,14 +48,31 @@ export function Home({
     }
   }, [initialBills]);
 
-  // Compute total balances
-  const totalYouAreOwed = friends
-    .filter(f => f.balance > 0)
-    .reduce((sum, f) => sum + f.balance, 0);
+  // Compute dynamic balances from real bills data
+  let totalYouAreOwed = 0;
+  let totalYouOwe = 0;
 
-  const totalYouOwe = friends
-    .filter(f => f.balance < 0)
-    .reduce((sum, f) => sum + Math.abs(f.balance), 0);
+  (bills || []).forEach(bill => {
+    if (bill.status === 'Settled') return; // Settled bills don't contribute to balance
+
+    const isCreator = bill.creator_id === userId;
+
+    if (isCreator) {
+      // Money other participants owe to current user for this bill
+      (bill.participants || []).forEach((p: any) => {
+        const isMe = p.friend_id === userId || p.friendId === userId;
+        if (!isMe && !p.paid) {
+          totalYouAreOwed += Number(p.share || 0);
+        }
+      });
+    } else {
+      // Money current user owes to creator for this bill
+      const myPart = (bill.participants || []).find((p: any) => p.friend_id === userId || p.friendId === userId);
+      if (myPart && !myPart.paid) {
+        totalYouOwe += Number(myPart.share || 0);
+      }
+    }
+  });
 
   const netBalance = totalYouAreOwed - totalYouOwe;
 
