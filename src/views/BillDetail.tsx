@@ -1,10 +1,13 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { ConfirmTransferModal } from '../components/ConfirmTransferModal';
 
 interface BillDetailProps {
   onBack: () => void;
 }
 
 export function BillDetail({ onBack }: BillDetailProps) {
+  const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
+
   return (
     <div className="min-h-screen bg-gray-100 pb-32">
       {/* Header / Top Section */}
@@ -56,11 +59,26 @@ export function BillDetail({ onBack }: BillDetailProps) {
       <div className="fixed bottom-[140px] left-0 w-full px-6 z-40 pointer-events-none flex justify-center">
         <div className="w-full max-w-[432px] h-20 bg-zinc-900 rounded-[50px] flex items-center justify-between px-8 shadow-xl pointer-events-auto">
           <span className="text-gray-100 text-xl font-semibold font-['Sora']">Your Share</span>
-          <button className="text-gray-100 text-xl font-semibold font-['Sora'] hover:text-amber-300 transition-colors">
+          <button 
+            onClick={() => setIsConfirmModalOpen(true)}
+            className="text-gray-100 text-xl font-semibold font-['Sora'] hover:text-amber-300 transition-colors"
+          >
             Pay LKR 1200
           </button>
         </div>
       </div>
+
+      <ConfirmTransferModal 
+        isOpen={isConfirmModalOpen}
+        onClose={() => setIsConfirmModalOpen(false)}
+        onConfirm={() => {
+          setIsConfirmModalOpen(false);
+          // In a real app, dispatch payment success here
+        }}
+        amount={1200}
+        username="@senup"
+      />
+
 
     </div>
   );
