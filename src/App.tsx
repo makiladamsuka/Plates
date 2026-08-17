@@ -17,6 +17,7 @@ function App() {
   const [selectedBillId, setSelectedBillId] = useState<string | null>(null);
   
   // Friends tab state
+  const [friends, setFriends] = useState<Friend[]>(MOCK_FRIENDS);
   const [friendsView, setFriendsView] = useState<'list' | 'detail' | 'search'>('list');
   const [selectedFriendId, setSelectedFriendId] = useState<string | null>(null);
 
@@ -24,8 +25,26 @@ function App() {
     setBills([newBill, ...bills]);
   };
 
+  const handleAddPendingFriend = (newFriend: Friend) => {
+    setFriends(prev => {
+      const exists = prev.find(f => f.id === newFriend.id);
+      if (exists) {
+        return prev.map(f => f.id === newFriend.id ? { ...f, isPendingRequest: true } : f);
+      }
+      return [...prev, { ...newFriend, isPendingRequest: true }];
+    });
+  };
+
+  const handleApproveFriend = (friendId: string) => {
+    setFriends(prev => prev.map(f => f.id === friendId ? { ...f, isPendingRequest: false } : f));
+  };
+
+  const handleDeclineFriend = (friendId: string) => {
+    setFriends(prev => prev.filter(f => f.id !== friendId));
+  };
+
   const selectedBill = bills.find(b => b.id === selectedBillId) || bills[0];
-  const selectedFriend = MOCK_FRIENDS.find(f => f.id === selectedFriendId);
+  const selectedFriend = friends.find(f => f.id === selectedFriendId);
 
   return (
     <div id="root-container" className="max-w-[480px] mx-auto w-full min-h-screen bg-[#EDEDF1] relative shadow-sm">
@@ -34,7 +53,10 @@ function App() {
       
       {currentTab === 'friends' && (
         friendsView === 'search' ? (
-          <SearchFriends onBack={() => setFriendsView('list')} />
+          <SearchFriends 
+            onBack={() => setFriendsView('list')} 
+            onAddFriend={handleAddPendingFriend}
+          />
         ) : friendsView === 'detail' && selectedFriend ? (
           <FriendDetail 
             friend={selectedFriend}
@@ -50,6 +72,9 @@ function App() {
           />
         ) : (
           <FriendsList 
+            friendsList={friends}
+            onApproveRequest={handleApproveFriend}
+            onDeclineRequest={handleDeclineFriend}
             onFriendClick={(id) => {
               setSelectedFriendId(id);
               setFriendsView('detail');

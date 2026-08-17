@@ -5,14 +5,22 @@ import { MOCK_FRIENDS } from '../data/mockData';
 import type { Friend } from '../data/mockData';
 
 interface FriendsListProps {
+  friendsList: Friend[];
+  onApproveRequest: (friendId: string) => void;
+  onDeclineRequest: (friendId: string) => void;
   onFriendClick?: (friendId: string) => void;
   onSearchClick?: () => void;
 }
 
-export function FriendsList({ onFriendClick, onSearchClick }: FriendsListProps) {
+export function FriendsList({ 
+  friendsList, 
+  onApproveRequest, 
+  onDeclineRequest, 
+  onFriendClick, 
+  onSearchClick 
+}: FriendsListProps) {
   const [showHeader, setShowHeader] = useState(true);
   const [activeTab, setActiveTab] = useState<'all' | 'pending'>('all');
-  const [friendsList, setFriendsList] = useState<Friend[]>(MOCK_FRIENDS);
   const [incomingFriend, setIncomingFriend] = useState<Friend | null>(null);
   const lastScrollY = React.useRef(0);
 
@@ -42,13 +50,13 @@ export function FriendsList({ onFriendClick, onSearchClick }: FriendsListProps) 
     return !f.isPendingRequest;
   });
 
-  const handleApproveRequest = (friendId: string) => {
-    setFriendsList(prev => prev.map(f => f.id === friendId ? { ...f, isPendingRequest: false } : f));
+  const handleApprove = (friendId: string) => {
+    onApproveRequest(friendId);
     setIncomingFriend(null);
   };
 
-  const handleDeclineRequest = (friendId: string) => {
-    setFriendsList(prev => prev.filter(f => f.id !== friendId));
+  const handleDecline = (friendId: string) => {
+    onDeclineRequest(friendId);
     setIncomingFriend(null);
   };
 
@@ -127,7 +135,7 @@ export function FriendsList({ onFriendClick, onSearchClick }: FriendsListProps) 
                     <Check size={18} strokeWidth={3} className="text-[#4C8C3C]" />
                   </button>
                   <button 
-                    onClick={() => handleDeclineRequest(friend.id)}
+                    onClick={() => handleDecline(friend.id)}
                     className="w-6 h-6 flex items-center justify-center rounded-full active:scale-95 transition-transform bg-[#EDEDF1] border border-black/10 shadow-sm"
                   >
                     <X size={14} strokeWidth={3} className="text-[#F6D6DA]" />
@@ -178,7 +186,7 @@ export function FriendsList({ onFriendClick, onSearchClick }: FriendsListProps) 
       <IncomingFriendRequestModal 
         isOpen={!!incomingFriend}
         onClose={() => setIncomingFriend(null)}
-        onApprove={() => incomingFriend && handleApproveRequest(incomingFriend.id)}
+        onApprove={() => incomingFriend && handleApprove(incomingFriend.id)}
         friend={incomingFriend || undefined}
       />
 
