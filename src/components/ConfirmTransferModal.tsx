@@ -64,7 +64,7 @@ export function ConfirmTransferModal({ isOpen, onClose, onConfirm, amount, usern
   };
 
   return (
-    <div className="fixed inset-0 z-[60] flex justify-center items-end pointer-events-none pb-[120px] px-4">
+    <div className="fixed inset-0 z-[60] flex justify-center items-end pointer-events-none pb-6 px-4">
       <div className="w-full max-w-[448px] relative flex flex-col justify-end pointer-events-none">
         
         {/* Backdrop */}
