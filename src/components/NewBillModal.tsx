@@ -259,6 +259,42 @@ export function NewBillModal({ isOpen, onClose, onSuccess }: NewBillModalProps) 
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="bg-transparent text-black placeholder:text-black/50 text-[15px] font-normal outline-none w-full"
                   />
+
+                  {/* Search Dropdown Overlay */}
+                  {searchQuery.trim() && (
+                    <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-full bg-[#EDEDF1] rounded-[20px] shadow-lg py-2 max-h-[200px] overflow-y-auto z-30 border border-black/10">
+                      {availableFriends.map((friend) => (
+                        <div 
+                          key={friend.id} 
+                          onClick={() => {
+                            setSelectedFriends(prev => [...prev, friend]);
+                            setSearchQuery('');
+                          }}
+                          className="flex items-center justify-between px-4 py-2 cursor-pointer mx-1 rounded-[35px] hover:bg-zinc-300 transition-colors"
+                        >
+                          <div className="flex items-center gap-3 min-w-0">
+                            {friend.avatar_url ? (
+                              <img src={friend.avatar_url} alt="" className="w-8 h-8 rounded-full object-cover shrink-0" />
+                            ) : (
+                              <div className="w-8 h-8 rounded-full bg-[#D9D9D9] shrink-0 flex items-center justify-center font-bold text-xs">
+                                {(friend.full_name || 'F')[0]}
+                              </div>
+                            )}
+                            <div className="flex flex-col truncate">
+                              <span className="text-[#1A1A1A] text-xs font-semibold leading-tight truncate">{friend.full_name}</span>
+                              <span className="text-black/60 text-[10px] truncate">{friend.email}</span>
+                            </div>
+                          </div>
+                          <span className="text-xs font-semibold text-[#1A1A1A] bg-[#D9D9D9] px-2.5 py-1 rounded-full shrink-0 ml-2">
+                            Add +
+                          </span>
+                        </div>
+                      ))}
+                      {availableFriends.length === 0 && (
+                        <div className="px-4 py-3 text-center text-black/50 text-xs">No matching friends found</div>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
 
