@@ -68,9 +68,9 @@ export function BillsList({ bills, onAddBill, onBillClick }: { bills: Bill[], on
         }`}
       >
         <div className="max-w-[480px] mx-auto">
-          <div className="px-6 pt-10 pb-4 flex justify-between items-center">
+          <div className="px-6 pt-10 pb-4 flex justify-between items-center h-[88px]">
             {/* Title styled with elegant serif display font matching the user's inspiration image */}
-            <h1 className="text-black text-5xl font-bold font-display tracking-tight">Bills</h1>
+            <h1 className="text-black text-5xl font-bold font-display tracking-tight leading-none">Bills</h1>
             {/* Search Icon */}
             <div className="w-6 h-6 flex items-center justify-center">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-black">

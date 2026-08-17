@@ -38,11 +38,11 @@ export function Home({
   const pendingFriendRequests = friends.filter(f => f.isPendingRequest);
 
   return (
-    <div className="min-h-screen bg-[#EDEDF1] pb-36 pt-10">
+    <div className="min-h-screen bg-[#EDEDF1] pb-36 pt-0">
       
-      {/* Top Header */}
-      <div className="px-6 pt-2 pb-4 flex justify-between items-center max-w-[480px] mx-auto">
-        <h1 className="text-black text-5xl font-bold font-display tracking-tight">Plates</h1>
+      {/* Top Header Container */}
+      <div className="px-6 pt-10 pb-4 h-[88px] flex justify-between items-center max-w-[480px] mx-auto">
+        <h1 className="text-black text-5xl font-bold font-display tracking-tight leading-none">Plates</h1>
         <div className="w-10 h-10 rounded-full bg-[#D9D9D9] flex items-center justify-center font-bold text-black text-sm shadow-sm">
           ME
         </div>

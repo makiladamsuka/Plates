@@ -66,9 +66,9 @@ export function FriendsList({
         }`}
       >
         <div className="max-w-[480px] mx-auto">
-          <div className="px-6 pt-10 pb-4">
+          <div className="px-6 pt-10 pb-4 flex justify-between items-center h-[88px]">
             {/* Display font header matching the user's inspiration screenshot */}
-            <h1 className="text-black text-5xl font-bold font-display tracking-tight">Friends</h1>
+            <h1 className="text-black text-5xl font-bold font-display tracking-tight leading-none">Friends</h1>
           </div>
 
           {/* Filter Tabs */}
