@@ -16,7 +16,8 @@ export function NewBillModal({ isOpen, onClose, onSuccess }: NewBillModalProps) 
   const [tag, setTag] = useState('Restaurant');
   const [selectedFriends, setSelectedFriends] = useState<any[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [userFriends, setUserFriends] = useState<any[]>([]);
+  const [isLoadingFriends, setIsLoadingLoadingFriends] = useState(false);
   const [isEditingSplits, setIsEditingSplits] = useState(false);
   const [customSplits, setCustomSplits] = useState<Record<string, string>>({});
   const [isCreating, setIsCreating] = useState(false);
@@ -27,6 +28,38 @@ export function NewBillModal({ isOpen, onClose, onSuccess }: NewBillModalProps) 
       if (session) setUserId(session.user.id);
     });
   }, []);
+
+  // Fetch accepted friends when modal opens or userId is available
+  useEffect(() => {
+    if (!userId || !isOpen) return;
+    const fetchAcceptedFriends = async () => {
+      setIsLoadingLoadingFriends(true);
+      try {
+        const { data: friendRows } = await supabase
+          .from('friends')
+          .select('friend_id')
+          .eq('user_id', userId)
+          .or('status.eq.accepted,status.is.null');
+
+        if (friendRows && friendRows.length > 0) {
+          const friendIds = friendRows.map((f: any) => f.friend_id);
+          const { data: profs } = await supabase
+            .from('profiles')
+            .select('id, full_name, email, avatar_url')
+            .in('id', friendIds);
+          
+          setUserFriends(profs || []);
+        } else {
+          setUserFriends([]);
+        }
+      } catch (err) {
+        console.error('Error fetching user friends for bill:', err);
+      } finally {
+        setIsLoadingLoadingFriends(false);
+      }
+    };
+    fetchAcceptedFriends();
+  }, [userId, isOpen]);
 
   const amountInputRef = useRef<HTMLInputElement>(null);
   const nameInputRef = useRef<HTMLInputElement>(null);
@@ -45,12 +78,6 @@ export function NewBillModal({ isOpen, onClose, onSuccess }: NewBillModalProps) 
     setIsEditingSplits(false);
     setCustomSplits({});
     onClose();
-  };
-
-  const handleNext = () => {
-    if (step < 3) {
-      setStep(step + 1);
-    }
   };
 
   const allParticipants = [{ id: userId, name: 'You', username: '@you', color: '#E5E7EB' }, ...selectedFriends.map(f => ({ id: f.id, name: f.full_name || f.name, username: f.email || '', color: '#D9D9D9' }))];
@@ -100,6 +127,15 @@ export function NewBillModal({ isOpen, onClose, onSuccess }: NewBillModalProps) 
       setIsCreating(false);
     }
   };
+
+  // Filter user's accepted friends by search query and unselected state
+  const availableFriends = userFriends
+    .filter(f => !selectedFriends.some(sf => sf.id === f.id))
+    .filter(f => {
+      if (!searchQuery.trim()) return true;
+      const q = searchQuery.toLowerCase();
+      return (f.full_name || '').toLowerCase().includes(q) || (f.email || '').toLowerCase().includes(q);
+    });
 
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/50">
@@ -204,7 +240,7 @@ export function NewBillModal({ isOpen, onClose, onSuccess }: NewBillModalProps) 
         {step === 2 && (
           <div className="animate-in fade-in slide-in-from-right-4 duration-300 flex flex-col h-full flex-grow">
             {/* Header */}
-            <div className="flex justify-between items-center mb-6 shrink-0">
+            <div className="flex justify-between items-center mb-4 shrink-0">
               <h2 className="text-[#1A1A1A] text-2xl font-bold font-display">Add Friends</h2>
               <button onClick={handleClose} className="p-1 rounded-full transition-colors cursor-pointer">
                 <X size={24} className="text-black" />
@@ -213,90 +249,89 @@ export function NewBillModal({ isOpen, onClose, onSuccess }: NewBillModalProps) 
 
             <div className="flex-grow overflow-y-auto overflow-x-hidden no-scrollbar pb-4 flex flex-col">
               {/* Search Bar */}
-              <div className="flex justify-center mb-8 relative z-20">
-                <div className="flex items-center bg-[#EDEDF1] rounded-[30px] px-4 py-2.5 w-full max-w-[260px] relative">
-                  <Search size={18} className="text-black/60 mr-2" />
+              <div className="flex justify-center mb-4 relative z-20">
+                <div className="flex items-center bg-[#EDEDF1] rounded-[30px] px-4 py-2.5 w-full relative">
+                  <Search size={18} className="text-black/60 mr-2 shrink-0" />
                   <input 
                     type="text" 
-                    placeholder="Search Friends" 
+                    placeholder="Search your friends..." 
                     value={searchQuery}
-                    onChange={(e) => {
-                      const q = e.target.value;
-                      setSearchQuery(q);
-                      if (q.trim().length >= 1) {
-                        supabase
-                          .from('profiles')
-                          .select('id, full_name, email, avatar_url')
-                          .neq('id', userId)
-                          .or(`full_name.ilike.%${q}%,email.ilike.%${q}%`)
-                          .limit(10)
-                          .then(({ data }) => setSearchResults(data || []));
-                      } else {
-                        setSearchResults([]);
-                      }
-                    }}
+                    onChange={(e) => setSearchQuery(e.target.value)}
                     className="bg-transparent text-black placeholder:text-black/50 text-[15px] font-normal outline-none w-full"
                   />
-
-                  {/* Search Dropdown */}
-                  {searchQuery && (
-                    <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-[277px] bg-[#EDEDF1] rounded-[20px] shadow-lg py-2 max-h-[200px] overflow-y-auto">
-                      {searchResults.filter(f => !selectedFriends.some(sf => sf.id === f.id)).map((friend) => {
-                        return (
-                          <div 
-                            key={friend.id} 
-                            onClick={() => {
-                              setSelectedFriends(prev => [...prev, friend]);
-                              setSearchQuery('');
-                              setSearchResults([]);
-                            }}
-                            className="flex items-center px-4 py-2 cursor-pointer mx-2 rounded-[35px]"
-                          >
-                            {friend.avatar_url ? (
-                              <img src={friend.avatar_url} alt="" className="w-8 h-8 rounded-full mr-3 shrink-0 object-cover" />
-                            ) : (
-                              <div className="w-8 h-8 rounded-full mr-3 shrink-0 bg-[#D9D9D9]"></div>
-                            )}
-                            <div className="flex flex-col flex-grow">
-                              <span className="text-[#1A1A1A] text-xs font-semibold leading-tight">{friend.full_name}</span>
-                              <span className="text-black/60 text-[10px] font-normal mt-0.5">{friend.email}</span>
-                            </div>
-                          </div>
-                        );
-                      })}
-                      {searchResults.filter(f => !selectedFriends.some(sf => sf.id === f.id)).length === 0 && (
-                        <div className="px-4 py-3 text-center text-black/50 text-xs">No friends found</div>
-                      )}
-                    </div>
-                  )}
                 </div>
               </div>
 
-              {/* Selected Friends */}
-              <div className="mb-8 pl-2 min-h-[90px]">
-                <h3 className="text-black text-[15px] font-medium mb-4">Selected :</h3>
-                <div className="flex gap-5 overflow-x-auto pb-2 no-scrollbar">
+              {/* Selected Friends Chips */}
+              <div className="mb-4 pl-1 min-h-[70px]">
+                <h3 className="text-black text-[13px] font-semibold mb-2">Selected ({selectedFriends.length}):</h3>
+                <div className="flex gap-4 overflow-x-auto pb-2 no-scrollbar">
                   {selectedFriends.length === 0 ? (
-                    <span className="text-black/40 text-sm font-normal italic mt-2">No friends selected yet</span>
+                    <span className="text-black/40 text-xs font-normal italic">Tap friends below to add them</span>
                   ) : (
                     selectedFriends.map(friend => (
                       <div key={friend.id} className="flex flex-col items-center relative shrink-0">
                         {friend.avatar_url ? (
-                          <img src={friend.avatar_url} alt="" className="w-[45px] h-[45px] rounded-full object-cover mb-2" />
+                          <img src={friend.avatar_url} alt="" className="w-[40px] h-[40px] rounded-full object-cover mb-1" />
                         ) : (
-                          <div className="w-[45px] h-[45px] rounded-full bg-[#D9D9D9] mb-2"></div>
+                          <div className="w-[40px] h-[40px] rounded-full bg-[#E5E7EB] mb-1 flex items-center justify-center font-bold text-xs">
+                            {(friend.full_name || 'F')[0]}
+                          </div>
                         )}
                         <button 
                           onClick={() => setSelectedFriends(prev => prev.filter(sf => sf.id !== friend.id))}
-                          className="absolute -top-1.5 -right-1.5 bg-[#EDEDF1] rounded-full p-0.5 border border-black/10 shadow-sm cursor-pointer"
+                          className="absolute -top-1 -right-1 bg-[#EDEDF1] rounded-full p-0.5 border border-black/10 shadow-sm cursor-pointer"
                         >
-                          <X size={12} className="text-black" />
+                          <X size={10} className="text-black" />
                         </button>
-                        <span className="text-[#1A1A1A] text-sm font-medium whitespace-nowrap">{(friend.full_name || '').split(' ')[0]}</span>
+                        <span className="text-[#1A1A1A] text-xs font-medium whitespace-nowrap">{(friend.full_name || '').split(' ')[0]}</span>
                       </div>
                     ))
                   )}
                 </div>
+              </div>
+
+              {/* Accepted Friends List */}
+              <div className="flex-grow">
+                <h3 className="text-black text-[13px] font-semibold mb-2 pl-1">Your Friends:</h3>
+                {isLoadingFriends ? (
+                  <div className="text-center py-6 text-black/50 text-xs">Loading friends...</div>
+                ) : availableFriends.length > 0 ? (
+                  <div className="flex flex-col gap-2 max-h-[180px] overflow-y-auto pr-1">
+                    {availableFriends.map((friend) => (
+                      <div 
+                        key={friend.id} 
+                        onClick={() => setSelectedFriends(prev => [...prev, friend])}
+                        className="flex items-center justify-between p-2.5 bg-[#EDEDF1] hover:bg-zinc-200 rounded-[20px] cursor-pointer transition-colors"
+                      >
+                        <div className="flex items-center gap-3 min-w-0">
+                          {friend.avatar_url ? (
+                            <img src={friend.avatar_url} alt="" className="w-8 h-8 rounded-full object-cover shrink-0" />
+                          ) : (
+                            <div className="w-8 h-8 rounded-full bg-[#D9D9D9] shrink-0 flex items-center justify-center text-xs font-bold">
+                              {(friend.full_name || 'F')[0]}
+                            </div>
+                          )}
+                          <div className="flex flex-col truncate">
+                            <span className="text-[#1A1A1A] text-xs font-semibold leading-tight truncate">{friend.full_name}</span>
+                            <span className="text-black/60 text-[10px] truncate">{friend.email}</span>
+                          </div>
+                        </div>
+                        <span className="text-xs font-semibold text-[#1A1A1A] bg-[#D9D9D9] px-2.5 py-1 rounded-full shrink-0">
+                          Add +
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                ) : userFriends.length === 0 ? (
+                  <div className="text-center py-6 text-black/50 text-xs">
+                    No accepted friends yet. Add friends from the Friends tab first!
+                  </div>
+                ) : (
+                  <div className="text-center py-6 text-black/50 text-xs">
+                    No matching friends found.
+                  </div>
+                )}
               </div>
 
             </div>
