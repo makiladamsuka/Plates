@@ -156,26 +156,26 @@ export function Home({
           </h2>
 
           <div className="flex flex-col gap-3">
-            {/* Bills needing settlement */}
+            {/* Bills pending acceptance (accepted === false) */}
             {bills.filter(b => {
-              const myPart = (b.participants || []).find((p: any) => p.friend_id === userId || p.friendId === userId);
               const isCreator = b.creator_id === userId;
-              const isPaid = isCreator || myPart?.paid === true;
-              return !isPaid && b.status !== 'Settled';
+              if (isCreator) return false;
+              const myPart = (b.participants || []).find((p: any) => p.friend_id === userId || p.friendId === userId);
+              return myPart && myPart.accepted === false;
             }).map(bill => (
               <div 
-                key={`unsettled-${bill.id}`}
-                onClick={() => onBillClick?.(bill.id)}
+                key={`pending-accept-${bill.id}`}
+                onClick={() => setSelectedIncomingBill(bill)}
                 className="w-full bg-[#D9D9D9] rounded-[25px] p-4 flex items-center justify-between shadow-sm cursor-pointer hover:bg-zinc-300/80 transition-colors"
               >
                 <div className="flex flex-col gap-1 min-w-0 pr-2">
                   <span className="text-[#1A1A1A] text-base font-semibold truncate">{bill.title}</span>
-                  <span className="text-black/60 text-xs font-normal">Pending split · LKR {bill.total}</span>
+                  <span className="text-black/60 text-xs font-normal">Incoming request · LKR {bill.total}</span>
                 </div>
 
                 <div className="flex items-center gap-2 shrink-0">
                   <span className="bg-[#F5C744] text-black text-xs font-semibold px-4 py-1.5 rounded-full">
-                    Settle
+                    Accept Request
                   </span>
                   <ChevronRight size={18} className="text-black/40" />
                 </div>
@@ -210,13 +210,13 @@ export function Home({
             ))}
 
             {pendingFriendRequests.length === 0 && bills.filter(b => {
-              const myPart = (b.participants || []).find((p: any) => p.friend_id === userId || p.friendId === userId);
               const isCreator = b.creator_id === userId;
-              const isPaid = isCreator || myPart?.paid === true;
-              return !isPaid && b.status !== 'Settled';
+              if (isCreator) return false;
+              const myPart = (b.participants || []).find((p: any) => p.friend_id === userId || p.friendId === userId);
+              return myPart && myPart.accepted === false;
             }).length === 0 && (
               <div className="bg-[#D9D9D9]/50 rounded-[25px] p-6 text-center text-black/50 text-sm">
-                All caught up! No pending bills or requests.
+                All caught up! No pending requests to accept.
               </div>
             )}
           </div>
