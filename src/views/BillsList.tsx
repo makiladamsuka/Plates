@@ -130,11 +130,8 @@ export function BillsList({ onBillClick }: { onBillClick?: (id: string) => void 
             <div 
               key={bill.id}
               onClick={() => {
-                if (onBillClick) {
-                  onBillClick(bill.id);
-                } else {
-                  setSelectedBillForDetails(bill);
-                }
+                setSelectedBillForDetails(bill);
+                if (onBillClick) onBillClick(bill.id);
               }}
               className="w-full bg-[#D9D9D9] rounded-[30px] px-6 py-4.5 flex flex-col gap-3 shadow-sm cursor-pointer hover:bg-zinc-300/80 transition-colors"
             >

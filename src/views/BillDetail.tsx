@@ -104,7 +104,7 @@ export function BillDetail({ onBack, billId }: BillDetailProps) {
              <div className="w-[35px] h-[35px] opacity-30 bg-[#F6D6DA] rounded-full absolute left-3" />
              <div className="flex justify-between w-full pl-12 pr-4 z-10 items-center">
                <span className="text-black text-[14px] font-normal">
-                 {participant.friendId === 'me' ? 'You' : `Friend ${participant.friendId.substring(0,4)}`}
+                 {(participant.friendId === 'me' || participant.friend_id === userId) ? 'You' : `Friend ${(participant.friendId || participant.friend_id || '').substring(0, 4)}`}
                </span>
                <span className="text-[#1A1A1A] text-[20px] font-semibold">LKR {participant.share.toFixed(0)}</span>
              </div>

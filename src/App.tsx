@@ -100,22 +100,7 @@ function App() {
       )}
       
       {currentTab === 'bills' && (
-        currentView === 'list' ? (
-          <BillsList 
-            onBillClick={(id) => {
-              setSelectedBillId(id);
-              setCurrentView('detail');
-            }} 
-          />
-        ) : (
-          <BillDetail 
-            billId={selectedBillId}
-            onBack={() => {
-              setCurrentView('list');
-              setSelectedBillId(null);
-            }} 
-          />
-        )
+        <BillsList />
       )}
 
       {currentTab === 'profile' && <Profile session={session} />}
