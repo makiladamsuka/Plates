@@ -182,7 +182,7 @@ export function Home({
         </div>
 
         {/* Horizontal Scroll Feed — starts flush with px-5 left edge, has trailing spacer */}
-        <div className="flex gap-3.5 overflow-x-auto no-scrollbar pb-4 pt-1 snap-x snap-mandatory" style={{ paddingLeft: '20px', paddingRight: '20px' }}>
+        <div className="flex gap-3.5 overflow-x-auto no-scrollbar pb-4 pt-1 snap-x snap-mandatory" style={{ paddingLeft: '20px' }}>
           {bills.map((bill) => {
             const tagColors: Record<string, { bg: string, text: string }> = {
               'Restaurant': { bg: '#F6D6DA', text: '#1A1A1A' },
@@ -247,6 +247,8 @@ export function Home({
               </div>
             );
           })}
+          {/* Trailing spacer — required because browsers ignore padding-right on overflow-x containers */}
+          <div className="shrink-0" style={{ width: '4px' }} />
         </div>
       </div>
 
