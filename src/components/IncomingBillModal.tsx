@@ -220,24 +220,32 @@ export function IncomingBillModal({
               </div>
             </div>
 
-            {/* Actions */}
+            {/* Actions (Commit 9a3a00e style) */}
             {!isEffectiveReadOnly ? (
-              <div className="flex flex-col gap-3">
-                <button 
+              <div className="flex flex-col items-center gap-4 mt-2">
+                {/* Slide to approve pill */}
+                <div 
                   onClick={handleAccept}
-                  disabled={isSubmitting}
-                  className={`w-full h-14 bg-amber-400 hover:bg-amber-300 text-black text-lg font-semibold rounded-[30px] flex items-center justify-center gap-2 active:scale-[0.98] transition-all cursor-pointer ${isSubmitting ? 'opacity-50' : ''}`}
+                  className="w-full h-20 bg-zinc-300 rounded-[50px] relative flex items-center px-2 shadow-inner overflow-hidden cursor-pointer active:scale-[0.99] transition-transform"
                 >
-                  <Check size={20} strokeWidth={3} />
-                  <span>{isSubmitting ? 'Accepting...' : 'Accept Bill'}</span>
-                </button>
+                  {/* Slider Knob */}
+                  <div className="w-16 h-16 bg-amber-300 rounded-full flex items-center justify-center z-10 shadow-md">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="text-black">
+                      <path d="M9 18l6-6-6-6" />
+                    </svg>
+                  </div>
+                  {/* Text */}
+                  <div className="absolute inset-0 flex items-center justify-center text-black text-lg font-bold font-['Sora'] pointer-events-none">
+                    {isSubmitting ? 'Approving...' : 'Slide to approve'}
+                  </div>
+                </div>
 
                 <button 
                   onClick={handleDecline}
                   disabled={isSubmitting}
-                  className="text-white/60 hover:text-white text-sm py-2 text-center transition-colors cursor-pointer"
+                  className="text-white/60 text-base font-normal font-['Sora'] py-2 hover:text-white transition-colors cursor-pointer"
                 >
-                  Decline Request
+                  Decline
                 </button>
               </div>
             ) : (
