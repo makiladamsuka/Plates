@@ -1,13 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ConfirmTransferModal } from '../components/ConfirmTransferModal';
 import { ChevronLeft } from 'lucide-react';
+import { api } from '../services/api';
+import { supabase } from '../lib/supabase';
 import { MOCK_FRIENDS } from '../data/mockData';
 import type { Bill } from '../data/mockData';
 
 interface BillDetailProps {
   onBack: () => void;
-  onSettle?: () => void;
-  bill?: Bill;
+  billId: string | null;
 }
 
 const getTagColor = (category: string) => {
@@ -42,12 +43,37 @@ const getFriendColor = (friendId: string) => {
   return MOCK_FRIENDS.find(f => f.id === friendId)?.color ?? '#D9D9D9';
 };
 
-export function BillDetail({ onBack, onSettle, bill }: BillDetailProps) {
+export function BillDetail({ onBack, billId }: BillDetailProps) {
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
+  const [bill, setBill] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [userId, setUserId] = useState<string>('');
 
+  const fetchBill = async () => {
+    if (!billId) return;
+    try {
+      setLoading(true);
+      const data = await api.getBill(billId);
+      setBill(data);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) setUserId(session.user.id);
+    });
+    fetchBill();
+  }, [billId]);
+
+  if (loading) return <div className="min-h-screen bg-[#EDEDF1] flex items-center justify-center">Loading...</div>;
   if (!bill) return null;
 
-  const myShare = bill.participants.find(p => p.friendId === 'me')?.share ?? 0;
+  // Find user's share for the pay button
+  const myShare = (bill.participants?.find((p: any) => p.friendId === userId)?.share || bill.participants.find(p => p.friendId === 'me')?.share) ?? 0;
   const tag = getTagColor(bill.category);
 
   return (
@@ -173,9 +199,12 @@ export function BillDetail({ onBack, onSettle, bill }: BillDetailProps) {
       <ConfirmTransferModal
         isOpen={isConfirmModalOpen}
         onClose={() => setIsConfirmModalOpen(false)}
-        onConfirm={() => {
+        onConfirm={async () => {
           setIsConfirmModalOpen(false);
-          if (onSettle) onSettle();
+          if (billId) {
+            await api.payBill(billId, userId);
+            fetchBill();
+          }
         }}
         amount={myShare}
         username="@senup"

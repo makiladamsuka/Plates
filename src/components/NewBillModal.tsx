@@ -1,23 +1,32 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { X, Edit2, Search, CheckCircle2 } from 'lucide-react';
-import { MOCK_FRIENDS } from '../data/mockData';
-import type { Friend, Bill } from '../data/mockData';
+import { api } from '../services/api';
+import { supabase } from '../lib/supabase';
 
 interface NewBillModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onAddBill?: (bill: Bill) => void;
+  onSuccess?: () => void;
 }
 
-export function NewBillModal({ isOpen, onClose, onAddBill }: NewBillModalProps) {
+export function NewBillModal({ isOpen, onClose, onSuccess }: NewBillModalProps) {
   const [step, setStep] = useState(1);
   const [amount, setAmount] = useState('');
   const [billName, setBillName] = useState('');
   const [tag, setTag] = useState('Restaurant');
-  const [selectedFriends, setSelectedFriends] = useState<Friend[]>([]);
+  const [selectedFriends, setSelectedFriends] = useState<any[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<any[]>([]);
   const [isEditingSplits, setIsEditingSplits] = useState(false);
   const [customSplits, setCustomSplits] = useState<Record<string, string>>({});
+  const [isCreating, setIsCreating] = useState(false);
+  const [userId, setUserId] = useState<string>('');
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) setUserId(session.user.id);
+    });
+  }, []);
 
   const amountInputRef = useRef<HTMLInputElement>(null);
   const nameInputRef = useRef<HTMLInputElement>(null);
@@ -44,7 +53,7 @@ export function NewBillModal({ isOpen, onClose, onAddBill }: NewBillModalProps) 
     }
   };
 
-  const allParticipants = [{ id: 'me', name: 'You', username: '@you', color: '#E5E7EB' }, ...selectedFriends];
+  const allParticipants = [{ id: userId, name: 'You', username: '@you', color: '#E5E7EB' }, ...selectedFriends.map(f => ({ id: f.id, name: f.full_name || f.name, username: f.email || '', color: '#D9D9D9' }))];
 
   // Calculate dynamic splits
   const calculateSplits = () => {
@@ -73,19 +82,23 @@ export function NewBillModal({ isOpen, onClose, onAddBill }: NewBillModalProps) 
 
   const splits = calculateSplits();
 
-  const handleConfirm = () => {
-    if (onAddBill) {
-      onAddBill({
-        id: Math.random().toString(36).substring(2, 9),
+  const handleConfirm = async () => {
+    setIsCreating(true);
+    try {
+      await api.createBill({
         title: billName || 'New Bill',
         category: tag || 'Other',
         total: parsedAmount,
-        createdAt: Date.now(),
-        status: 'Pending',
         participants: splits.map(s => ({ friendId: s.id, share: s.share }))
       });
+      if (onSuccess) onSuccess();
+      handleClose();
+    } catch (err) {
+      console.error('Error creating bill:', err);
+      alert('Failed to create bill');
+    } finally {
+      setIsCreating(false);
     }
-    handleClose();
   };
 
   return (
@@ -207,40 +220,51 @@ export function NewBillModal({ isOpen, onClose, onAddBill }: NewBillModalProps) 
                   type="text" 
                   placeholder="Search Friends" 
                   value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onChange={(e) => {
+                    const q = e.target.value;
+                    setSearchQuery(q);
+                    if (q.trim().length >= 1) {
+                      supabase
+                        .from('profiles')
+                        .select('id, full_name, email, avatar_url')
+                        .neq('id', userId)
+                        .or(`full_name.ilike.%${q}%,email.ilike.%${q}%`)
+                        .limit(10)
+                        .then(({ data }) => setSearchResults(data || []));
+                    } else {
+                      setSearchResults([]);
+                    }
+                  }}
                   className="bg-transparent text-black placeholder:text-black/50 text-[15px] font-light font-['Sora'] outline-none w-full"
                 />
 
                 {/* Search Dropdown */}
                 {searchQuery && (
                   <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-[277px] bg-[#EDEDF1] rounded-[20px] shadow-lg py-2 max-h-[200px] overflow-y-auto">
-                    {MOCK_FRIENDS.filter(f => f.id !== 'me' && (f.name.toLowerCase().includes(searchQuery.toLowerCase()) || f.username.toLowerCase().includes(searchQuery.toLowerCase()))).map((friend) => {
-                      const isSelected = selectedFriends.some(sf => sf.id === friend.id);
+                    {searchResults.filter(f => !selectedFriends.some(sf => sf.id === f.id)).map((friend) => {
                       return (
                         <div 
                           key={friend.id} 
                           onClick={() => {
-                            if (isSelected) {
-                              setSelectedFriends(prev => prev.filter(sf => sf.id !== friend.id));
-                            } else {
-                              setSelectedFriends(prev => [...prev, friend]);
-                              setSearchQuery(''); // Clear search on select
-                            }
+                            setSelectedFriends(prev => [...prev, friend]);
+                            setSearchQuery('');
+                            setSearchResults([]);
                           }}
                           className="flex items-center px-4 py-2  cursor-pointer mx-2 rounded-[35px]"
                         >
-                          <div className="w-8 h-8 rounded-full mr-3 shrink-0" style={{ backgroundColor: friend.color }}></div>
+                          {friend.avatar_url ? (
+                            <img src={friend.avatar_url} alt="" className="w-8 h-8 rounded-full mr-3 shrink-0 object-cover" />
+                          ) : (
+                            <div className="w-8 h-8 rounded-full mr-3 shrink-0 bg-[#D9D9D9]"></div>
+                          )}
                           <div className="flex flex-col flex-grow">
-                            <span className="text-[#1A1A1A] text-[10px] font-semibold font-['Sora'] leading-tight">{friend.name}</span>
-                            <span className="text-black text-[8px] font-light font-['Sora'] mt-0.5">{friend.username}</span>
-                          </div>
-                          <div className={`w-4 h-4 border-[1.5px] border-black rounded-full ml-2 shrink-0 flex items-center justify-center ${isSelected ? 'bg-black' : ''}`}>
-                            {isSelected && <div className="w-2 h-2 bg-[#EDEDF1] rounded-full"></div>}
+                            <span className="text-[#1A1A1A] text-[10px] font-semibold font-['Sora'] leading-tight">{friend.full_name}</span>
+                            <span className="text-black text-[8px] font-light font-['Sora'] mt-0.5">{friend.email}</span>
                           </div>
                         </div>
                       );
                     })}
-                    {MOCK_FRIENDS.filter(f => f.id !== 'me' && (f.name.toLowerCase().includes(searchQuery.toLowerCase()) || f.username.toLowerCase().includes(searchQuery.toLowerCase()))).length === 0 && (
+                    {searchResults.filter(f => !selectedFriends.some(sf => sf.id === f.id)).length === 0 && (
                       <div className="px-4 py-3 text-center text-black/50 text-xs font-['Sora']">No friends found</div>
                     )}
                   </div>
@@ -257,39 +281,25 @@ export function NewBillModal({ isOpen, onClose, onAddBill }: NewBillModalProps) 
                 ) : (
                   selectedFriends.map(friend => (
                     <div key={friend.id} className="flex flex-col items-center relative shrink-0">
-                      <div className="w-[45px] h-[45px] rounded-full overflow-hidden mb-2" style={{ backgroundColor: friend.color }}></div>
+                      {friend.avatar_url ? (
+                        <img src={friend.avatar_url} alt="" className="w-[45px] h-[45px] rounded-full object-cover mb-2" />
+                      ) : (
+                        <div className="w-[45px] h-[45px] rounded-full bg-[#D9D9D9] mb-2"></div>
+                      )}
                       <button 
                         onClick={() => setSelectedFriends(prev => prev.filter(sf => sf.id !== friend.id))}
                         className="absolute -top-1.5 -right-1.5 bg-[#EDEDF1] rounded-full p-0.5 border border-black/10 shadow-sm transition-opacity "
                       >
                         <X size={12} className="text-black" />
                       </button>
-                      <span className="text-[#1A1A1A] text-sm font-normal font-['Sora'] whitespace-nowrap">{friend.name.split(' ')[0]}</span>
+                      <span className="text-[#1A1A1A] text-sm font-normal font-['Sora'] whitespace-nowrap">{(friend.full_name || '').split(' ')[0]}</span>
                     </div>
                   ))
                 )}
               </div>
             </div>
 
-            {/* Recent Friends (Mock for display) */}
-            <div className="mb-10 pl-2">
-              <h3 className="text-black text-[15px] font-normal font-['Sora'] mb-4">Recent Friends:</h3>
-              <div className="flex gap-5 overflow-x-auto no-scrollbar">
-                {MOCK_FRIENDS.filter(f => f.id !== 'me').slice(0, 3).map((friend) => {
-                  const isSelected = selectedFriends.some(sf => sf.id === friend.id);
-                  return (
-                    <div 
-                      key={`recent-${friend.id}`} 
-                      onClick={() => !isSelected && setSelectedFriends(prev => [...prev, friend])}
-                      className={`flex flex-col items-center cursor-pointer transition-opacity ${isSelected ? 'opacity-50 cursor-default' : ''}`}
-                    >
-                      <div className="w-[45px] h-[45px] rounded-full overflow-hidden mb-2" style={{ backgroundColor: friend.color }}></div>
-                      <span className="text-[#1A1A1A] text-sm font-normal font-['Sora']">{friend.name.split(' ')[0]}</span>
-                    </div>
-                  )
-                })}
-              </div>
-            </div>
+            {/* Recent Friends - hidden when using real data */}
 
             </div>
 
@@ -337,7 +347,7 @@ export function NewBillModal({ isOpen, onClose, onAddBill }: NewBillModalProps) 
                 {splits.map(participant => (
                   <div key={participant.id} className="flex items-center justify-between w-full">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full overflow-hidden shrink-0" style={{ backgroundColor: participant.color }}></div>
+                      <div className="w-10 h-10 rounded-full overflow-hidden shrink-0 bg-[#D9D9D9]"></div>
                       <div className="flex flex-col">
                         <span className="text-[#1A1A1A] text-sm font-semibold font-['Sora'] leading-tight">{participant.name}</span>
                         <span className="text-black/60 text-[10px] font-light font-['Sora']">{participant.username}</span>
@@ -374,9 +384,10 @@ export function NewBillModal({ isOpen, onClose, onAddBill }: NewBillModalProps) 
             {/* Confirm Button */}
             <button 
               onClick={handleConfirm}
-              className="w-full bg-[#1A1A1A] py-4 rounded-[30px] text-[#EDEDF1] text-lg font-semibold font-['Sora'] mt-6 transition-transform  active:scale-[0.98]"
+              disabled={isCreating}
+              className={`w-full bg-[#1A1A1A] py-4 rounded-[30px] text-[#EDEDF1] text-lg font-semibold font-['Sora'] mt-6 transition-transform  active:scale-[0.98] ${isCreating ? 'opacity-50' : ''}`}
             >
-              Confirm
+              {isCreating ? 'Creating...' : 'Confirm'}
             </button>
           </div>
         )}

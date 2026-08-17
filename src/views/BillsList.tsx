@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { NewBillModal } from '../components/NewBillModal';
 import { Plus } from 'lucide-react';
+import { api } from '../services/api';
 import type { Bill } from '../data/mockData';
 
 const getTagColor = (category: string) => {
@@ -26,13 +27,18 @@ const formatTime = (ts: number) => {
 
 type SortKey = 'all' | 'highest' | 'lowest' | 'oldest';
 
-export function BillsList({ bills, onAddBill, onBillClick }: {
-  bills: Bill[];
-  onAddBill: (bill: Bill) => void;
-  onBillClick?: (id: string) => void;
-}) {
+export function BillsList({ onBillClick }: { onBillClick?: (id: string) => void }) {
+  const [bills, setBills] = useState<any[]>([]);
   const [isNewBillModalOpen, setIsNewBillModalOpen] = useState(false);
   const [sortKey, setSortKey] = useState<SortKey>('all');
+  
+  const fetchBills = () => {
+    api.getBills().then(setBills).catch(console.error);
+  };
+
+  useEffect(() => {
+    fetchBills();
+  }, []);
   const [showHeader, setShowHeader] = useState(true);
   const lastScrollY = React.useRef(0);
 
@@ -176,10 +182,14 @@ export function BillsList({ bills, onAddBill, onBillClick }: {
         </div>
       </div>
 
-      <NewBillModal
-        isOpen={isNewBillModalOpen}
-        onClose={() => setIsNewBillModalOpen(false)}
-        onAddBill={onAddBill}
+      {/* New Bill Modal */}
+      <NewBillModal 
+        isOpen={isNewBillModalOpen} 
+        onClose={() => setIsNewBillModalOpen(false)} 
+        onSuccess={() => {
+          setIsNewBillModalOpen(false);
+          fetchBills();
+        }}
       />
     </div>
   );

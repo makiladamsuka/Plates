@@ -1,35 +1,64 @@
 import React, { useState } from 'react';
 import { Search, ChevronLeft, UserPlus, Check } from 'lucide-react';
-import { MOCK_FRIENDS } from '../data/mockData';
-import type { Friend } from '../data/mockData';
+import { supabase } from '../lib/supabase';
 
 interface SearchFriendsProps {
+  session: any;
   onBack: () => void;
-  onAddFriend?: (friend: Friend) => void;
 }
 
-const ALL_USERS: Friend[] = [
-  ...MOCK_FRIENDS.filter(f => f.id !== 'me'),
-  { id: 'u1', name: 'Kasun Bandara', username: '@kasun_b', color: '#4C8C3C', balance: 0 },
-  { id: 'u2', name: 'Dilshan Silva', username: '@dilshans', color: '#F5C744', balance: 0 },
-  { id: 'u3', name: 'Nirosha Perera', username: '@niro_p', color: '#F6D6DA', balance: 0 },
-  { id: 'u4', name: 'Sanuka Wick', username: '@sanuka_w', color: '#CDE1FF', balance: 0 },
-  { id: 'u5', name: 'Dhanushka R', username: '@dhanu_r', color: '#4F7F3B', balance: 0 },
-  { id: 'u6', name: 'Prabath Jay', username: '@prabath_j', color: '#FDD356', balance: 0 },
-];
-
-export function SearchFriends({ onBack, onAddFriend }: SearchFriendsProps) {
+export function SearchFriends({ session, onBack }: SearchFriendsProps) {
   const [searchQuery, setSearchQuery] = useState('');
-  const [sentRequests, setSentRequests] = useState<string[]>([]);
+  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [addedIds, setAddedIds] = useState<string[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
 
-  const filteredUsers = ALL_USERS.filter(user => 
-    user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    user.username.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const handleSearch = async (query: string) => {
+    setSearchQuery(query);
+    if (query.trim().length < 1) {
+      setSearchResults([]);
+      return;
+    }
 
-  const handleSendRequest = (userId: string, friend: Friend) => {
-    setSentRequests(prev => [...prev, userId]);
-    onAddFriend?.(friend);
+    setIsSearching(true);
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id, full_name, email, avatar_url')
+        .neq('id', session.user.id)
+        .or(`full_name.ilike.%${query}%,email.ilike.%${query}%`)
+        .limit(10);
+      
+      if (error) throw error;
+      setSearchResults(data || []);
+    } catch (err) {
+      console.error('Error searching profiles:', err);
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  const handleSendRequest = async (friendId: string) => {
+    try {
+      const { error } = await supabase
+        .from('friends')
+        .insert({
+          user_id: session.user.id,
+          friend_id: friendId
+        });
+      
+      if (error) {
+        if (error.code === '23505') {
+          alert('Already added as friend!');
+        } else {
+          throw error;
+        }
+      }
+      setAddedIds(prev => [...prev, friendId]);
+    } catch (err) {
+      console.error('Error adding friend:', err);
+      alert('Failed to add friend.');
+    }
   };
 
   return (
@@ -52,7 +81,7 @@ export function SearchFriends({ onBack, onAddFriend }: SearchFriendsProps) {
             type="text"
             placeholder="Search People"
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={(e) => handleSearch(e.target.value)}
             autoFocus
             className="bg-transparent text-[#1A1A1A] placeholder:text-black/50 text-[15px] font-light outline-none w-full"
           />
@@ -61,51 +90,58 @@ export function SearchFriends({ onBack, onAddFriend }: SearchFriendsProps) {
 
       {/* User Results List */}
       <div className="px-6 mt-4 flex flex-col gap-3">
-        {filteredUsers.map((user) => {
-          const isSent = sentRequests.includes(user.id);
-          return (
-            <div 
-              key={user.id}
-              className="w-full h-[54px] px-2 flex items-center justify-between transition-colors"
-            >
-              {/* User Avatar + Info */}
-              <div className="flex items-center gap-3 min-w-0">
-                <div 
-                  className="w-[39px] h-[39px] rounded-full opacity-40 shrink-0"
-                  style={{ backgroundColor: user.color }}
-                />
-                <div className="flex flex-col truncate">
-                  <span className="text-[#1A1A1A] text-[13px] font-semibold leading-tight truncate">
-                    {user.name}
-                  </span>
-                  <span className="text-black text-[11px] font-light leading-tight mt-0.5 truncate">
-                    {user.username}
-                  </span>
-                </div>
-              </div>
-
-              {/* Action Button */}
-              <button 
-                onClick={() => !isSent && handleSendRequest(user.id, user)}
-                className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 transition-all ${
-                  isSent 
-                    ? 'bg-[#4C8C3C] text-white' 
-                    : 'bg-[#1A1A1A] text-[#EDEDF1] active:scale-95'
-                }`}
+        {isSearching ? (
+          <div className="text-center py-12 text-black/40 text-sm font-light">Searching...</div>
+        ) : searchResults.length > 0 ? (
+          searchResults.map((user) => {
+            const isSent = addedIds.includes(user.id);
+            return (
+              <div 
+                key={user.id}
+                className="w-full h-[54px] px-2 flex items-center justify-between transition-colors"
               >
-                {isSent ? (
-                  <Check size={16} strokeWidth={2.5} />
-                ) : (
-                  <UserPlus size={16} strokeWidth={2} />
-                )}
-              </button>
-            </div>
-          );
-        })}
+                {/* User Avatar + Info */}
+                <div className="flex items-center gap-3 min-w-0">
+                  {user.avatar_url ? (
+                    <img src={user.avatar_url} alt="" className="w-[39px] h-[39px] rounded-full object-cover shrink-0" />
+                  ) : (
+                    <div className="w-[39px] h-[39px] rounded-full bg-[#D9D9D9] opacity-40 shrink-0" />
+                  )}
+                  <div className="flex flex-col truncate">
+                    <span className="text-[#1A1A1A] text-[13px] font-semibold leading-tight truncate">
+                      {user.full_name}
+                    </span>
+                    <span className="text-black text-[11px] font-light leading-tight mt-0.5 truncate">
+                      {user.email}
+                    </span>
+                  </div>
+                </div>
 
-        {filteredUsers.length === 0 && (
+                {/* Action Button */}
+                <button 
+                  onClick={() => !isSent && handleSendRequest(user.id)}
+                  className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 transition-all ${
+                    isSent 
+                      ? 'bg-[#4C8C3C] text-white' 
+                      : 'bg-[#1A1A1A] text-[#EDEDF1] active:scale-95'
+                  }`}
+                >
+                  {isSent ? (
+                    <Check size={16} strokeWidth={2.5} />
+                  ) : (
+                    <UserPlus size={16} strokeWidth={2} />
+                  )}
+                </button>
+              </div>
+            );
+          })
+        ) : searchQuery.length >= 1 ? (
           <div className="text-center py-12 text-black/40 text-sm font-light">
             No people found matching "{searchQuery}"
+          </div>
+        ) : (
+          <div className="text-center py-12 text-black/40 text-sm font-light">
+            Type a name or email to search
           </div>
         )}
       </div>

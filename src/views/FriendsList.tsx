@@ -1,27 +1,67 @@
 import React, { useState, useEffect } from 'react';
 import { ArrowUpRight, ArrowDownLeft, Check, X, UserPlus } from 'lucide-react';
 import { IncomingFriendRequestModal } from '../components/IncomingFriendRequestModal';
+import { supabase } from '../lib/supabase';
 import type { Friend } from '../data/mockData';
 
 interface FriendsListProps {
-  friendsList: Friend[];
-  onApproveRequest: (friendId: string) => void;
-  onDeclineRequest: (friendId: string) => void;
+  session: any;
   onFriendClick?: (friendId: string) => void;
   onSearchClick?: () => void;
 }
 
 export function FriendsList({
-  friendsList,
-  onApproveRequest,
-  onDeclineRequest,
+  session,
   onFriendClick,
   onSearchClick,
 }: FriendsListProps) {
   const [showHeader, setShowHeader] = useState(true);
   const [activeTab, setActiveTab] = useState<'all' | 'pending'>('all');
   const [incomingFriend, setIncomingFriend] = useState<Friend | null>(null);
+  const [friendsList, setFriendsList] = useState<Friend[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const lastScrollY = React.useRef(0);
+
+  useEffect(() => {
+    fetchFriends();
+  }, [session]);
+
+  const fetchFriends = async () => {
+    setIsLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('friends')
+        .select(`
+          *,
+          friend:profiles!friends_friend_id_fkey (
+            id,
+            full_name,
+            avatar_url,
+            email
+          )
+        `)
+        .eq('user_id', session.user.id);
+      
+      if (error) throw error;
+      
+      // Transform to Friend format
+      const friends: Friend[] = data?.map((f: any) => ({
+        id: f.friend.id,
+        name: f.friend.full_name || 'Unknown',
+        username: f.friend.email || '',
+        color: '#D9D9D9',
+        balance: 0,
+        isPendingRequest: f.status === 'pending',
+      })) || [];
+      
+      setFriendsList(friends);
+    } catch (err) {
+      console.error('Error fetching friends:', err);
+      setFriendsList([]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   useEffect(() => {
     const onScroll = () => {
@@ -34,14 +74,33 @@ export function FriendsList({
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
-  const friends = friendsList
-    .filter(f => f.id !== 'me')
-    .filter(f => activeTab === 'pending' ? f.isPendingRequest : !f.isPendingRequest);
-
-  const pendingCount = friendsList.filter(f => f.id !== 'me' && f.isPendingRequest).length;
-
-  const handleApprove = (id: string) => { onApproveRequest(id); setIncomingFriend(null); };
-  const handleDecline = (id: string) => { onDeclineRequest(id); setIncomingFriend(null); };
+  const handleApprove = async (id: string) => { 
+    try {
+      await supabase
+        .from('friends')
+        .update({ status: 'accepted' })
+        .eq('user_id', session.user.id)
+        .eq('friend_id', id);
+      setIncomingFriend(null);
+      fetchFriends();
+    } catch (err) {
+      console.error('Error approving friend:', err);
+    }
+  };
+  
+  const handleDecline = async (id: string) => { 
+    try {
+      await supabase
+        .from('friends')
+        .delete()
+        .eq('user_id', session.user.id)
+        .eq('friend_id', id);
+      setIncomingFriend(null);
+      fetchFriends();
+    } catch (err) {
+      console.error('Error declining friend:', err);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-[#EDEDF1] pb-40 pt-[128px] font-['Sora']">
@@ -62,7 +121,7 @@ export function FriendsList({
         <div className="px-5 pb-3 flex gap-2">
           {[
             { key: 'all' as const, label: 'All' },
-            { key: 'pending' as const, label: `Pending${pendingCount > 0 ? ` · ${pendingCount}` : ''}` },
+            { key: 'pending' as const, label: `Pending${friendsList.filter(f => f.isPendingRequest).length > 0 ? ` · ${friendsList.filter(f => f.isPendingRequest).length}` : ''}` },
           ].map(t => (
             <button
               key={t.key}
@@ -82,14 +141,20 @@ export function FriendsList({
 
       {/* ── Friend rows ── */}
       <div className="max-w-[480px] mx-auto px-4">
-        {friends.length === 0 ? (
+        {isLoading ? (
+          <div className="text-center mt-16 text-[13px] text-[#1A1A1A]/40">
+            Loading friends...
+          </div>
+        ) : friendsList.filter(f => activeTab === 'pending' ? f.isPendingRequest : !f.isPendingRequest).length === 0 ? (
           <div className="text-center mt-16 text-[13px] text-[#1A1A1A]/40">
             {activeTab === 'pending' ? 'No pending requests.' : 'No friends yet.'}
           </div>
         ) : (
           <div className="bg-white rounded-[22px] overflow-hidden shadow-[0_1px_6px_rgba(0,0,0,0.07)]">
-            {friends.map((friend, i) => {
-              const isLast = i === friends.length - 1;
+            {friendsList
+              .filter(f => activeTab === 'pending' ? f.isPendingRequest : !f.isPendingRequest)
+              .map((friend, i, arr) => {
+              const isLast = i === arr.length - 1;
               return (
                 <div key={friend.id}>
                   <div

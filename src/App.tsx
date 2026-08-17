@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Home } from './views/Home';
 import { BillsList } from './views/BillsList';
 import { BillDetail } from './views/BillDetail';
@@ -7,44 +7,49 @@ import { FriendDetail } from './views/FriendDetail';
 import { SearchFriends } from './views/SearchFriends';
 import { BottomNav } from './components/BottomNav';
 import { IncomingBillModal } from './components/IncomingBillModal';
-import { MOCK_BILLS, MOCK_FRIENDS } from './data/mockData';
-import type { Bill } from './data/mockData';
+import { Login } from './views/Login';
+import { Profile } from './views/Profile';
+import { supabase } from './lib/supabase';
 
 function App() {
   const [currentTab, setCurrentTab] = useState('home');
   const [currentView, setCurrentView] = useState('list'); // 'list' or 'detail' within Bills tab
-  const [bills, setBills] = useState<Bill[]>(MOCK_BILLS);
   const [selectedBillId, setSelectedBillId] = useState<string | null>(null);
   
   // Friends tab state
-  const [friends, setFriends] = useState<Friend[]>(MOCK_FRIENDS);
   const [friendsView, setFriendsView] = useState<'list' | 'detail' | 'search'>('list');
   const [selectedFriendId, setSelectedFriendId] = useState<string | null>(null);
 
-  const handleAddBill = (newBill: Bill) => {
-    setBills([newBill, ...bills]);
-  };
+  // Auth state
+  const [session, setSession] = useState<any>(null);
+  const [isInitializing, setIsInitializing] = useState(true);
 
-  const handleAddPendingFriend = (newFriend: Friend) => {
-    setFriends(prev => {
-      const exists = prev.find(f => f.id === newFriend.id);
-      if (exists) {
-        return prev.map(f => f.id === newFriend.id ? { ...f, isPendingRequest: true } : f);
-      }
-      return [...prev, { ...newFriend, isPendingRequest: true }];
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setIsInitializing(false);
     });
-  };
 
-  const handleApproveFriend = (friendId: string) => {
-    setFriends(prev => prev.map(f => f.id === friendId ? { ...f, isPendingRequest: false } : f));
-  };
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+    });
 
-  const handleDeclineFriend = (friendId: string) => {
-    setFriends(prev => prev.filter(f => f.id !== friendId));
-  };
+    return () => subscription.unsubscribe();
+  }, []);
 
-  const selectedBill = bills.find(b => b.id === selectedBillId) || bills[0];
-  const selectedFriend = friends.find(f => f.id === selectedFriendId);
+  // Removed handleAddBill, handleApproveFriend, etc. since data is fetched from DB
+
+  // removed selectedBill and selectedFriend lookups
+
+  if (isInitializing) {
+    return <div className="min-h-screen bg-[#EDEDF1] flex items-center justify-center"><div className="text-black">Loading...</div></div>;
+  }
+
+  if (!session) {
+    return <Login />;
+  }
 
   return (
     <div id="root-container" className="max-w-[480px] mx-auto w-full min-h-screen bg-[#EDEDF1] relative shadow-sm">
@@ -54,12 +59,12 @@ function App() {
       {currentTab === 'friends' && (
         friendsView === 'search' ? (
           <SearchFriends 
+            session={session}
             onBack={() => setFriendsView('list')} 
-            onAddFriend={handleAddPendingFriend}
           />
-        ) : friendsView === 'detail' && selectedFriend ? (
+        ) : friendsView === 'detail' && selectedFriendId ? (
           <FriendDetail 
-            friend={selectedFriend}
+            friendId={selectedFriendId}
             onBack={() => {
               setFriendsView('list');
               setSelectedFriendId(null);
@@ -72,9 +77,7 @@ function App() {
           />
         ) : (
           <FriendsList 
-            friendsList={friends}
-            onApproveRequest={handleApproveFriend}
-            onDeclineRequest={handleDeclineFriend}
+            session={session}
             onFriendClick={(id) => {
               setSelectedFriendId(id);
               setFriendsView('detail');
@@ -87,8 +90,6 @@ function App() {
       {currentTab === 'bills' && (
         currentView === 'list' ? (
           <BillsList 
-            bills={bills} 
-            onAddBill={handleAddBill} 
             onBillClick={(id) => {
               setSelectedBillId(id);
               setCurrentView('detail');
@@ -96,19 +97,16 @@ function App() {
           />
         ) : (
           <BillDetail 
-            bill={selectedBill}
+            billId={selectedBillId}
             onBack={() => {
               setCurrentView('list');
               setSelectedBillId(null);
             }} 
-            onSettle={() => {
-              setBills(bills.map(b => b.id === selectedBill?.id ? { ...b, status: 'Settled' } : b));
-              setCurrentView('list');
-              setSelectedBillId(null);
-            }}
           />
         )
       )}
+
+      {currentTab === 'profile' && <Profile session={session} />}
 
       {/* Shared Bottom Navigation */}
       <BottomNav 
