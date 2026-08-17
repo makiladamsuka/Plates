@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { NewBillModal } from '../components/NewBillModal';
+import { IncomingBillModal } from '../components/IncomingBillModal';
 import { api } from '../services/api';
+import { supabase } from '../lib/supabase';
 import type { Bill } from '../data/mockData';
 
 const getTagColor = (category: string) => {
@@ -12,8 +14,10 @@ const getTagColor = (category: string) => {
   }
 };
 
-const formatTime = (ts: number) => {
-  const date = new Date(ts);
+const formatTime = (ts: any) => {
+  if (!ts) return 'Recent';
+  const date = new Date(typeof ts === 'string' && !isNaN(Number(ts)) ? Number(ts) : ts);
+  if (isNaN(date.getTime())) return 'Recent';
   const now = new Date();
   
   if (date.toDateString() === now.toDateString()) {
@@ -32,9 +36,14 @@ type SortKey = 'all' | 'highest' | 'lowest' | 'oldest';
 export function BillsList({ onBillClick }: { onBillClick?: (id: string) => void }) {
   const [bills, setBills] = useState<any[]>([]);
   const [isNewBillModalOpen, setIsNewBillModalOpen] = useState(false);
+  const [selectedBillForDetails, setSelectedBillForDetails] = useState<any>(null);
   const [sortKey, setSortKey] = useState<SortKey>('all');
+  const [userId, setUserId] = useState<string>('');
   
   const fetchBills = () => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) setUserId(session.user.id);
+    });
     api.getBills().then(setBills).catch(console.error);
   };
 
@@ -62,10 +71,12 @@ export function BillsList({ onBillClick }: { onBillClick?: (id: string) => void 
   }, []);
 
   const sortedBills = [...bills].sort((a, b) => {
+    const timeA = new Date(a.created_at || a.createdAt || Date.now()).getTime();
+    const timeB = new Date(b.created_at || b.createdAt || Date.now()).getTime();
     if (sortKey === 'highest') return b.total - a.total;
     if (sortKey === 'lowest') return a.total - b.total;
-    if (sortKey === 'oldest') return a.createdAt - b.createdAt;
-    return b.createdAt - a.createdAt;
+    if (sortKey === 'oldest') return timeA - timeB;
+    return timeB - timeA;
   });
 
   return (
@@ -79,9 +90,7 @@ export function BillsList({ onBillClick }: { onBillClick?: (id: string) => void 
       >
         <div className="max-w-[480px] mx-auto">
           <div className="px-6 pt-10 pb-4 flex justify-between items-center h-[88px]">
-            {/* Title styled with elegant serif display font matching the user's inspiration image */}
             <h1 className="text-black text-5xl font-bold font-display tracking-tight leading-none">Bills</h1>
-            {/* Search Icon */}
             <div className="w-6 h-6 flex items-center justify-center">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-black">
                 <circle cx="11" cy="11" r="8" />
@@ -101,7 +110,7 @@ export function BillsList({ onBillClick }: { onBillClick?: (id: string) => void 
               <button 
                 key={t.key}
                 onClick={() => setSortKey(t.key as SortKey)}
-                className={`h-8 px-5 rounded-[35px] text-lg font-semibold whitespace-nowrap flex items-center justify-center transition-colors ${
+                className={`h-8 px-5 rounded-[35px] text-lg font-semibold whitespace-nowrap flex items-center justify-center transition-colors cursor-pointer ${
                   sortKey === t.key ? 'bg-[#1A1A1A] text-[#EDEDF1]' : 'bg-[#D9D9D9] text-black'
                 }`}
               >
@@ -115,12 +124,18 @@ export function BillsList({ onBillClick }: { onBillClick?: (id: string) => void 
       {/* Main Content */}
       <div className="max-w-[480px] mx-auto">
         
-        {/* Bills Cards - Balanced, spacious card layout with comfortable padding */}
+        {/* Bills Cards */}
         <div className="px-5 mt-2 flex flex-col gap-3.5">
           {sortedBills.map(bill => (
             <div 
               key={bill.id}
-              onClick={() => onBillClick?.(bill.id)}
+              onClick={() => {
+                if (onBillClick) {
+                  onBillClick(bill.id);
+                } else {
+                  setSelectedBillForDetails(bill);
+                }
+              }}
               className="w-full bg-[#D9D9D9] rounded-[30px] px-6 py-4.5 flex flex-col gap-3 shadow-sm cursor-pointer hover:bg-zinc-300/80 transition-colors"
             >
               {/* Top Row: Title + Status Pill */}
@@ -141,7 +156,7 @@ export function BillsList({ onBillClick }: { onBillClick?: (id: string) => void 
                   <span className={`${getTagColor(bill.category)} text-black px-3 py-1 rounded-full font-medium text-xs`}>
                     {bill.category}
                   </span>
-                  <span className="text-black/60 font-normal text-xs">{formatTime(bill.createdAt)}</span>
+                  <span className="text-black/60 font-normal text-xs">{formatTime(bill.created_at || bill.createdAt)}</span>
                 </div>
                 <span className="text-[#1A1A1A] text-2xl font-semibold">LKR {bill.total}</span>
               </div>
@@ -158,7 +173,7 @@ export function BillsList({ onBillClick }: { onBillClick?: (id: string) => void 
         <div className="w-full max-w-[480px] relative">
           <button 
             onClick={() => setIsNewBillModalOpen(true)}
-            className="absolute bottom-0 right-6 w-20 h-20 bg-[#1A1A1A] rounded-full flex items-center justify-center shadow-lg pointer-events-auto active:scale-95 transition-transform"
+            className="absolute bottom-0 right-6 w-20 h-20 bg-[#1A1A1A] rounded-full flex items-center justify-center shadow-lg pointer-events-auto active:scale-95 transition-transform cursor-pointer"
           >
             <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-[#EDEDF1]">
               <line x1="12" y1="5" x2="12" y2="19" />
@@ -176,6 +191,15 @@ export function BillsList({ onBillClick }: { onBillClick?: (id: string) => void 
           setIsNewBillModalOpen(false);
           fetchBills();
         }}
+      />
+
+      {/* Bill Details Modal (Read-Only Sheet matching screenshot design) */}
+      <IncomingBillModal 
+        isOpen={!!selectedBillForDetails}
+        onClose={() => setSelectedBillForDetails(null)}
+        bill={selectedBillForDetails}
+        userId={userId}
+        readOnly={true}
       />
     </div>
   );
