@@ -3,9 +3,10 @@ import { Home } from './views/Home';
 import { BillsList } from './views/BillsList';
 import { BillDetail } from './views/BillDetail';
 import { FriendsList } from './views/FriendsList';
+import { FriendDetail } from './views/FriendDetail';
 import { BottomNav } from './components/BottomNav';
 import { IncomingBillModal } from './components/IncomingBillModal';
-import { MOCK_BILLS } from './data/mockData';
+import { MOCK_BILLS, MOCK_FRIENDS } from './data/mockData';
 import type { Bill } from './data/mockData';
 
 function App() {
@@ -13,19 +14,32 @@ function App() {
   const [currentView, setCurrentView] = useState('list'); // 'list' or 'detail' within Bills tab
   const [bills, setBills] = useState<Bill[]>(MOCK_BILLS);
   const [selectedBillId, setSelectedBillId] = useState<string | null>(null);
+  
+  // Friends tab state
+  const [selectedFriendId, setSelectedFriendId] = useState<string | null>(null);
 
   const handleAddBill = (newBill: Bill) => {
     setBills([newBill, ...bills]);
   };
 
   const selectedBill = bills.find(b => b.id === selectedBillId) || bills[0];
+  const selectedFriend = MOCK_FRIENDS.find(f => f.id === selectedFriendId);
 
   return (
     <div id="root-container" className="max-w-[480px] mx-auto w-full min-h-screen bg-[#EDEDF1] relative shadow-sm">
       {/* Views */}
       {currentTab === 'home' && <Home />}
       
-      {currentTab === 'friends' && <FriendsList />}
+      {currentTab === 'friends' && (
+        selectedFriendId && selectedFriend ? (
+          <FriendDetail 
+            friend={selectedFriend}
+            onBack={() => setSelectedFriendId(null)}
+          />
+        ) : (
+          <FriendsList onFriendClick={(id) => setSelectedFriendId(id)} />
+        )
+      )}
       
       {currentTab === 'bills' && (
         currentView === 'list' ? (

@@ -3,7 +3,11 @@ import { Search, ArrowUpRight, ArrowDownLeft, Check, X } from 'lucide-react';
 import { MOCK_FRIENDS } from '../data/mockData';
 import type { Friend } from '../data/mockData';
 
-export function FriendsList() {
+interface FriendsListProps {
+  onFriendClick?: (friendId: string) => void;
+}
+
+export function FriendsList({ onFriendClick }: FriendsListProps) {
   const [showHeader, setShowHeader] = useState(true);
   const [activeTab, setActiveTab] = useState<'all' | 'pending'>('all');
   const lastScrollY = React.useRef(0);
@@ -78,6 +82,7 @@ export function FriendsList() {
           {friends.map((friend, i) => (
             <div 
               key={friend.id}
+              onClick={() => onFriendClick?.(friend.id)}
               className="w-full h-[100px] bg-[#D9D9D9] rounded-[35px] px-5 relative flex items-center justify-between shadow-sm cursor-pointer hover:bg-zinc-300/80 transition-colors"
             >
               {/* Left Side: Avatar & Details */}
