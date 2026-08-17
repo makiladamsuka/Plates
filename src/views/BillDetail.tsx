@@ -99,17 +99,29 @@ export function BillDetail({ onBack, billId }: BillDetailProps) {
 
       {/* Friends List Section */}
       <div className="px-6 mt-6 flex flex-col gap-3 relative">
-        {bill.participants.map((participant, i) => (
-          <div key={i} className="w-full h-[59px] bg-[#D9D9D9] rounded-[30px] px-3 flex items-center shadow-sm relative">
-             <div className="w-[35px] h-[35px] opacity-30 bg-[#F6D6DA] rounded-full absolute left-3" />
-             <div className="flex justify-between w-full pl-12 pr-4 z-10 items-center">
-               <span className="text-black text-[14px] font-normal">
-                 {(participant.friendId === 'me' || participant.friend_id === userId) ? 'You' : `Friend ${(participant.friendId || participant.friend_id || '').substring(0, 4)}`}
-               </span>
-               <span className="text-[#1A1A1A] text-[20px] font-semibold">LKR {participant.share.toFixed(0)}</span>
-             </div>
-          </div>
-        ))}
+        {bill.participants.map((participant: any, i: number) => {
+          const isPMe = participant.friendId === 'me' || participant.friend_id === userId || participant.friendId === userId;
+          const pName = participant.full_name || participant.profile?.full_name || (isPMe ? 'You' : `Friend ${(participant.friendId || participant.friend_id || '').substring(0, 4)}`);
+          const pAvatar = participant.avatar_url || participant.profile?.avatar_url;
+
+          return (
+            <div key={i} className="w-full h-[59px] bg-[#D9D9D9] rounded-[30px] px-3 flex items-center shadow-sm relative">
+              {pAvatar ? (
+                <img src={pAvatar} alt="" className="w-9 h-9 rounded-full object-cover absolute left-3 shrink-0" />
+              ) : (
+                <div className="w-9 h-9 bg-zinc-400 rounded-full absolute left-3 flex items-center justify-center text-white text-xs font-bold shrink-0">
+                  {(pName || 'P')[0].toUpperCase()}
+                </div>
+              )}
+              <div className="flex justify-between w-full pl-14 pr-4 z-10 items-center">
+                <span className="text-black text-[14px] font-medium truncate">
+                  {pName} {isPMe ? '(You)' : ''}
+                </span>
+                <span className="text-[#1A1A1A] text-[20px] font-semibold">LKR {Number(participant.share || 0).toFixed(0)}</span>
+              </div>
+            </div>
+          );
+        })}
       </div>
 
       {/* Total Amount */}

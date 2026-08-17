@@ -27,15 +27,42 @@ app.get('/api/bills', async (req, res) => {
     if (error) throw error;
 
     // Filter bills where user is a participant if userId is provided
-    let filteredData = data;
+    let filteredData = data || [];
     if (userId) {
-      filteredData = (data || []).filter((bill: any) => 
+      filteredData = filteredData.filter((bill: any) => 
         bill.creator_id === userId ||
         (bill.participants || []).some((p: any) => p.friend_id === userId)
       );
     }
 
-    res.json(filteredData || []);
+    // Enrich participants with profile information (full_name, avatar_url, email)
+    const allFriendIds = Array.from(new Set(
+      filteredData.flatMap((b: any) => (b.participants || []).map((p: any) => p.friend_id))
+    ));
+
+    let profilesMap: Record<string, any> = {};
+    if (allFriendIds.length > 0) {
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('id, full_name, avatar_url, email')
+        .in('id', allFriendIds);
+      
+      (profiles || []).forEach((prof: any) => {
+        profilesMap[prof.id] = prof;
+      });
+    }
+
+    const enrichedBills = filteredData.map((b: any) => ({
+      ...b,
+      participants: (b.participants || []).map((p: any) => ({
+        ...p,
+        profile: profilesMap[p.friend_id] || null,
+        full_name: profilesMap[p.friend_id]?.full_name || null,
+        avatar_url: profilesMap[p.friend_id]?.avatar_url || null
+      }))
+    }));
+
+    res.json(enrichedBills);
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }
@@ -45,14 +72,39 @@ app.get('/api/bills', async (req, res) => {
 app.get('/api/bills/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const { data, error } = await supabase
+    const { data: bill, error } = await supabase
       .from('bills')
       .select('*, participants(*)')
       .eq('id', id)
       .single();
       
     if (error) throw error;
-    res.json(data);
+
+    // Enrich participants with profile information
+    const friendIds = (bill.participants || []).map((p: any) => p.friend_id);
+    let profilesMap: Record<string, any> = {};
+    if (friendIds.length > 0) {
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('id, full_name, avatar_url, email')
+        .in('id', friendIds);
+      
+      (profiles || []).forEach((prof: any) => {
+        profilesMap[prof.id] = prof;
+      });
+    }
+
+    const enrichedBill = {
+      ...bill,
+      participants: (bill.participants || []).map((p: any) => ({
+        ...p,
+        profile: profilesMap[p.friend_id] || null,
+        full_name: profilesMap[p.friend_id]?.full_name || null,
+        avatar_url: profilesMap[p.friend_id]?.avatar_url || null
+      }))
+    };
+
+    res.json(enrichedBill);
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }

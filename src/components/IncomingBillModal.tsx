@@ -175,21 +175,27 @@ export function IncomingBillModal({
                 const isPMe = p.friend_id === userId || p.friendId === userId;
                 const isPCreator = bill.creator_id === (p.friend_id || p.friendId);
                 const isPPaid = isPCreator || p.paid;
+                const pName = isPMe ? 'You' : (p.full_name || p.profile?.full_name || `Friend ${(p.friend_id || p.friendId || '').substring(0, 4)}`);
+                const pAvatar = p.avatar_url || p.profile?.avatar_url;
 
                 return (
                   <div key={i} className="w-full bg-zinc-300/10 rounded-[20px] p-3 flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-zinc-600 flex items-center justify-center text-white text-xs font-bold shrink-0">
-                        {isPMe ? 'You' : 'P'}
-                      </div>
-                      <div className="flex flex-col">
-                        <span className="text-white text-sm font-medium">
-                          {isPMe ? 'You' : `Friend ${(p.friend_id || p.friendId || '').substring(0, 4)}`}
+                      {pAvatar ? (
+                        <img src={pAvatar} alt="" className="w-8 h-8 rounded-full object-cover shrink-0" />
+                      ) : (
+                        <div className="w-8 h-8 rounded-full bg-zinc-600 flex items-center justify-center text-white text-xs font-bold shrink-0">
+                          {(pName || 'P')[0].toUpperCase()}
+                        </div>
+                      )}
+                      <div className="flex flex-col min-w-0">
+                        <span className="text-white text-sm font-medium truncate">
+                          {pName}
                         </span>
                         {isPCreator && <span className="text-amber-300 text-[10px]">Creator (Paid upfront)</span>}
                       </div>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 shrink-0 ml-2">
                       <span className="text-white text-base font-semibold">LKR {p.share}</span>
                       {isPPaid ? (
                         <span className="text-[10px] bg-green-900/60 text-green-300 px-2 py-0.5 rounded-full font-bold">Paid</span>
