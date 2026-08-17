@@ -105,32 +105,32 @@ export function BillsList({ bills, onAddBill, onBillClick }: { bills: Bill[], on
       {/* Main Content */}
       <div className="max-w-[480px] mx-auto">
         
-        {/* Bills Cards - Restored to exact #D9D9D9 rounded pill style */}
-        <div className="px-5 mt-2 flex flex-col gap-4">
+        {/* Bills Cards - Thin, sleek compact cards matching reference layout */}
+        <div className="px-5 mt-2 flex flex-col gap-2.5">
           {sortedBills.map(bill => (
             <div 
               key={bill.id}
               onClick={() => onBillClick?.(bill.id)}
-              className="w-full bg-[#D9D9D9] rounded-[35px] p-6 relative flex flex-col gap-2 shadow-sm cursor-pointer hover:bg-zinc-300/80 transition-colors"
+              className="w-full min-h-[64px] bg-[#D9D9D9] rounded-[24px] px-5 py-3 flex items-center justify-between shadow-sm cursor-pointer hover:bg-zinc-300/80 transition-colors"
             >
-              <div className="flex justify-between items-start">
-                <h2 className="text-[#1A1A1A] text-2xl font-semibold leading-tight">{bill.title}</h2>
-                {/* Status Pill */}
-                <div className={`rounded-[30px] px-4 py-1.5 flex items-center justify-center shrink-0 ${bill.status === 'Pending' ? 'bg-[#F5C744]' : 'bg-[#4C8C3C]'}`}>
-                  <span className={`text-[13px] font-semibold ${bill.status === 'Pending' ? 'text-black' : 'text-white'}`}>{bill.status}</span>
+              {/* Left Column: Title + Meta (Tag & Date) */}
+              <div className="flex flex-col gap-1 min-w-0 pr-3">
+                <h2 className="text-[#1A1A1A] text-base font-semibold leading-snug truncate">{bill.title}</h2>
+                <div className="flex items-center gap-2">
+                  <span className={`${getTagColor(bill.category)} text-black px-2.5 py-0.5 rounded-full font-medium text-[11px]`}>
+                    {bill.category}
+                  </span>
+                  <span className="text-black/60 font-normal text-xs">{formatTime(bill.createdAt)}</span>
                 </div>
               </div>
               
-              <div className="flex items-center gap-3 mt-1">
-                {/* Tag */}
-                <div className={`${getTagColor(bill.category)} rounded-[30px] px-3 py-1 flex items-center justify-center`}>
-                  <span className="text-black text-base font-normal">{bill.category}</span>
+              {/* Right Column: Amount + Status Pill */}
+              <div className="flex items-center gap-2.5 shrink-0">
+                <span className="text-[#1A1A1A] text-base font-bold whitespace-nowrap">LKR {bill.total}</span>
+                <div className={`rounded-full px-2.5 py-1 flex items-center justify-center ${bill.status === 'Pending' ? 'bg-[#F5C744] text-black' : 'bg-[#4C8C3C] text-white'}`}>
+                  <span className="text-[11px] font-semibold">{bill.status}</span>
                 </div>
               </div>
-              
-              <div className="text-black text-base font-normal mt-1">{formatTime(bill.createdAt)}</div>
-              
-              <div className="text-[#1A1A1A] text-3xl font-semibold mt-2">LKR {bill.total}</div>
             </div>
           ))}
           {bills.length === 0 && (
