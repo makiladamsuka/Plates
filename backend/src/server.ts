@@ -122,20 +122,20 @@ app.post('/api/bills/:id/accept', async (req, res) => {
     // Update participant accepted status (paid remains false until settled)
     const { data, error } = await supabase
       .from('participants')
-      .update({ accepted: true })
+      .update({ accepted: true, paid: false })
       .eq('bill_id', id)
       .eq('friend_id', userId)
       .select();
       
     if (error) throw error;
 
-    // Update overall bill status to Accepted
+    // Bill status remains Pending until settled
     await supabase
       .from('bills')
-      .update({ status: 'Accepted' })
+      .update({ status: 'Pending' })
       .eq('id', id);
 
-    res.json({ message: 'Bill accepted', data, status: 'Accepted' });
+    res.json({ message: 'Bill accepted', data, status: 'Pending' });
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }

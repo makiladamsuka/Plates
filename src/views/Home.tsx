@@ -139,24 +139,26 @@ export function Home({
           </h2>
 
           <div className="flex flex-col gap-3">
-            {/* Incoming Bill Requests awaiting approval */}
+            {/* Bills needing settlement */}
             {bills.filter(b => {
-              const myPart = (b.participants || []).find((p: any) => p.friend_id === userId);
-              return myPart && myPart.accepted === false;
+              const myPart = (b.participants || []).find((p: any) => p.friend_id === userId || p.friendId === userId);
+              const isCreator = b.creator_id === userId;
+              const isPaid = isCreator || myPart?.paid === true;
+              return !isPaid && b.status !== 'Settled';
             }).map(bill => (
               <div 
-                key={`incoming-${bill.id}`}
+                key={`unsettled-${bill.id}`}
                 onClick={() => setSelectedIncomingBill(bill)}
-                className="w-full bg-[#F5C744]/20 border border-[#F5C744] rounded-[25px] p-4 flex items-center justify-between shadow-sm cursor-pointer hover:bg-[#F5C744]/30 transition-colors"
+                className="w-full bg-[#D9D9D9] rounded-[25px] p-4 flex items-center justify-between shadow-sm cursor-pointer hover:bg-zinc-300/80 transition-colors"
               >
                 <div className="flex flex-col gap-1 min-w-0 pr-2">
                   <span className="text-[#1A1A1A] text-base font-semibold truncate">{bill.title}</span>
-                  <span className="text-black/70 text-xs font-medium">Incoming Bill Request · LKR {bill.total}</span>
+                  <span className="text-black/60 text-xs font-normal">Pending split · LKR {bill.total}</span>
                 </div>
 
                 <div className="flex items-center gap-2 shrink-0">
-                  <span className="bg-[#1A1A1A] text-amber-300 text-xs font-semibold px-3 py-1.5 rounded-full">
-                    Review
+                  <span className="bg-[#F5C744] text-black text-xs font-semibold px-4 py-1.5 rounded-full">
+                    Settle
                   </span>
                   <ChevronRight size={18} className="text-black/40" />
                 </div>
@@ -190,28 +192,12 @@ export function Home({
               </div>
             ))}
 
-            {/* Pending Bills */}
-            {pendingBills.slice(0, 2).map(bill => (
-              <div 
-                key={bill.id}
-                onClick={() => onBillClick?.(bill.id)}
-                className="w-full bg-[#D9D9D9] rounded-[25px] p-4 flex items-center justify-between shadow-sm cursor-pointer hover:bg-zinc-300/80 transition-colors"
-              >
-                <div className="flex flex-col gap-1 min-w-0 pr-2">
-                  <span className="text-[#1A1A1A] text-base font-semibold truncate">{bill.title}</span>
-                  <span className="text-black/60 text-xs font-normal">Pending split · LKR {bill.total}</span>
-                </div>
-
-                <div className="flex items-center gap-2 shrink-0">
-                  <span className="bg-[#F5C744] text-black text-xs font-semibold px-3 py-1.5 rounded-full">
-                    Settle
-                  </span>
-                  <ChevronRight size={18} className="text-black/40" />
-                </div>
-              </div>
-            ))}
-
-            {pendingFriendRequests.length === 0 && pendingBills.length === 0 && bills.filter(b => (b.participants || []).some((p: any) => p.friend_id === userId && p.accepted === false)).length === 0 && (
+            {pendingFriendRequests.length === 0 && bills.filter(b => {
+              const myPart = (b.participants || []).find((p: any) => p.friend_id === userId || p.friendId === userId);
+              const isCreator = b.creator_id === userId;
+              const isPaid = isCreator || myPart?.paid === true;
+              return !isPaid && b.status !== 'Settled';
+            }).length === 0 && (
               <div className="bg-[#D9D9D9]/50 rounded-[25px] p-6 text-center text-black/50 text-sm">
                 All caught up! No pending bills or requests.
               </div>
@@ -228,21 +214,18 @@ export function Home({
             <span className="text-xs font-medium text-black/40">Swipe →</span>
           </div>
 
-          {/* -mx-5 breaks out of the px-5 parent padding, paddingLeft restores card alignment */}
           <div
             className="-mx-5 flex gap-3.5 overflow-x-auto no-scrollbar pb-4 pt-1 snap-x snap-mandatory"
             style={{ paddingLeft: '20px' }}
           >
-            {bills.filter(b => {
-              const myPart = (b.participants || []).find((p: any) => p.friend_id === userId);
-              return !myPart || myPart.accepted !== false;
-            }).map((bill) => {
+            {bills.map((bill) => {
               const tagColors: Record<string, { bg: string, text: string }> = {
                 'Restaurant': { bg: '#F6D6DA', text: '#1A1A1A' },
                 'Grocery': { bg: '#D7ECD1', text: '#1A1A1A' },
                 'Entertainment': { bg: '#CDE1FF', text: '#1A1A1A' },
               };
               const tagStyle = tagColors[bill.category] || { bg: '#E5E7EB', text: '#1A1A1A' };
+              const displayStatus = bill.status === 'Settled' ? 'Settled' : 'Pending';
 
               return (
                 <div
@@ -270,11 +253,11 @@ export function Home({
                   <div className="flex justify-between items-end border-t border-black/10 pt-2.5">
                     <div className="flex flex-col gap-1">
                       <span
-                        className={`text-[10px] font-bold px-2 py-0.5 rounded-full w-fit ${
-                          bill.status === 'Pending' ? 'bg-[#F5C744] text-black' : 'bg-[#4C8C3C] text-white'
+                        className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full w-fit ${
+                          displayStatus === 'Settled' ? 'bg-[#4C8C3C] text-white' : 'bg-[#F5C744] text-black'
                         }`}
                       >
-                        {bill.status}
+                        {displayStatus}
                       </span>
                       <span className="text-[#1A1A1A] text-base font-extrabold tracking-tight">
                         LKR {bill.total}
@@ -286,7 +269,7 @@ export function Home({
                           key={i}
                           className="w-6 h-6 rounded-full border border-[#EDEDF1] bg-black/20 flex items-center justify-center text-[9px] font-bold text-black shrink-0"
                         >
-                          {p.friend_id === userId ? 'Y' : 'P'}
+                          {(p.friend_id === userId || p.friendId === userId) ? 'Y' : 'P'}
                         </div>
                       ))}
                     </div>
@@ -294,7 +277,6 @@ export function Home({
                 </div>
               );
             })}
-            {/* Trailing spacer */}
             <div className="shrink-0" style={{ width: '20px' }} />
           </div>
         </div>
