@@ -64,17 +64,17 @@ export function ConfirmTransferModal({ isOpen, onClose, onConfirm, amount, usern
   };
 
   return (
-    <div className="fixed inset-0 z-[60] flex justify-center items-end pointer-events-none pb-6 px-4">
-      <div className="w-full max-w-[448px] relative flex flex-col justify-end pointer-events-none">
+    <div className="fixed inset-0 z-[60] flex justify-center pointer-events-none">
+      <div className="w-full max-w-[480px] h-full relative flex flex-col justify-end pointer-events-none">
         
         {/* Backdrop */}
         <div 
-          className="fixed inset-0 bg-black/40 pointer-events-auto transition-opacity animate-in fade-in duration-300" 
+          className="absolute inset-0 bg-black/40 pointer-events-auto transition-opacity animate-in fade-in duration-300" 
           onClick={onClose}
         />
         
         {/* Modal Container */}
-        <div className="w-full bg-[#1A1A1A] rounded-[35px] p-6 relative flex flex-col items-center pointer-events-auto animate-in slide-in-from-bottom-8 duration-300 shadow-2xl h-[422px]">
+        <div className="w-full bg-[#1A1A1A] rounded-t-[35px] p-6 relative flex flex-col items-center pointer-events-auto animate-in slide-in-from-bottom-32 duration-300 shadow-2xl h-[422px]">
           
           {/* Header Content */}
           <div className="mt-4 text-center">
