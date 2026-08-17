@@ -1,8 +1,26 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { NewBillModal } from '../components/NewBillModal';
+import { api } from '../services/api';
 
-export function BillsList({ onBillClick }: { onBillClick?: () => void }) {
+export function BillsList({ onBillClick }: { onBillClick?: (id: string) => void }) {
   const [isNewBillModalOpen, setIsNewBillModalOpen] = useState(false);
+  const [bills, setBills] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  const fetchBills = async () => {
+    try {
+      const data = await api.getBills();
+      setBills(data || []);
+    } catch (error) {
+      console.error('Failed to fetch bills:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchBills();
+  }, []);
 
   return (
     <div className="min-h-screen bg-gray-100 pb-32">
@@ -36,54 +54,42 @@ export function BillsList({ onBillClick }: { onBillClick?: () => void }) {
 
       {/* Bills Cards */}
       <div className="px-5 mt-6 flex flex-col gap-4">
-        
-        {/* Card 1: Dinner at Senu */}
-        <div 
-          onClick={onBillClick}
-          className="w-full bg-zinc-300 rounded-[35px] p-6 relative flex flex-col gap-2 shadow-sm cursor-pointer hover:bg-zinc-200 transition-colors"
-        >
-          <div className="flex justify-between items-start">
-            <h2 className="text-zinc-900 text-2xl font-semibold font-['Sora'] leading-tight">Dinner at Senu</h2>
-            {/* Pending Pill */}
-            <div className="bg-amber-300 rounded-[30px] px-3 py-1 flex items-center justify-center">
-              <span className="text-black text-xs font-semibold font-['Sora']">Pending</span>
+        {isLoading ? (
+          <div className="text-center text-gray-500 mt-10">Loading bills...</div>
+        ) : bills.length === 0 ? (
+          <div className="text-center text-gray-500 mt-10">No bills found</div>
+        ) : (
+          bills.map((bill) => (
+            <div 
+              key={bill.id}
+              onClick={() => onBillClick && onBillClick(bill.id)}
+              className="w-full bg-zinc-300 rounded-[35px] p-6 relative flex flex-col gap-2 shadow-sm cursor-pointer hover:bg-zinc-200 transition-colors"
+            >
+              <div className="flex justify-between items-start">
+                <h2 className="text-zinc-900 text-2xl font-semibold font-['Sora'] leading-tight">{bill.title}</h2>
+                {/* Status Pill */}
+                <div className={`rounded-[30px] px-3 py-1 flex items-center justify-center ${bill.status === 'Pending' ? 'bg-amber-300' : 'bg-lime-700'}`}>
+                  <span className={`text-xs font-semibold font-['Sora'] ${bill.status === 'Pending' ? 'text-black' : 'text-white'}`}>
+                    {bill.status}
+                  </span>
+                </div>
+              </div>
+              
+              <div className="flex items-center gap-3 mt-1">
+                {/* Tag */}
+                <div className={`rounded-[30px] px-3 py-1 flex items-center justify-center ${bill.category === 'Restaurant' ? 'bg-rose-200' : bill.category === 'Grocery' ? 'bg-neutral-300' : 'bg-blue-200'}`}>
+                  <span className="text-black text-base font-normal font-['Sora']">{bill.category}</span>
+                </div>
+              </div>
+              
+              <div className="text-black text-base font-normal font-['Sora'] mt-1">
+                {new Date(bill.created_at || Date.now()).toLocaleDateString()}
+              </div>
+              
+              <div className="text-zinc-900 text-3xl font-semibold font-['Sora'] mt-2">LKR {bill.total}</div>
             </div>
-          </div>
-          
-          <div className="flex items-center gap-3 mt-1">
-            {/* Tag */}
-            <div className="bg-rose-200 rounded-[30px] px-3 py-1 flex items-center justify-center">
-              <span className="text-black text-base font-normal font-['Sora']">Restaurant</span>
-            </div>
-          </div>
-          
-          <div className="text-black text-base font-normal font-['Sora'] mt-1">Today 11pm</div>
-          
-          <div className="text-zinc-900 text-3xl font-semibold font-['Sora'] mt-2">LKR 4800</div>
-        </div>
-
-        {/* Card 2: Late Keells */}
-        <div className="w-full bg-zinc-300 rounded-[35px] p-6 relative flex flex-col gap-2 shadow-sm">
-          <div className="flex justify-between items-start">
-            <h2 className="text-zinc-900 text-2xl font-semibold font-['Sora'] leading-tight">Late Keells</h2>
-            {/* Settled Pill */}
-            <div className="bg-lime-700 rounded-[30px] px-3 py-1 flex items-center justify-center">
-              <span className="text-black text-xs font-semibold font-['Sora'] text-white">Settled</span>
-            </div>
-          </div>
-          
-          <div className="flex items-center gap-3 mt-1">
-            {/* Tag */}
-            <div className="bg-neutral-300 rounded-[30px] px-3 py-1 flex items-center justify-center">
-              <span className="text-black text-base font-normal font-['Sora']">Grocery</span>
-            </div>
-          </div>
-          
-          <div className="text-black text-base font-normal font-['Sora'] mt-1">Today 11pm</div>
-          
-          <div className="text-zinc-900 text-3xl font-semibold font-['Sora'] mt-2">LKR 2100</div>
-        </div>
-
+          ))
+        )}
       </div>
 
       {/* Floating Action Button */}
@@ -104,7 +110,10 @@ export function BillsList({ onBillClick }: { onBillClick?: () => void }) {
       {/* New Bill Modal */}
       <NewBillModal 
         isOpen={isNewBillModalOpen} 
-        onClose={() => setIsNewBillModalOpen(false)} 
+        onClose={() => {
+          setIsNewBillModalOpen(false);
+          fetchBills(); // Refresh list after closing modal
+        }} 
       />
     </div>
   );

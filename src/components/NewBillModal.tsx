@@ -1,5 +1,6 @@
 import React, { useRef, useState } from 'react';
 import { X, Edit2, Search } from 'lucide-react';
+import { api } from '../services/api';
 
 interface NewBillModalProps {
   isOpen: boolean;
@@ -9,7 +10,10 @@ interface NewBillModalProps {
 export function NewBillModal({ isOpen, onClose }: NewBillModalProps) {
   const [step, setStep] = useState(1);
   const [amount, setAmount] = useState('');
+  const [title, setTitle] = useState('');
+  const [category, setCategory] = useState('Restaurant');
   const [searchQuery, setSearchQuery] = useState('');
+  const [isCreating, setIsCreating] = useState(false);
   const amountInputRef = useRef<HTMLInputElement>(null);
   const nameInputRef = useRef<HTMLInputElement>(null);
 
@@ -69,6 +73,8 @@ export function NewBillModal({ isOpen, onClose }: NewBillModalProps) {
                 ref={nameInputRef}
                 type="text" 
                 placeholder="Bill Name" 
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
                 className="bg-transparent text-black placeholder:text-black/50 text-xl font-semibold font-['Sora'] text-center outline-none w-full border-b border-transparent focus:border-black/20 pb-1 transition-colors"
               />
               <button 
@@ -83,10 +89,16 @@ export function NewBillModal({ isOpen, onClose }: NewBillModalProps) {
             <div className="mb-10 pl-2">
               <h3 className="text-black text-[15px] font-normal font-['Sora'] mb-3">Select a Tag:</h3>
               <div className="flex gap-3">
-                <button className="bg-[#F6D6DA] px-5 py-1.5 rounded-[30px] text-black text-[15px] font-normal font-['Sora'] transition-transform hover:scale-105">
+                <button 
+                  onClick={() => setCategory('Restaurant')}
+                  className={`px-5 py-1.5 rounded-[30px] text-black text-[15px] font-normal font-['Sora'] transition-transform hover:scale-105 ${category === 'Restaurant' ? 'bg-[#F5C744]' : 'bg-[#F6D6DA]'}`}
+                >
                   Restaurant
                 </button>
-                <button className="bg-[#D7ECD1] px-5 py-1.5 rounded-[30px] text-black text-[15px] font-normal font-['Sora'] transition-transform hover:scale-105">
+                <button 
+                  onClick={() => setCategory('Grocery')}
+                  className={`px-5 py-1.5 rounded-[30px] text-black text-[15px] font-normal font-['Sora'] transition-transform hover:scale-105 ${category === 'Grocery' ? 'bg-[#F5C744]' : 'bg-[#D7ECD1]'}`}
+                >
                   Grocery
                 </button>
               </div>
@@ -174,12 +186,33 @@ export function NewBillModal({ isOpen, onClose }: NewBillModalProps) {
               </div>
             </div>
 
-            {/* Next Button (Step 2) */}
+            {/* Create Button (Step 2) */}
             <button 
-              onClick={() => {}} // Move to step 3 later
-              className="w-full bg-[#1A1A1A] py-4 rounded-[30px] text-[#EDEDF1] text-lg font-semibold font-['Sora'] mt-auto transition-transform hover:scale-[1.02] active:scale-[0.98]"
+              onClick={async () => {
+                if (isCreating) return;
+                setIsCreating(true);
+                try {
+                  await api.createBill({
+                    title: title || 'New Bill',
+                    category,
+                    total: parseFloat(amount) || 0,
+                    status: 'Pending',
+                    participants: [
+                      { friendId: 'me', share: (parseFloat(amount) || 0) / 2 },
+                      { friendId: 'Adhan Dilva', share: (parseFloat(amount) || 0) / 2 } // Mock friend
+                    ]
+                  });
+                  onClose();
+                } catch (error) {
+                  console.error('Failed to create bill:', error);
+                } finally {
+                  setIsCreating(false);
+                }
+              }} 
+              disabled={isCreating}
+              className={`w-full bg-[#1A1A1A] py-4 rounded-[30px] text-[#EDEDF1] text-lg font-semibold font-['Sora'] mt-auto transition-transform hover:scale-[1.02] active:scale-[0.98] ${isCreating ? 'opacity-50' : ''}`}
             >
-              Next
+              {isCreating ? 'Creating...' : 'Create Bill'}
             </button>
           </div>
         )}
