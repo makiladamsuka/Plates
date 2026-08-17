@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Home } from './views/Home';
 import { BillsList } from './views/BillsList';
 import { BillDetail } from './views/BillDetail';
+import { FriendsList } from './views/FriendsList';
 import { BottomNav } from './components/BottomNav';
 import { IncomingBillModal } from './components/IncomingBillModal';
 import { MOCK_BILLS } from './data/mockData';
@@ -20,9 +21,11 @@ function App() {
   const selectedBill = bills.find(b => b.id === selectedBillId) || bills[0];
 
   return (
-    <div id="root-container" className="max-w-[480px] mx-auto w-full min-h-screen bg-gray-100 relative shadow-sm">
+    <div id="root-container" className="max-w-[480px] mx-auto w-full min-h-screen bg-[#EDEDF1] relative shadow-sm">
       {/* Views */}
       {currentTab === 'home' && <Home />}
+      
+      {currentTab === 'friends' && <FriendsList />}
       
       {currentTab === 'bills' && (
         currentView === 'list' ? (
