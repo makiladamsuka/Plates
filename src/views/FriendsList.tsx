@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Search, ArrowUpRight, ArrowDownLeft, Check, X } from 'lucide-react';
+import { SearchFriendModal } from '../components/SearchFriendModal';
 import { MOCK_FRIENDS } from '../data/mockData';
 import type { Friend } from '../data/mockData';
 
@@ -10,6 +11,7 @@ interface FriendsListProps {
 export function FriendsList({ onFriendClick }: FriendsListProps) {
   const [showHeader, setShowHeader] = useState(true);
   const [activeTab, setActiveTab] = useState<'all' | 'pending'>('all');
+  const [isSearchModalOpen, setIsSearchModalOpen] = useState(false);
   const lastScrollY = React.useRef(0);
 
   useEffect(() => {
@@ -51,7 +53,10 @@ export function FriendsList({ onFriendClick }: FriendsListProps) {
           <div className="px-6 pt-10 pb-4 flex justify-between items-center">
             <h1 className="text-black text-5xl font-bold font-['Sora']">Friends</h1>
             {/* Search Icon */}
-            <button className="w-6 h-6 flex items-center justify-center">
+            <button 
+              onClick={() => setIsSearchModalOpen(true)}
+              className="w-6 h-6 flex items-center justify-center active:scale-90 transition-transform"
+            >
               <Search size={24} strokeWidth={2.5} className="text-black" />
             </button>
           </div>
@@ -141,6 +146,7 @@ export function FriendsList({ onFriendClick }: FriendsListProps) {
       <div className="fixed bottom-[140px] left-0 w-full z-40 pointer-events-none flex justify-center">
         <div className="w-full max-w-[480px] relative">
           <button 
+            onClick={() => setIsSearchModalOpen(true)}
             className="absolute bottom-0 right-6 w-20 h-20 bg-[#1A1A1A] rounded-full flex items-center justify-center shadow-lg pointer-events-auto active:scale-95 transition-transform"
           >
             <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-[#EDEDF1]">
@@ -150,6 +156,12 @@ export function FriendsList({ onFriendClick }: FriendsListProps) {
           </button>
         </div>
       </div>
+
+      {/* Search Friend Modal */}
+      <SearchFriendModal 
+        isOpen={isSearchModalOpen}
+        onClose={() => setIsSearchModalOpen(false)}
+      />
 
     </div>
   );
