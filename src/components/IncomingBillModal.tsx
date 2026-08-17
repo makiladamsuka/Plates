@@ -37,14 +37,14 @@ export function IncomingBillModal({
         // 2. Direct Supabase fallback
         const { error } = await supabase
           .from('participants')
-          .update({ accepted: true })
+          .update({ accepted: true, paid: true })
           .eq('bill_id', bill.id)
           .eq('friend_id', userId);
         if (error) throw error;
 
         await supabase
           .from('bills')
-          .update({ status: 'Accepted' })
+          .update({ status: 'Settled' })
           .eq('id', bill.id);
       }
 

@@ -86,8 +86,8 @@ app.post('/api/bills', async (req, res) => {
           bill_id: bill.id,
           friend_id: p.friendId,
           share: p.share,
-          paid: p.paid || false,
-          accepted: isCreator ? true : false // Creator auto-accepts; friends need to accept!
+          paid: isCreator ? true : (p.paid || false), // Creator is ALREADY paid!
+          accepted: isCreator ? true : false // Creator auto-accepts
         };
       });
       
@@ -119,23 +119,31 @@ app.post('/api/bills/:id/accept', async (req, res) => {
     const { id } = req.params;
     const { userId } = req.body;
     
-    // Update participant accepted status
+    // Update participant accepted & paid status
     const { data, error } = await supabase
       .from('participants')
-      .update({ accepted: true })
+      .update({ accepted: true, paid: true })
       .eq('bill_id', id)
       .eq('friend_id', userId)
       .select();
       
     if (error) throw error;
 
-    // Update overall bill status to Accepted
+    // Check if ALL participants for this bill are paid/accepted
+    const { data: parts } = await supabase
+      .from('participants')
+      .select('paid, accepted')
+      .eq('bill_id', id);
+
+    const allSettled = parts && parts.length > 0 && parts.every((p: any) => p.paid === true || p.accepted === true);
+    
+    // Update overall bill status to Settled (or Accepted)
     await supabase
       .from('bills')
-      .update({ status: 'Accepted' })
+      .update({ status: allSettled ? 'Settled' : 'Accepted' })
       .eq('id', id);
 
-    res.json({ message: 'Bill accepted', data });
+    res.json({ message: 'Bill accepted and settled', data, status: allSettled ? 'Settled' : 'Accepted' });
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }
@@ -150,7 +158,7 @@ app.post('/api/bills/:id/decline', async (req, res) => {
     // Update participant accepted status to false
     const { error } = await supabase
       .from('participants')
-      .update({ accepted: false })
+      .update({ accepted: false, paid: false })
       .eq('bill_id', id)
       .eq('friend_id', userId);
       
@@ -182,7 +190,22 @@ app.post('/api/bills/:id/pay', async (req, res) => {
       .select();
       
     if (error) throw error;
-    res.json(data);
+
+    // Check if ALL participants for this bill are paid
+    const { data: parts } = await supabase
+      .from('participants')
+      .select('paid')
+      .eq('bill_id', id);
+
+    const allPaid = parts && parts.length > 0 && parts.every((p: any) => p.paid === true);
+    if (allPaid) {
+      await supabase
+        .from('bills')
+        .update({ status: 'Settled' })
+        .eq('id', id);
+    }
+
+    res.json({ message: 'Share paid', data, allPaid });
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }
