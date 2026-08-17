@@ -28,9 +28,8 @@ const formatTime = (ts: number) => {
   return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 };
 
-export function BillsList({ onBillClick }: { onBillClick?: () => void }) {
+export function BillsList({ bills, onAddBill, onBillClick }: { bills: Bill[], onAddBill: (bill: Bill) => void, onBillClick?: () => void }) {
   const [isNewBillModalOpen, setIsNewBillModalOpen] = useState(false);
-  const [bills, setBills] = useState<Bill[]>(MOCK_BILLS);
   
   const [showHeader, setShowHeader] = useState(true);
   const lastScrollY = React.useRef(0);
@@ -54,10 +53,6 @@ export function BillsList({ onBillClick }: { onBillClick?: () => void }) {
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
-
-  const handleAddBill = (newBill: Bill) => {
-    setBills([newBill, ...bills]);
-  };
 
   return (
     <div className="min-h-screen bg-[#EDEDF1] pb-32 pt-[160px]">
@@ -154,7 +149,7 @@ export function BillsList({ onBillClick }: { onBillClick?: () => void }) {
       <NewBillModal 
         isOpen={isNewBillModalOpen} 
         onClose={() => setIsNewBillModalOpen(false)} 
-        onAddBill={handleAddBill}
+        onAddBill={onAddBill}
       />
     </div>
   );

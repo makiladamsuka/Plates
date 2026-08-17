@@ -4,10 +4,17 @@ import { BillsList } from './views/BillsList';
 import { BillDetail } from './views/BillDetail';
 import { BottomNav } from './components/BottomNav';
 import { IncomingBillModal } from './components/IncomingBillModal';
+import { MOCK_BILLS } from './data/mockData';
+import type { Bill } from './data/mockData';
 
 function App() {
   const [currentTab, setCurrentTab] = useState('home');
   const [currentView, setCurrentView] = useState('list'); // 'list' or 'detail' within Bills tab
+  const [bills, setBills] = useState<Bill[]>(MOCK_BILLS);
+
+  const handleAddBill = (newBill: Bill) => {
+    setBills([newBill, ...bills]);
+  };
 
   return (
     <div id="root-container" className="max-w-[480px] mx-auto w-full min-h-screen bg-gray-100 relative shadow-sm">
@@ -16,7 +23,7 @@ function App() {
       
       {currentTab === 'bills' && (
         currentView === 'list' ? (
-          <BillsList onBillClick={() => setCurrentView('detail')} />
+          <BillsList bills={bills} onAddBill={handleAddBill} onBillClick={() => setCurrentView('detail')} />
         ) : (
           <BillDetail onBack={() => setCurrentView('list')} />
         )

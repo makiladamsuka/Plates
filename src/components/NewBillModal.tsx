@@ -78,14 +78,11 @@ export function NewBillModal({ isOpen, onClose, onAddBill }: NewBillModalProps) 
       onAddBill({
         id: Math.random().toString(36).substring(2, 9),
         title: billName || 'New Bill',
-        category: tag,
+        category: tag || 'Other',
         total: parsedAmount,
         createdAt: Date.now(),
         status: 'Pending',
-        participants: [
-          { friendId: 'me', share: parseFloat(splitAmount) },
-          ...selectedFriends.map(f => ({ friendId: f.id, share: parseFloat(splitAmount) }))
-        ]
+        participants: splits.map(s => ({ friendId: s.id, share: s.share }))
       });
     }
     handleClose();
