@@ -165,7 +165,7 @@ export function Home({
             }).map(bill => (
               <div 
                 key={`unsettled-${bill.id}`}
-                onClick={() => setSelectedIncomingBill(bill)}
+                onClick={() => onBillClick?.(bill.id)}
                 className="w-full bg-[#D9D9D9] rounded-[25px] p-4 flex items-center justify-between shadow-sm cursor-pointer hover:bg-zinc-300/80 transition-colors"
               >
                 <div className="flex flex-col gap-1 min-w-0 pr-2">
