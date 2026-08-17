@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Check } from 'lucide-react';
+import { X, Check, CreditCard } from 'lucide-react';
 import { api } from '../services/api';
 import { supabase } from '../lib/supabase';
 
@@ -26,6 +26,9 @@ export function IncomingBillModal({
 
   const myParticipant = (bill.participants || []).find((p: any) => p.friend_id === userId || p.friendId === userId);
   const myShare = myParticipant ? myParticipant.share : 0;
+  const isCreator = bill.creator_id === userId;
+  const isMySharePaid = isCreator || myParticipant?.paid === true;
+  const isFullySettled = bill.status === 'Settled';
 
   const handleAccept = async () => {
     setIsSubmitting(true);
@@ -37,14 +40,14 @@ export function IncomingBillModal({
         // 2. Direct Supabase fallback
         const { error } = await supabase
           .from('participants')
-          .update({ accepted: true, paid: true })
+          .update({ accepted: true })
           .eq('bill_id', bill.id)
           .eq('friend_id', userId);
         if (error) throw error;
 
         await supabase
           .from('bills')
-          .update({ status: 'Settled' })
+          .update({ status: 'Accepted' })
           .eq('id', bill.id);
       }
 
@@ -87,6 +90,35 @@ export function IncomingBillModal({
     }
   };
 
+  const handleSettle = async () => {
+    setIsSubmitting(true);
+    try {
+      try {
+        await api.payBill(bill.id, userId);
+      } catch (apiErr) {
+        const { error } = await supabase
+          .from('participants')
+          .update({ paid: true })
+          .eq('bill_id', bill.id)
+          .eq('friend_id', userId);
+        if (error) throw error;
+
+        await supabase
+          .from('bills')
+          .update({ status: 'Settled' })
+          .eq('id', bill.id);
+      }
+
+      if (onSuccess) onSuccess();
+      onClose();
+    } catch (err: any) {
+      console.error('Error settling bill:', err);
+      alert(err.message || 'Failed to settle bill');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   return (
     <div className="fixed inset-0 z-[60] flex flex-col justify-end bg-black/60">
       
@@ -106,11 +138,12 @@ export function IncomingBillModal({
                 <div className="text-amber-300 text-sm font-semibold mb-2">Incoming Bill Request</div>
               ) : (
                 <div className={`text-xs font-semibold px-3 py-1 rounded-full w-fit mb-2 ${
+                  isFullySettled ? 'bg-[#4C8C3C] text-white' :
                   bill.status === 'Accepted' ? 'bg-[#4C8C3C] text-white' :
                   bill.status === 'Rejected' || bill.status === 'Declined' ? 'bg-red-500 text-white' :
                   'bg-[#F5C744] text-black'
                 }`}>
-                  {bill.status || 'Active'}
+                  {isFullySettled ? 'Settled' : (bill.status || 'Active')}
                 </div>
               )}
               <div className="text-white/70 text-sm">{bill.category} · {bill.participants?.length || 0} Participants</div>
@@ -123,19 +156,31 @@ export function IncomingBillModal({
           {/* Participants Card */}
           <div className="bg-neutral-800 rounded-[25px] p-4 flex flex-col gap-2.5 mb-6">
             <span className="text-white/60 text-xs font-semibold uppercase tracking-wider mb-1">Participants & Shares</span>
-            {(bill.participants || []).map((p: any, i: number) => (
-              <div key={i} className="w-full bg-zinc-300/10 rounded-[20px] p-3 flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-full bg-zinc-600 flex items-center justify-center text-white text-xs font-bold shrink-0">
-                    {(p.friend_id === userId || p.friendId === userId) ? 'You' : 'P'}
+            {(bill.participants || []).map((p: any, i: number) => {
+              const isPMe = p.friend_id === userId || p.friendId === userId;
+              const isPCreator = bill.creator_id === (p.friend_id || p.friendId);
+              const isPPaid = isPCreator || p.paid;
+
+              return (
+                <div key={i} className="w-full bg-zinc-300/10 rounded-[20px] p-3 flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-full bg-zinc-600 flex items-center justify-center text-white text-xs font-bold shrink-0">
+                      {isPMe ? 'You' : 'P'}
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="text-white text-sm font-medium">
+                        {isPMe ? 'You' : `Friend ${(p.friend_id || p.friendId || '').substring(0, 4)}`}
+                      </span>
+                      {isPCreator && <span className="text-amber-300 text-[10px]">Creator (Paid)</span>}
+                    </div>
                   </div>
-                  <span className="text-white text-sm font-medium">
-                    {(p.friend_id === userId || p.friendId === userId) ? 'You' : `Friend ${(p.friend_id || p.friendId || '').substring(0, 4)}`}
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-white text-base font-semibold">LKR {p.share}</span>
+                    {isPPaid && <span className="text-[10px] bg-green-900/60 text-green-300 px-2 py-0.5 rounded-full font-bold">Paid</span>}
+                  </div>
                 </div>
-                <div className="text-white text-base font-semibold">LKR {p.share}</div>
-              </div>
-            ))}
+              );
+            })}
           </div>
 
           {/* Totals Section */}
@@ -172,9 +217,24 @@ export function IncomingBillModal({
             </div>
           ) : (
             <div className="flex flex-col gap-3">
+              {!isMySharePaid && !isFullySettled ? (
+                <button 
+                  onClick={handleSettle}
+                  disabled={isSubmitting}
+                  className={`w-full h-14 bg-amber-400 hover:bg-amber-300 text-black text-lg font-semibold rounded-[30px] flex items-center justify-center gap-2 active:scale-[0.98] transition-all cursor-pointer ${isSubmitting ? 'opacity-50' : ''}`}
+                >
+                  <CreditCard size={20} strokeWidth={2.5} />
+                  <span>{isSubmitting ? 'Settling...' : `Settle LKR ${myShare}`}</span>
+                </button>
+              ) : (
+                <div className="w-full py-2 text-center text-green-400 text-sm font-semibold bg-green-950/40 rounded-[20px] border border-green-800/40 mb-1">
+                  ✓ {isCreator ? 'You created this plate (Paid)' : 'Your share is settled'}
+                </div>
+              )}
+
               <button 
                 onClick={onClose}
-                className="w-full h-14 bg-zinc-800 hover:bg-zinc-700 text-white text-lg font-semibold rounded-[30px] flex items-center justify-center transition-all cursor-pointer"
+                className="w-full h-12 bg-zinc-800 hover:bg-zinc-700 text-white text-base font-semibold rounded-[30px] flex items-center justify-center transition-all cursor-pointer"
               >
                 Close
               </button>

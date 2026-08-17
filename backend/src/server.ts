@@ -119,31 +119,23 @@ app.post('/api/bills/:id/accept', async (req, res) => {
     const { id } = req.params;
     const { userId } = req.body;
     
-    // Update participant accepted & paid status
+    // Update participant accepted status (paid remains false until settled)
     const { data, error } = await supabase
       .from('participants')
-      .update({ accepted: true, paid: true })
+      .update({ accepted: true })
       .eq('bill_id', id)
       .eq('friend_id', userId)
       .select();
       
     if (error) throw error;
 
-    // Check if ALL participants for this bill are paid/accepted
-    const { data: parts } = await supabase
-      .from('participants')
-      .select('paid, accepted')
-      .eq('bill_id', id);
-
-    const allSettled = parts && parts.length > 0 && parts.every((p: any) => p.paid === true || p.accepted === true);
-    
-    // Update overall bill status to Settled (or Accepted)
+    // Update overall bill status to Accepted
     await supabase
       .from('bills')
-      .update({ status: allSettled ? 'Settled' : 'Accepted' })
+      .update({ status: 'Accepted' })
       .eq('id', id);
 
-    res.json({ message: 'Bill accepted and settled', data, status: allSettled ? 'Settled' : 'Accepted' });
+    res.json({ message: 'Bill accepted', data, status: 'Accepted' });
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }
