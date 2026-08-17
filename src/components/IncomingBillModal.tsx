@@ -29,7 +29,9 @@ export function IncomingBillModal({
   const myParticipant = (bill.participants || []).find((p: any) => p.friend_id === userId || p.friendId === userId);
   const myShare = myParticipant ? myParticipant.share : 0;
   const isCreator = bill.creator_id === userId;
-  const isMySharePaid = isCreator || (myParticipant?.paid === true && myParticipant?.accepted === true);
+  const isAcceptedByMe = isCreator || (myParticipant ? myParticipant.accepted === true : false);
+  const isEffectiveReadOnly = readOnly || isAcceptedByMe;
+  const isMySharePaid = isCreator || myParticipant?.paid === true;
   const isFullySettled = bill.status === 'Settled';
 
   const handleAccept = async () => {
@@ -147,7 +149,7 @@ export function IncomingBillModal({
             <div className="mb-6 flex justify-between items-start">
               <div>
                 <h2 className="text-white text-3xl font-bold font-display mb-1">{bill.title}</h2>
-                {!readOnly ? (
+                {!isEffectiveReadOnly ? (
                   <div className="text-amber-300 text-sm font-semibold mb-2">Incoming Bill Request</div>
                 ) : (
                   <div className={`text-xs font-semibold px-3 py-1 rounded-full w-fit mb-2 ${
@@ -213,7 +215,7 @@ export function IncomingBillModal({
             </div>
 
             {/* Actions */}
-            {!readOnly ? (
+            {!isEffectiveReadOnly ? (
               <div className="flex flex-col gap-3">
                 <button 
                   onClick={handleAccept}
