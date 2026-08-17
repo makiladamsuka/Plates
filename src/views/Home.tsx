@@ -198,7 +198,17 @@ export function Home({
                 className="w-[200px] h-[205px] shrink-0 bg-[#D9D9D9] rounded-[28px] flex flex-col justify-between shadow-sm snap-start cursor-pointer active:scale-[0.98] hover:bg-zinc-300/80 transition-all relative overflow-hidden"
                 style={{ padding: '16px' }}
               >
-                {/* Top: category + status */}
+                {/* Top: title + date */}
+                <div className="flex flex-col gap-0.5">
+                  <h3 className="text-[#1A1A1A] text-base font-bold leading-snug line-clamp-2">
+                    {bill.title}
+                  </h3>
+                  <span className="text-black/50 text-xs font-normal">
+                    {new Date(bill.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                  </span>
+                </div>
+
+                {/* Middle: category + status tags */}
                 <div className="flex justify-between items-center">
                   <span
                     className="text-[11px] font-semibold px-2.5 py-1 rounded-full"
@@ -212,16 +222,6 @@ export function Home({
                     }`}
                   >
                     {bill.status}
-                  </span>
-                </div>
-
-                {/* Middle: title + date */}
-                <div className="flex flex-col gap-0.5">
-                  <h3 className="text-[#1A1A1A] text-base font-bold leading-snug line-clamp-2">
-                    {bill.title}
-                  </h3>
-                  <span className="text-black/50 text-xs font-normal">
-                    {new Date(bill.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                   </span>
                 </div>
 
