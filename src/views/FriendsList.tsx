@@ -30,64 +30,58 @@ export function FriendsList({
     if (!session?.user) return;
     setIsLoading(true);
     try {
-      // 1. Fetch Accepted Friends for the current user
-      const { data: acceptedData, error: acceptedError } = await supabase
+      // 1. Fetch Accepted Friends for current user (where user_id = session.user.id)
+      const { data: rawAccepted } = await supabase
         .from('friends')
-        .select(`
-          friend_id,
-          status,
-          profiles:friend_id (
-            id,
-            full_name,
-            avatar_url,
-            email
-          )
-        `)
+        .select('friend_id, status')
         .eq('user_id', session.user.id)
         .or('status.eq.accepted,status.is.null');
 
-      if (!acceptedError && acceptedData) {
-        const friends = acceptedData
-          .filter((d: any) => d.profiles)
-          .map((d: any) => ({
-            id: d.profiles.id,
-            name: d.profiles.full_name || 'Friend',
-            username: d.profiles.email || '',
-            avatar_url: d.profiles.avatar_url,
-            balance: 0,
-            isPendingRequest: false,
-          }));
+      if (rawAccepted && rawAccepted.length > 0) {
+        const friendIds = rawAccepted.map((f: any) => f.friend_id);
+        const { data: profs } = await supabase
+          .from('profiles')
+          .select('id, full_name, avatar_url, email')
+          .in('id', friendIds);
+        
+        const friends = (profs || []).map((p: any) => ({
+          id: p.id,
+          name: p.full_name || 'Friend',
+          username: p.email || '',
+          avatar_url: p.avatar_url,
+          balance: 0,
+          isPendingRequest: false,
+        }));
         setAcceptedFriends(friends);
+      } else {
+        setAcceptedFriends([]);
       }
 
-      // 2. Fetch Pending Friend Requests sent TO the current user (where friend_id = session.user.id)
-      const { data: pendingData, error: pendingError } = await supabase
+      // 2. Fetch Pending Friend Requests sent TO current user (where friend_id = session.user.id and status = 'pending')
+      const { data: rawPending } = await supabase
         .from('friends')
-        .select(`
-          user_id,
-          status,
-          profiles:user_id (
-            id,
-            full_name,
-            avatar_url,
-            email
-          )
-        `)
+        .select('user_id, status')
         .eq('friend_id', session.user.id)
         .eq('status', 'pending');
 
-      if (!pendingError && pendingData) {
-        const pending = pendingData
-          .filter((d: any) => d.profiles)
-          .map((d: any) => ({
-            id: d.profiles.id,
-            name: d.profiles.full_name || 'User',
-            username: d.profiles.email || '',
-            avatar_url: d.profiles.avatar_url,
-            balance: 0,
-            isPendingRequest: true,
-          }));
+      if (rawPending && rawPending.length > 0) {
+        const requesterIds = rawPending.map((f: any) => f.user_id);
+        const { data: profs } = await supabase
+          .from('profiles')
+          .select('id, full_name, avatar_url, email')
+          .in('id', requesterIds);
+
+        const pending = (profs || []).map((p: any) => ({
+          id: p.id,
+          name: p.full_name || 'User',
+          username: p.email || '',
+          avatar_url: p.avatar_url,
+          balance: 0,
+          isPendingRequest: true,
+        }));
         setPendingRequests(pending);
+      } else {
+        setPendingRequests([]);
       }
     } catch (err) {
       console.error('Error fetching friends:', err);
