@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Search, ArrowUpRight, ArrowDownLeft, Check, X } from 'lucide-react';
 import { SearchFriendModal } from '../components/SearchFriendModal';
+import { IncomingFriendRequestModal } from '../components/IncomingFriendRequestModal';
 import { MOCK_FRIENDS } from '../data/mockData';
 import type { Friend } from '../data/mockData';
 
@@ -12,6 +13,8 @@ export function FriendsList({ onFriendClick }: FriendsListProps) {
   const [showHeader, setShowHeader] = useState(true);
   const [activeTab, setActiveTab] = useState<'all' | 'pending'>('all');
   const [isSearchModalOpen, setIsSearchModalOpen] = useState(false);
+  const [friendsList, setFriendsList] = useState<Friend[]>(MOCK_FRIENDS);
+  const [incomingFriend, setIncomingFriend] = useState<Friend | null>(null);
   const lastScrollY = React.useRef(0);
 
   useEffect(() => {
@@ -35,10 +38,20 @@ export function FriendsList({ onFriendClick }: FriendsListProps) {
   }, []);
 
   // Filter friends based on tab
-  const friends = MOCK_FRIENDS.filter(f => f.id !== 'me').filter(f => {
+  const friends = friendsList.filter(f => f.id !== 'me').filter(f => {
     if (activeTab === 'pending') return f.isPendingRequest;
-    return true;
+    return !f.isPendingRequest;
   });
+
+  const handleApproveRequest = (friendId: string) => {
+    setFriendsList(prev => prev.map(f => f.id === friendId ? { ...f, isPendingRequest: false } : f));
+    setIncomingFriend(null);
+  };
+
+  const handleDeclineRequest = (friendId: string) => {
+    setFriendsList(prev => prev.filter(f => f.id !== friendId));
+    setIncomingFriend(null);
+  };
 
   return (
     <div className="min-h-screen bg-[#EDEDF1] pb-32 pt-[160px]">
@@ -87,7 +100,13 @@ export function FriendsList({ onFriendClick }: FriendsListProps) {
           {friends.map((friend, i) => (
             <div 
               key={friend.id}
-              onClick={() => onFriendClick?.(friend.id)}
+              onClick={() => {
+                if (activeTab === 'pending') {
+                  setIncomingFriend(friend);
+                } else {
+                  onFriendClick?.(friend.id);
+                }
+              }}
               className="w-full h-[100px] bg-[#D9D9D9] rounded-[35px] px-5 relative flex items-center justify-between shadow-sm cursor-pointer hover:bg-zinc-300/80 transition-colors"
             >
               {/* Left Side: Avatar & Details */}
@@ -108,11 +127,17 @@ export function FriendsList({ onFriendClick }: FriendsListProps) {
 
               {/* Right Side: Action Icons OR Balances */}
               {activeTab === 'pending' ? (
-                <div className="flex items-center gap-4 shrink-0 pr-2">
-                  <button className="w-[30px] h-[30px] flex items-center justify-center rounded-full active:scale-95 transition-transform bg-[#EDEDF1] border border-black/10 shadow-sm">
+                <div className="flex items-center gap-4 shrink-0 pr-2" onClick={(e) => e.stopPropagation()}>
+                  <button 
+                    onClick={() => setIncomingFriend(friend)}
+                    className="w-[30px] h-[30px] flex items-center justify-center rounded-full active:scale-95 transition-transform bg-[#EDEDF1] border border-black/10 shadow-sm"
+                  >
                     <Check size={18} strokeWidth={3} className="text-[#4C8C3C]" />
                   </button>
-                  <button className="w-6 h-6 flex items-center justify-center rounded-full active:scale-95 transition-transform bg-[#EDEDF1] border border-black/10 shadow-sm">
+                  <button 
+                    onClick={() => handleDeclineRequest(friend.id)}
+                    className="w-6 h-6 flex items-center justify-center rounded-full active:scale-95 transition-transform bg-[#EDEDF1] border border-black/10 shadow-sm"
+                  >
                     <X size={14} strokeWidth={3} className="text-[#F6D6DA]" />
                   </button>
                 </div>
@@ -161,6 +186,17 @@ export function FriendsList({ onFriendClick }: FriendsListProps) {
       <SearchFriendModal 
         isOpen={isSearchModalOpen}
         onClose={() => setIsSearchModalOpen(false)}
+        onAddFriend={(newFriend) => {
+          setFriendsList(prev => [...prev, { ...newFriend, isPendingRequest: false }]);
+        }}
+      />
+
+      {/* Incoming Friend Request Modal (Slide to Approve) */}
+      <IncomingFriendRequestModal 
+        isOpen={!!incomingFriend}
+        onClose={() => setIncomingFriend(null)}
+        onApprove={() => incomingFriend && handleApproveRequest(incomingFriend.id)}
+        friend={incomingFriend || undefined}
       />
 
     </div>
