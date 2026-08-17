@@ -27,3 +27,12 @@ body {
 .no-spinners {
   -moz-appearance: textfield;
 }
+
+/* Hide scrollbars across Chrome, Safari, Firefox, Edge */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
