@@ -75,13 +75,13 @@ export function FriendsList({
           <div className="px-6 pb-4 flex gap-2 overflow-x-auto no-scrollbar">
             <button 
               onClick={() => setActiveTab('all')}
-              className={`h-8 px-5 rounded-[35px] text-lg font-semibold font-['Sora'] whitespace-nowrap flex items-center justify-center transition-colors ${activeTab === 'all' ? 'bg-[#1A1A1A] text-[#EDEDF1]' : 'bg-[#D9D9D9] text-black'}`}
+              className={`h-8 px-5 rounded-[35px] text-lg font-semibold whitespace-nowrap flex items-center justify-center transition-colors ${activeTab === 'all' ? 'bg-[#1A1A1A] text-[#EDEDF1]' : 'bg-[#D9D9D9] text-black'}`}
             >
               All
             </button>
             <button 
               onClick={() => setActiveTab('pending')}
-              className={`h-8 px-5 rounded-[35px] text-lg font-semibold font-['Sora'] whitespace-nowrap flex items-center justify-center transition-colors ${activeTab === 'pending' ? 'bg-[#1A1A1A] text-[#EDEDF1]' : 'bg-[#D9D9D9] text-black'}`}
+              className={`h-8 px-5 rounded-[35px] text-lg font-semibold whitespace-nowrap flex items-center justify-center transition-colors ${activeTab === 'pending' ? 'bg-[#1A1A1A] text-[#EDEDF1]' : 'bg-[#D9D9D9] text-black'}`}
             >
               Pending
             </button>
@@ -113,10 +113,10 @@ export function FriendsList({
                   style={{ backgroundColor: friend.color }}
                 />
                 <div className="flex flex-col">
-                  <span className="text-[#1A1A1A] text-2xl font-semibold font-['Sora'] leading-tight">
+                  <span className="text-[#1A1A1A] text-2xl font-semibold leading-tight">
                     {friend.name}
                   </span>
-                  <span className="text-black text-[15px] font-normal font-['Sora'] mt-1">
+                  <span className="text-black text-[15px] font-normal mt-1">
                     {friend.username}
                   </span>
                 </div>
@@ -148,7 +148,7 @@ export function FriendsList({
                       // You owe them -> outgoing arrow
                       <ArrowUpRight size={24} strokeWidth={2.5} className="text-black" />
                     )}
-                    <span className="text-[#1A1A1A] text-xl font-semibold font-['Sora'] whitespace-nowrap">
+                    <span className="text-[#1A1A1A] text-xl font-semibold whitespace-nowrap">
                       LKR {Math.abs(friend.balance)}
                     </span>
                   </div>
@@ -157,7 +157,7 @@ export function FriendsList({
             </div>
           ))}
           {friends.length === 0 && (
-            <div className="text-center mt-10 text-black/50 font-['Sora']">
+            <div className="text-center mt-10 text-black/50">
               {activeTab === 'pending' ? 'No pending requests.' : 'No friends found.'}
             </div>
           )}

@@ -91,7 +91,7 @@ export function BillsList({ bills, onAddBill, onBillClick }: { bills: Bill[], on
               <button 
                 key={t.key}
                 onClick={() => setSortKey(t.key as SortKey)}
-                className={`h-8 px-5 rounded-[35px] text-lg font-semibold font-['Sora'] whitespace-nowrap flex items-center justify-center transition-colors ${
+                className={`h-8 px-5 rounded-[35px] text-lg font-semibold whitespace-nowrap flex items-center justify-center transition-colors ${
                   sortKey === t.key ? 'bg-[#1A1A1A] text-[#EDEDF1]' : 'bg-[#D9D9D9] text-black'
                 }`}
               >
@@ -114,27 +114,27 @@ export function BillsList({ bills, onAddBill, onBillClick }: { bills: Bill[], on
               className="w-full bg-[#D9D9D9] rounded-[35px] p-6 relative flex flex-col gap-2 shadow-sm cursor-pointer hover:bg-zinc-300/80 transition-colors"
             >
               <div className="flex justify-between items-start">
-                <h2 className="text-[#1A1A1A] text-2xl font-semibold font-['Sora'] leading-tight">{bill.title}</h2>
+                <h2 className="text-[#1A1A1A] text-2xl font-semibold leading-tight">{bill.title}</h2>
                 {/* Status Pill */}
                 <div className={`rounded-[30px] px-4 py-1.5 flex items-center justify-center shrink-0 ${bill.status === 'Pending' ? 'bg-[#F5C744]' : 'bg-[#4C8C3C]'}`}>
-                  <span className={`text-[13px] font-semibold font-['Sora'] ${bill.status === 'Pending' ? 'text-black' : 'text-white'}`}>{bill.status}</span>
+                  <span className={`text-[13px] font-semibold ${bill.status === 'Pending' ? 'text-black' : 'text-white'}`}>{bill.status}</span>
                 </div>
               </div>
               
               <div className="flex items-center gap-3 mt-1">
                 {/* Tag */}
                 <div className={`${getTagColor(bill.category)} rounded-[30px] px-3 py-1 flex items-center justify-center`}>
-                  <span className="text-black text-base font-normal font-['Sora']">{bill.category}</span>
+                  <span className="text-black text-base font-normal">{bill.category}</span>
                 </div>
               </div>
               
-              <div className="text-black text-base font-normal font-['Sora'] mt-1">{formatTime(bill.createdAt)}</div>
+              <div className="text-black text-base font-normal mt-1">{formatTime(bill.createdAt)}</div>
               
-              <div className="text-[#1A1A1A] text-3xl font-semibold font-['Sora'] mt-2">LKR {bill.total}</div>
+              <div className="text-[#1A1A1A] text-3xl font-semibold mt-2">LKR {bill.total}</div>
             </div>
           ))}
           {bills.length === 0 && (
-            <div className="text-center mt-10 text-black/50 font-['Sora']">No bills found. Create one!</div>
+            <div className="text-center mt-10 text-black/50">No bills found. Create one!</div>
           )}
         </div>
       </div>
