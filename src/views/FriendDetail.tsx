@@ -22,7 +22,7 @@ export function FriendDetail({ friend, onBack, onBillClick }: FriendDetailProps)
   };
 
   return (
-    <div className="min-h-screen bg-[#EDEDF1] pb-32 font-['Sora'] relative overflow-hidden">
+    <div className="min-h-screen bg-[#EDEDF1] pb-32 relative overflow-hidden">
       
       {/* Header Area */}
       <div className="pt-6 px-6 relative">
@@ -35,7 +35,7 @@ export function FriendDetail({ friend, onBack, onBillClick }: FriendDetailProps)
 
         <div className="flex justify-between items-start">
           <div className="flex flex-col">
-            <h1 className="text-[#1A1A1A] text-2xl font-semibold">{friend.name}</h1>
+            <h1 className="text-[#1A1A1A] text-2xl font-bold font-display">{friend.name}</h1>
             <div className="flex items-center gap-4 mt-2">
               <div 
                 className="w-[50px] h-[50px] rounded-full opacity-30 shrink-0"

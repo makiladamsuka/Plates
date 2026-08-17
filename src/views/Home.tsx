@@ -106,10 +106,10 @@ export function Home({
           </button>
         </div>
 
-        {/* 3. Need Attention Section */}
+        {/* 3. Waiting on You Section */}
         <div className="flex flex-col gap-3">
           <h2 className="text-[#1A1A1A] text-2xl font-bold font-display tracking-tight px-1">
-            Need Attention
+            Waiting on You
           </h2>
 
           <div className="flex flex-col gap-3">
