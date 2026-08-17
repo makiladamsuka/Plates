@@ -46,15 +46,13 @@ function App() {
       )}
 
       {/* Shared Bottom Navigation */}
-      {currentView !== 'detail' && (
-        <BottomNav 
-          currentTab={currentTab} 
-          onTabChange={(tab) => {
-            setCurrentTab(tab);
-            if (tab === 'bills') setCurrentView('list');
-          }} 
-        />
-      )}
+      <BottomNav 
+        currentTab={currentTab} 
+        onTabChange={(tab) => {
+          setCurrentTab(tab);
+          if (tab === 'bills') setCurrentView('list');
+        }} 
+      />
       
       {/* <IncomingBillModal /> */}
     </div>

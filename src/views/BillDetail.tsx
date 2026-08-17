@@ -90,7 +90,7 @@ export function BillDetail({ onBack, bill }: BillDetailProps) {
       </div>
 
       {/* Floating Action Bar */}
-      <div className="fixed bottom-[30px] left-0 w-full z-[55] flex justify-center px-4 pointer-events-none">
+      <div className="fixed bottom-[130px] left-0 w-full z-[55] flex justify-center px-4 pointer-events-none">
         <button 
           onClick={() => setIsConfirmModalOpen(true)}
           className="w-full max-w-[365px] h-[74px] bg-[#1A1A1A] rounded-[50px] flex items-center justify-center pointer-events-auto shadow-lg active:scale-[0.98] transition-transform"

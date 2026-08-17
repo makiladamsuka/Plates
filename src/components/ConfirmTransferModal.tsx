@@ -69,12 +69,12 @@ export function ConfirmTransferModal({ isOpen, onClose, onConfirm, amount, usern
         
         {/* Backdrop */}
         <div 
-          className="absolute inset-0 bg-black/40 pointer-events-auto transition-opacity animate-in fade-in duration-300" 
+          className="absolute inset-0 bg-black/40 pointer-events-auto animate-fade-in" 
           onClick={onClose}
         />
         
         {/* Modal Container */}
-        <div className="w-full bg-[#1A1A1A] rounded-t-[35px] p-6 relative flex flex-col items-center pointer-events-auto animate-in slide-in-from-bottom duration-300 shadow-2xl h-[422px]">
+        <div className="w-full bg-[#1A1A1A] rounded-t-[35px] p-6 relative flex flex-col items-center pointer-events-auto animate-slide-up shadow-2xl h-[422px]">
           
           {/* Header Content */}
           <div className="mt-4 text-center">
@@ -98,9 +98,9 @@ export function ConfirmTransferModal({ isOpen, onClose, onConfirm, amount, usern
             
             {/* Draggable Thumb */}
             <div 
-              className="absolute left-0 top-1/2 -translate-y-1/2 w-[50px] h-[50px] bg-[#F5C744] rounded-full flex items-center justify-center cursor-grab active:cursor-grabbing shadow-md touch-none"
+              className="absolute left-0 top-[12px] w-[50px] h-[50px] bg-[#F5C744] rounded-full flex items-center justify-center cursor-grab active:cursor-grabbing shadow-md touch-none"
               style={{ 
-                transform: `translate(${slideProgress}px, -50%)`,
+                transform: `translateX(${slideProgress}px)`,
                 transition: isDragging.current ? 'none' : 'transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)'
               }}
               onPointerDown={handlePointerDown}
