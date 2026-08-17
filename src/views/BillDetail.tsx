@@ -90,15 +90,17 @@ export function BillDetail({ onBack, onSettle, bill }: BillDetailProps) {
          <div className="text-[#1A1A1A] text-[24px] font-semibold">LKR {bill.total}</div>
       </div>
 
-      {/* Floating Action Bar */}
-      <div className="fixed bottom-[130px] left-0 w-full z-[55] flex justify-center px-4 pointer-events-none">
-        <button 
-          onClick={() => setIsConfirmModalOpen(true)}
-          className="w-full max-w-[365px] h-[74px] bg-[#1A1A1A] rounded-[50px] flex items-center justify-center pointer-events-auto shadow-lg active:scale-[0.98] transition-transform"
-        >
-          <span className="text-[#EDEDF1] text-[20px] font-semibold">Pay  LKR {myShare.toFixed(0)}</span>
-        </button>
-      </div>
+      {/* Floating Action Bar - Only show if Pending */}
+      {bill.status === 'Pending' && (
+        <div className="fixed bottom-[130px] left-0 w-full z-[55] flex justify-center px-4 pointer-events-none">
+          <button 
+            onClick={() => setIsConfirmModalOpen(true)}
+            className="w-full max-w-[365px] h-[74px] bg-[#1A1A1A] rounded-[50px] flex items-center justify-center pointer-events-auto shadow-lg active:scale-[0.98] transition-transform"
+          >
+            <span className="text-[#EDEDF1] text-[20px] font-semibold">Pay  LKR {myShare.toFixed(0)}</span>
+          </button>
+        </div>
+      )}
 
       <ConfirmTransferModal 
         isOpen={isConfirmModalOpen}
