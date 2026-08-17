@@ -66,7 +66,7 @@ export function SearchFriends({ onBack, onAddFriend }: SearchFriendsProps) {
           return (
             <div 
               key={user.id}
-              className="w-full h-[59px] bg-[#D9D9D9] rounded-[35px] px-4 flex items-center justify-between shadow-sm"
+              className="w-full h-[54px] px-2 flex items-center justify-between transition-colors"
             >
               {/* User Avatar + Info */}
               <div className="flex items-center gap-3 min-w-0">
