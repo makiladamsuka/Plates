@@ -119,6 +119,7 @@ app.post('/api/bills/:id/accept', async (req, res) => {
     const { id } = req.params;
     const { userId } = req.body;
     
+    // Update participant accepted status
     const { data, error } = await supabase
       .from('participants')
       .update({ accepted: true })
@@ -127,6 +128,13 @@ app.post('/api/bills/:id/accept', async (req, res) => {
       .select();
       
     if (error) throw error;
+
+    // Update overall bill status to Accepted
+    await supabase
+      .from('bills')
+      .update({ status: 'Accepted' })
+      .eq('id', id);
+
     res.json({ message: 'Bill accepted', data });
   } catch (err: any) {
     res.status(500).json({ error: err.message });
@@ -139,13 +147,21 @@ app.post('/api/bills/:id/decline', async (req, res) => {
     const { id } = req.params;
     const { userId } = req.body;
     
+    // Update participant accepted status to false
     const { error } = await supabase
       .from('participants')
-      .delete()
+      .update({ accepted: false })
       .eq('bill_id', id)
       .eq('friend_id', userId);
       
     if (error) throw error;
+
+    // Update overall bill status to Rejected
+    await supabase
+      .from('bills')
+      .update({ status: 'Rejected' })
+      .eq('id', id);
+
     res.json({ message: 'Bill declined' });
   } catch (err: any) {
     res.status(500).json({ error: err.message });

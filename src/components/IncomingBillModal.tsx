@@ -39,6 +39,11 @@ export function IncomingBillModal({
           .eq('bill_id', bill.id)
           .eq('friend_id', userId);
         if (error) throw error;
+
+        await supabase
+          .from('bills')
+          .update({ status: 'Accepted' })
+          .eq('id', bill.id);
       }
 
       if (onSuccess) onSuccess();
@@ -59,10 +64,15 @@ export function IncomingBillModal({
       } catch (apiErr) {
         const { error } = await supabase
           .from('participants')
-          .delete()
+          .update({ accepted: false })
           .eq('bill_id', bill.id)
           .eq('friend_id', userId);
         if (error) throw error;
+
+        await supabase
+          .from('bills')
+          .update({ status: 'Rejected' })
+          .eq('id', bill.id);
       }
 
       if (onSuccess) onSuccess();

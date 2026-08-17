@@ -126,7 +126,11 @@ export function BillsList({ onBillClick }: { onBillClick?: (id: string) => void 
               {/* Top Row: Title + Status Pill */}
               <div className="flex justify-between items-center gap-3">
                 <h2 className="text-[#1A1A1A] text-xl font-semibold leading-tight truncate">{bill.title}</h2>
-                <div className={`rounded-full px-3.5 py-1 flex items-center justify-center shrink-0 ${bill.status === 'Pending' ? 'bg-[#F5C744] text-black' : 'bg-[#4C8C3C] text-white'}`}>
+                <div className={`rounded-full px-3.5 py-1 flex items-center justify-center shrink-0 ${
+                  bill.status === 'Accepted' ? 'bg-[#4C8C3C] text-white' : 
+                  bill.status === 'Rejected' || bill.status === 'Declined' ? 'bg-[#F6D6DA] text-red-700 font-bold' : 
+                  'bg-[#F5C744] text-black'
+                }`}>
                   <span className="text-[12px] font-semibold">{bill.status}</span>
                 </div>
               </div>
