@@ -4,14 +4,15 @@ import type { Bill } from '../data/mockData';
 
 interface BillDetailProps {
   onBack: () => void;
+  onSettle?: () => void;
   bill?: Bill;
 }
 
 const getTagColor = (category: string) => {
   switch (category) {
-    case 'Restaurant': return 'bg-rose-200';
-    case 'Grocery': return 'bg-neutral-300';
-    case 'Entertainment': return 'bg-blue-200';
+    case 'Restaurant': return 'bg-[#F6D6DA]';
+    case 'Grocery': return 'bg-[#D7ECD1]';
+    case 'Entertainment': return 'bg-[#CDE1FF]';
     default: return 'bg-zinc-200';
   }
 };
@@ -29,7 +30,7 @@ const formatTime = (ts: number) => {
   return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 };
 
-export function BillDetail({ onBack, bill }: BillDetailProps) {
+export function BillDetail({ onBack, onSettle, bill }: BillDetailProps) {
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
 
   if (!bill) return null;
@@ -54,8 +55,8 @@ export function BillDetail({ onBack, bill }: BillDetailProps) {
           <h1 className="text-[#1A1A1A] text-[24px] font-semibold leading-tight break-words ml-[43px]">{bill.title}</h1>
           
           {/* Status Pill */}
-          <div className="bg-[#F5C744] rounded-[30px] px-4 py-1.5 flex items-center justify-center shrink-0">
-            <span className="text-black text-[13px] font-semibold">{bill.status}</span>
+          <div className={`rounded-[30px] px-4 py-1.5 flex items-center justify-center shrink-0 ${bill.status === 'Pending' ? 'bg-[#F5C744]' : 'bg-[#4C8C3C]'}`}>
+            <span className={`text-[13px] font-semibold ${bill.status === 'Pending' ? 'text-black' : 'text-white'}`}>{bill.status}</span>
           </div>
         </div>
         
@@ -104,6 +105,7 @@ export function BillDetail({ onBack, bill }: BillDetailProps) {
         onClose={() => setIsConfirmModalOpen(false)}
         onConfirm={() => {
           setIsConfirmModalOpen(false);
+          if (onSettle) onSettle();
         }}
         amount={myShare}
         username="@senup"

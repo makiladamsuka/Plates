@@ -41,6 +41,11 @@ function App() {
               setCurrentView('list');
               setSelectedBillId(null);
             }} 
+            onSettle={() => {
+              setBills(bills.map(b => b.id === selectedBill?.id ? { ...b, status: 'Settled' } : b));
+              setCurrentView('list');
+              setSelectedBillId(null);
+            }}
           />
         )
       )}

@@ -5,9 +5,9 @@ import type { Bill } from '../data/mockData';
 
 const getTagColor = (category: string) => {
   switch (category) {
-    case 'Restaurant': return 'bg-rose-200';
-    case 'Grocery': return 'bg-neutral-300';
-    case 'Entertainment': return 'bg-blue-200';
+    case 'Restaurant': return 'bg-[#F6D6DA]';
+    case 'Grocery': return 'bg-[#D7ECD1]';
+    case 'Entertainment': return 'bg-[#CDE1FF]';
     default: return 'bg-zinc-200';
   }
 };
@@ -107,8 +107,8 @@ export function BillsList({ bills, onAddBill, onBillClick }: { bills: Bill[], on
               <div className="flex justify-between items-start">
                 <h2 className="text-zinc-900 text-2xl font-semibold font-['Sora'] leading-tight">{bill.title}</h2>
                 {/* Status Pill */}
-                <div className={`rounded-[30px] px-3 py-1 flex items-center justify-center ${bill.status === 'Pending' ? 'bg-amber-300' : 'bg-lime-700'}`}>
-                  <span className={`text-xs font-semibold font-['Sora'] ${bill.status === 'Pending' ? 'text-black' : 'text-white'}`}>{bill.status}</span>
+                <div className={`rounded-[30px] px-4 py-1.5 flex items-center justify-center shrink-0 ${bill.status === 'Pending' ? 'bg-[#F5C744]' : 'bg-[#4C8C3C]'}`}>
+                  <span className={`text-[13px] font-semibold font-['Sora'] ${bill.status === 'Pending' ? 'text-black' : 'text-white'}`}>{bill.status}</span>
                 </div>
               </div>
               
