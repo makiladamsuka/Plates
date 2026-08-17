@@ -169,84 +169,85 @@ export function Home({
           </div>
         </div>
 
-        {/* 4. Recent Plates Horizontal Carousel */}
-        <div className="flex flex-col gap-3">
-          <div className="flex justify-between items-end px-1">
-            <h2 className="text-[#1A1A1A] text-2xl font-bold font-display tracking-tight">
-              Recent Plates
-            </h2>
-            <span className="text-xs font-medium text-black/40">Swipe left →</span>
-          </div>
 
-          {/* Horizontal Scroll Feed */}
-          <div className="flex gap-3.5 overflow-x-auto no-scrollbar pb-3 pt-1 -mx-5 px-5 snap-x snap-mandatory">
-            {bills.map((bill) => {
-              const tagColors: Record<string, { bg: string, text: string }> = {
-                'Restaurant': { bg: '#F6D6DA', text: '#1A1A1A' },
-                'Grocery': { bg: '#D7ECD1', text: '#1A1A1A' },
-                'Entertainment': { bg: '#CDE1FF', text: '#1A1A1A' },
-              };
-              const tagStyle = tagColors[bill.category] || { bg: '#E5E7EB', text: '#1A1A1A' };
+      </div>
 
-              return (
-                <div
-                  key={`carousel-${bill.id}`}
-                  onClick={() => onBillClick?.(bill.id)}
-                  className="w-[210px] h-[210px] shrink-0 bg-[#D9D9D9] rounded-[28px] p-4.5 flex flex-col justify-between shadow-sm snap-start cursor-pointer active:scale-[0.98] hover:bg-zinc-300/80 transition-all relative overflow-hidden"
-                >
-                  {/* Top Bar inside Card */}
-                  <div className="flex justify-between items-center z-10">
-                    <span 
-                      className="text-[11px] font-semibold px-2.5 py-1 rounded-full"
-                      style={{ backgroundColor: tagStyle.bg, color: tagStyle.text }}
-                    >
-                      {bill.category}
-                    </span>
-                    <span 
-                      className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                        bill.status === 'Pending' ? 'bg-[#F5C744] text-black' : 'bg-[#4C8C3C] text-white'
-                      }`}
-                    >
-                      {bill.status}
-                    </span>
-                  </div>
-
-                  {/* Middle Content */}
-                  <div className="flex flex-col gap-1 z-10 mt-2">
-                    <h3 className="text-[#1A1A1A] text-lg font-bold leading-snug line-clamp-2">
-                      {bill.title}
-                    </h3>
-                    <span className="text-black/50 text-xs font-normal">
-                      {new Date(bill.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                    </span>
-                  </div>
-
-                  {/* Bottom Footer: Amount & Split count */}
-                  <div className="flex justify-between items-end z-10 border-t border-black/10 pt-3 mt-1">
-                    <div className="flex flex-col">
-                      <span className="text-black/50 text-[10px] font-semibold uppercase tracking-wider">Total</span>
-                      <span className="text-[#1A1A1A] text-lg font-extrabold tracking-tight">
-                        LKR {bill.total}
-                      </span>
-                    </div>
-
-                    <div className="flex -space-x-1.5 overflow-hidden">
-                      {bill.participants.slice(0, 3).map((p, i) => (
-                        <div 
-                          key={i} 
-                          className="w-6 h-6 rounded-full border border-[#EDEDF1] bg-black/20 flex items-center justify-center text-[9px] font-bold text-black shrink-0"
-                        >
-                          {p.friendId === 'me' ? 'Y' : p.friendId.substring(0, 1).toUpperCase()}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+      {/* 4. Recent Plates Horizontal Carousel - outside padded container for clean edge-to-edge scroll */}
+      <div className="flex flex-col gap-3 mt-6 max-w-[480px] mx-auto">
+        <div className="flex justify-between items-end px-5">
+          <h2 className="text-[#1A1A1A] text-2xl font-bold font-display tracking-tight">
+            Recent Plates
+          </h2>
+          <span className="text-xs font-medium text-black/40">Swipe →</span>
         </div>
 
+        {/* Horizontal Scroll Feed — starts flush with px-5 left edge, has trailing spacer */}
+        <div className="flex gap-3.5 overflow-x-auto no-scrollbar pb-4 pt-1 snap-x snap-mandatory" style={{ paddingLeft: '20px', paddingRight: '20px' }}>
+          {bills.map((bill) => {
+            const tagColors: Record<string, { bg: string, text: string }> = {
+              'Restaurant': { bg: '#F6D6DA', text: '#1A1A1A' },
+              'Grocery': { bg: '#D7ECD1', text: '#1A1A1A' },
+              'Entertainment': { bg: '#CDE1FF', text: '#1A1A1A' },
+            };
+            const tagStyle = tagColors[bill.category] || { bg: '#E5E7EB', text: '#1A1A1A' };
+
+            return (
+              <div
+                key={`carousel-${bill.id}`}
+                onClick={() => onBillClick?.(bill.id)}
+                className="w-[200px] h-[205px] shrink-0 bg-[#D9D9D9] rounded-[28px] flex flex-col justify-between shadow-sm snap-start cursor-pointer active:scale-[0.98] hover:bg-zinc-300/80 transition-all relative overflow-hidden"
+                style={{ padding: '16px' }}
+              >
+                {/* Top: category + status */}
+                <div className="flex justify-between items-center">
+                  <span
+                    className="text-[11px] font-semibold px-2.5 py-1 rounded-full"
+                    style={{ backgroundColor: tagStyle.bg, color: tagStyle.text }}
+                  >
+                    {bill.category}
+                  </span>
+                  <span
+                    className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                      bill.status === 'Pending' ? 'bg-[#F5C744] text-black' : 'bg-[#4C8C3C] text-white'
+                    }`}
+                  >
+                    {bill.status}
+                  </span>
+                </div>
+
+                {/* Middle: title + date */}
+                <div className="flex flex-col gap-0.5">
+                  <h3 className="text-[#1A1A1A] text-base font-bold leading-snug line-clamp-2">
+                    {bill.title}
+                  </h3>
+                  <span className="text-black/50 text-xs font-normal">
+                    {new Date(bill.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                  </span>
+                </div>
+
+                {/* Bottom: amount + avatars */}
+                <div className="flex justify-between items-end border-t border-black/10 pt-2.5">
+                  <div className="flex flex-col">
+                    <span className="text-black/50 text-[9px] font-semibold uppercase tracking-wider">Total</span>
+                    <span className="text-[#1A1A1A] text-base font-extrabold tracking-tight">
+                      LKR {bill.total}
+                    </span>
+                  </div>
+                  <div className="flex -space-x-1.5">
+                    {bill.participants.slice(0, 3).map((p, i) => (
+                      <div
+                        key={i}
+                        className="w-6 h-6 rounded-full border border-[#EDEDF1] bg-black/20 flex items-center justify-center text-[9px] font-bold text-black shrink-0"
+                      >
+                        {p.friendId === 'me' ? 'Y' : p.friendId.substring(0, 1).toUpperCase()}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
       </div>
 
       {/* New Bill Modal */}
