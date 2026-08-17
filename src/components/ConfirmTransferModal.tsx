@@ -64,17 +64,17 @@ export function ConfirmTransferModal({ isOpen, onClose, onConfirm, amount, usern
   };
 
   return (
-    <div className="fixed inset-0 z-[60] flex justify-center pointer-events-none">
-      <div className="w-full max-w-[480px] h-full relative flex flex-col justify-end pointer-events-none">
+    <div className="fixed inset-0 z-[60] flex justify-center items-end pointer-events-none pb-[120px] px-4">
+      <div className="w-full max-w-[448px] relative flex flex-col justify-end pointer-events-none">
         
         {/* Backdrop */}
         <div 
-          className="absolute inset-0 bg-black/40 pointer-events-auto animate-fade-in" 
+          className="fixed inset-0 bg-black/40 pointer-events-auto transition-opacity animate-in fade-in duration-300" 
           onClick={onClose}
         />
         
         {/* Modal Container */}
-        <div className="w-full bg-[#1A1A1A] rounded-t-[35px] p-6 relative flex flex-col items-center pointer-events-auto animate-slide-up shadow-2xl h-[422px]">
+        <div className="w-full bg-[#1A1A1A] rounded-[35px] p-6 relative flex flex-col items-center pointer-events-auto animate-in slide-in-from-bottom-8 duration-300 shadow-2xl h-[422px]">
           
           {/* Header Content */}
           <div className="mt-4 text-center">
@@ -90,29 +90,31 @@ export function ConfirmTransferModal({ isOpen, onClose, onConfirm, amount, usern
           {/* Slide to Approve Track */}
           <div 
             ref={trackRef}
-            className="w-full max-w-[365px] h-[74px] bg-[#D9D9D9] rounded-[50px] mt-10 relative flex items-center justify-center select-none touch-none"
+            className="w-full max-w-[365px] h-[74px] shrink-0 bg-[#D9D9D9] rounded-[50px] mt-10 relative flex items-center justify-center select-none touch-none"
           >
             <span className="text-black text-lg font-bold font-['Sora'] pointer-events-none transition-opacity duration-300" style={{ opacity: slideProgress > 50 ? 0 : 1 }}>
               Slide to approve
             </span>
             
-            {/* Draggable Thumb */}
-            <div 
-              className="absolute left-0 top-[12px] w-[50px] h-[50px] bg-[#F5C744] rounded-full flex items-center justify-center cursor-grab active:cursor-grabbing shadow-md touch-none"
-              style={{ 
-                transform: `translateX(${slideProgress}px)`,
-                transition: isDragging.current ? 'none' : 'transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)'
-              }}
-              onPointerDown={handlePointerDown}
-              onPointerMove={handlePointerMove}
-              onPointerUp={handlePointerUp}
-              onPointerCancel={handlePointerUp}
-            >
-              {/* Double Arrow Icon */}
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-black ml-0.5">
-                <polyline points="13 17 18 12 13 7" />
-                <polyline points="6 17 11 12 6 7" />
-              </svg>
+            {/* Draggable Thumb Bounds */}
+            <div className="absolute inset-y-[12px] left-[12px] right-[12px] pointer-events-none">
+              <div 
+                className="absolute left-0 top-0 w-[50px] h-[50px] shrink-0 bg-[#F5C744] rounded-full flex items-center justify-center cursor-grab active:cursor-grabbing shadow-md pointer-events-auto touch-none"
+                style={{ 
+                  transform: `translateX(${slideProgress}px)`,
+                  transition: isDragging.current ? 'none' : 'transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)'
+                }}
+                onPointerDown={handlePointerDown}
+                onPointerMove={handlePointerMove}
+                onPointerUp={handlePointerUp}
+                onPointerCancel={handlePointerUp}
+              >
+                {/* Double Arrow Icon */}
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-black ml-0.5">
+                  <polyline points="13 17 18 12 13 7" />
+                  <polyline points="6 17 11 12 6 7" />
+                </svg>
+              </div>
             </div>
           </div>
 
