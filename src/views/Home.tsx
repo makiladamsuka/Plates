@@ -94,11 +94,11 @@ export function Home({
       <div className="max-w-[480px] mx-auto px-5 flex flex-col gap-6">
 
         {/* 1. Net Balance Overview Card */}
-        <div className="w-full bg-[#D9D9D9] rounded-[30px] p-6 shadow-sm flex flex-col gap-4">
+        <div className="w-full bg-[#D9D9D9] rounded-[26px] p-5 shadow-sm flex flex-col gap-3">
           <div className="flex justify-between items-start">
             <div className="flex flex-col">
               <span className="text-black/60 text-xs font-medium uppercase tracking-wider">Overall Balance</span>
-              <span className="text-[#1A1A1A] text-3xl font-bold mt-1">
+              <span className="text-[#1A1A1A] text-3xl font-bold mt-0.5">
                 LKR {Math.abs(netBalance).toLocaleString()}
               </span>
             </div>
@@ -109,23 +109,23 @@ export function Home({
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-3 pt-2 border-t border-black/10">
+          <div className="grid grid-cols-2 gap-2.5 pt-2 border-t border-black/10">
             {/* You are owed */}
-            <div className="bg-[#EDEDF1]/70 rounded-[20px] p-3.5 flex flex-col gap-1">
+            <div className="bg-[#EDEDF1]/70 rounded-2xl px-3.5 py-2.5 flex flex-col gap-0.5">
               <div className="flex items-center gap-1.5 text-[#4C8C3C]">
-                <ArrowDownLeft size={16} strokeWidth={2.5} />
+                <ArrowDownLeft size={15} strokeWidth={2.5} />
                 <span className="text-xs font-medium text-black/70">Owed to you</span>
               </div>
-              <span className="text-lg font-bold text-[#1A1A1A]">LKR {totalYouAreOwed.toLocaleString()}</span>
+              <span className="text-base sm:text-lg font-bold text-[#1A1A1A]">LKR {totalYouAreOwed.toLocaleString()}</span>
             </div>
 
             {/* You owe */}
-            <div className="bg-[#EDEDF1]/70 rounded-[20px] p-3.5 flex flex-col gap-1">
+            <div className="bg-[#EDEDF1]/70 rounded-2xl px-3.5 py-2.5 flex flex-col gap-0.5">
               <div className="flex items-center gap-1.5 text-black">
-                <ArrowUpRight size={16} strokeWidth={2.5} />
+                <ArrowUpRight size={15} strokeWidth={2.5} />
                 <span className="text-xs font-medium text-black/70">You owe</span>
               </div>
-              <span className="text-lg font-bold text-[#1A1A1A]">LKR {totalYouOwe.toLocaleString()}</span>
+              <span className="text-base sm:text-lg font-bold text-[#1A1A1A]">LKR {totalYouOwe.toLocaleString()}</span>
             </div>
           </div>
         </div>
