@@ -2,11 +2,10 @@ import { useState } from 'react';
 import { supabase } from '../lib/supabase';
 
 // List of background / hero images located in public/welcome-heroes/
-// You can add more image paths here as you paste new photos into public/welcome-heroes/
+// You can add more image paths here as you paste new photos (.jpeg, .jpg, .png) into public/welcome-heroes/
 const HERO_IMAGES = [
-  '/welcome-heroes/hero-1.jpg',
-  '/welcome-heroes/hero-2.jpg',
-  '/welcome-heroes/hero-3.jpg',
+  '/welcome-heroes/hero-1.jpeg',
+  '/welcome-heroes/hero-2.jpeg',
 ];
 
 interface LoginProps {
@@ -57,7 +56,7 @@ export function Login({ onGuestLogin }: LoginProps) {
             alt="Plates Dining Friends"
             className="w-full h-full object-contain relative z-10"
             loading="eager"
-            onError={() => setHeroImage('/welcome-heroes/hero-1.jpg')}
+            onError={() => setHeroImage('/welcome-heroes/hero-1.jpeg')}
           />
         </div>
 
@@ -139,7 +138,7 @@ export function Login({ onGuestLogin }: LoginProps) {
               alt="Plates Dining Friends"
               className="w-full h-full object-contain rounded-2xl"
               loading="eager"
-              onError={() => setHeroImage('/welcome-heroes/hero-1.jpg')}
+              onError={() => setHeroImage('/welcome-heroes/hero-1.jpeg')}
             />
           </div>
         </div>
