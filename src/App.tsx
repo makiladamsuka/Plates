@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Home } from './views/Home';
 import { BillsList } from './views/BillsList';
 import { BillDetail } from './views/BillDetail';
@@ -6,7 +6,6 @@ import { FriendsList } from './views/FriendsList';
 import { FriendDetail } from './views/FriendDetail';
 import { SearchFriends } from './views/SearchFriends';
 import { BottomNav } from './components/BottomNav';
-import { IncomingBillModal } from './components/IncomingBillModal';
 import { Login } from './views/Login';
 import { Profile } from './views/Profile';
 import { supabase } from './lib/supabase';
@@ -22,6 +21,7 @@ function App() {
 
   // Auth state
   const [session, setSession] = useState<any>(null);
+  const [isGuestMode, setIsGuestMode] = useState(false);
   const [isInitializing, setIsInitializing] = useState(true);
 
   useEffect(() => {
@@ -39,16 +39,21 @@ function App() {
     return () => subscription.unsubscribe();
   }, []);
 
-  // Removed handleAddBill, handleApproveFriend, etc. since data is fetched from DB
-
-  // removed selectedBill and selectedFriend lookups
-
   if (isInitializing) {
     return <div className="min-h-screen bg-[#EDEDF1] flex items-center justify-center"><div className="text-black">Loading...</div></div>;
   }
 
-  if (!session) {
-    return <Login />;
+  // Active session or mock guest session for testing without backend
+  const activeSession = session || (isGuestMode ? {
+    user: {
+      id: 'demo-user-me',
+      email: 'alex.demo@plates.app',
+      user_metadata: { full_name: 'Alex Rivera' }
+    }
+  } : null);
+
+  if (!activeSession) {
+    return <Login onGuestLogin={() => setIsGuestMode(true)} />;
   }
 
   return (
@@ -71,7 +76,7 @@ function App() {
       {currentTab === 'friends' && (
         friendsView === 'search' ? (
           <SearchFriends 
-            session={session}
+            session={activeSession}
             onBack={() => setFriendsView('list')} 
           />
         ) : friendsView === 'detail' && selectedFriendId ? (
@@ -89,7 +94,7 @@ function App() {
           />
         ) : (
           <FriendsList 
-            session={session}
+            session={activeSession}
             onFriendClick={(id) => {
               setSelectedFriendId(id);
               setFriendsView('detail');
@@ -118,7 +123,7 @@ function App() {
         )
       )}
 
-      {currentTab === 'profile' && <Profile session={session} />}
+      {currentTab === 'profile' && <Profile session={activeSession} />}
 
       {/* Shared Bottom Navigation */}
       <BottomNav 
