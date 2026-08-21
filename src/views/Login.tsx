@@ -15,7 +15,9 @@ export function Login({ onGuestLogin }: LoginProps) {
       setError(null);
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
-        options: { redirectTo: window.location.origin }
+        options: {
+          redirectTo: window.location.origin,
+        }
       });
       if (error) throw error;
     } catch (err: any) {
@@ -25,104 +27,108 @@ export function Login({ onGuestLogin }: LoginProps) {
     }
   };
 
-  // Friend avatars decorative row
-  const avatars = [
-    { color: '#FCD3D3', initials: 'A' },
-    { color: '#FDD356', initials: 'S' },
-    { color: '#D9E8D3', initials: 'T' },
-    { color: '#C8D8F0', initials: 'N' },
-    { color: '#E5D0F5', initials: 'K' },
-  ];
-
   return (
-    /* ── Full-screen wrapper ── */
-    <div className="min-h-screen w-full flex flex-col bg-[#F0F6F2]">
+    <div className="min-h-screen bg-[#F6F7F9] text-[#1A1A1A] flex items-center justify-center md:p-8 lg:p-10 selection:bg-[#F5C744]/30">
+      {/* Main Container */}
+      <div className="w-full max-w-5xl bg-white md:rounded-[36px] md:shadow-[0_20px_60px_-15px_rgba(0,0,0,0.07)] md:border md:border-gray-100 overflow-hidden flex flex-col md:flex-row min-h-screen md:min-h-0">
 
-      {/* ── TOP: Illustration area (fills ~60% of screen on mobile) ── */}
-      <div className="relative flex-1 flex items-center justify-center overflow-hidden bg-gradient-to-b from-[#E8F5EE] via-[#EEF7F2] to-[#F0F6F2]">
-        {/* Soft ambient blobs */}
-        <div className="absolute top-[-5%] left-[-10%] w-72 h-72 bg-[#F5C744]/25 rounded-full blur-3xl" />
-        <div className="absolute top-[10%] right-[-10%] w-56 h-56 bg-[#4C8C3C]/15 rounded-full blur-3xl" />
-        <div className="absolute bottom-0 left-[20%] w-48 h-48 bg-[#F5C744]/10 rounded-full blur-2xl" />
+        {/* ── MOBILE ONLY: Full-width graphic on top ── */}
+        <div className="md:hidden w-full h-56 sm:h-72 bg-[#E9F3EE] relative overflow-hidden flex items-center justify-center flex-shrink-0">
+          {/* Ambient glows */}
+          <div className="absolute top-[-30%] right-[-20%] w-56 h-56 bg-[#F5C744]/35 rounded-full blur-3xl pointer-events-none" />
+          <div className="absolute bottom-[-30%] left-[-20%] w-56 h-56 bg-[#4C8C3C]/20 rounded-full blur-3xl pointer-events-none" />
+          {/* 3D Illustration */}
+          <img
+            src="/welcome-hero.jpg"
+            alt="Plates 3D Dining Mascot"
+            className="h-full w-auto object-contain relative z-10 drop-shadow-xl"
+            loading="eager"
+          />
+        </div>
 
-        {/* Main illustration */}
-        <img
-          src="/welcome-hero.jpg"
-          alt="Plates mascot"
-          className="relative z-10 w-full max-w-[340px] md:max-w-[420px] object-contain drop-shadow-xl"
-        />
-      </div>
-
-      {/* ── BOTTOM: Info + buttons panel ── */}
-      <div className="w-full bg-white rounded-t-[36px] px-7 pt-8 pb-10 shadow-[0_-8px_40px_rgba(0,0,0,0.06)] flex flex-col gap-5">
-
-        {/* Friend avatar row */}
-        <div className="flex items-center gap-2">
-          <div className="flex -space-x-2.5">
-            {avatars.map((av, i) => (
-              <div
-                key={i}
-                className="w-9 h-9 rounded-full border-2 border-white flex items-center justify-center text-xs font-bold text-[#1A1A1A] shadow-sm"
-                style={{ backgroundColor: av.color }}
-              >
-                {av.initials}
+        {/* ── Form Panel: Logo, Headline, Description & Buttons ── */}
+        <div className="w-full md:w-1/2 px-6 py-7 sm:px-10 sm:py-10 md:p-14 flex flex-col justify-between flex-1">
+          <div>
+            {/* Brand Logo */}
+            <div className="flex items-center gap-3 mb-6 md:mb-8">
+              <div className="w-11 h-11 bg-[#F5C744] rounded-2xl flex items-center justify-center shadow-md shadow-[#F5C744]/30 rotate-[-4deg] transition-transform hover:rotate-0">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#1A1A1A" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+                </svg>
               </div>
-            ))}
+              <span className="text-2xl font-bold font-display tracking-tight text-[#1A1A1A]">Plates</span>
+            </div>
+
+            {/* Headline */}
+            <h1 className="text-2xl sm:text-3xl md:text-[40px] font-extrabold font-display tracking-tight text-[#1A1A1A] leading-[1.2] mb-3 md:mb-4">
+              Split dining bills effortlessly with friends.
+            </h1>
+
+            {/* Description */}
+            <p className="text-gray-500 text-sm sm:text-base md:text-lg font-sans-app leading-relaxed mb-6 md:mb-8">
+              The easiest way to track shared meals, split food tabs in real-time, and settle balances without the math headaches.
+            </p>
           </div>
-          <span className="text-xs font-sans-app text-gray-500 ml-1">
-            Join 1,000+ friends splitting bills
-          </span>
+
+          {/* Buttons */}
+          <div className="space-y-3">
+            {/* Google Sign In */}
+            <button
+              onClick={handleGoogleLogin}
+              disabled={isLoading}
+              className="w-full h-13 sm:h-14 bg-[#1A1A1A] hover:bg-[#2A2A2A] text-white rounded-2xl flex items-center justify-center gap-3.5 transition-all duration-200 hover:shadow-lg hover:shadow-black/10 active:scale-[0.99] disabled:opacity-70 cursor-pointer font-sans-app"
+            >
+              <div className="w-7 h-7 bg-white rounded-full flex items-center justify-center">
+                <svg width="18" height="18" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+                  <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+                  <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
+                  <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+                </svg>
+              </div>
+              <span className="text-base font-semibold font-sans-app">
+                {isLoading ? 'Connecting to Google...' : 'Continue with Google'}
+              </span>
+            </button>
+
+            {/* Guest Mode */}
+            {onGuestLogin && (
+              <button
+                onClick={onGuestLogin}
+                className="w-full h-11 sm:h-12 bg-gray-50 hover:bg-gray-100 text-gray-700 rounded-2xl flex items-center justify-center gap-2 text-sm font-semibold font-sans-app border border-gray-200/80 transition-all cursor-pointer"
+              >
+                <span>Explore Demo Mode (No Login)</span>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M5 12h14M12 5l7 7-7 7"/>
+                </svg>
+              </button>
+            )}
+
+            {error && (
+              <p className="text-red-500 text-xs font-medium font-sans-app mt-2 text-center">{error}</p>
+            )}
+
+            <p className="text-gray-400 text-xs font-sans-app text-center pt-1 pb-2 md:pb-0">
+              Free to use • No credit card required
+            </p>
+          </div>
         </div>
 
-        {/* Title & Slogan */}
-        <div className="flex flex-col gap-1.5">
-          <h1 className="text-[28px] sm:text-[32px] font-extrabold font-display text-[#1A1A1A] leading-tight">
-            Welcome to Plates
-          </h1>
-          <p className="text-gray-500 text-sm sm:text-base font-sans-app leading-relaxed">
-            Split dining bills effortlessly with friends. Track expenses, settle up in seconds.
-          </p>
+        {/* ── DESKTOP ONLY: Right-side 3D illustration panel ── */}
+        <div className="hidden md:flex w-1/2 bg-[#E9F3EE] p-8 md:p-12 items-center justify-center relative overflow-hidden">
+          <div className="absolute top-[-20%] right-[-20%] w-60 h-60 bg-[#F5C744]/30 rounded-full blur-3xl pointer-events-none" />
+          <div className="absolute bottom-[-20%] left-[-20%] w-60 h-60 bg-[#4C8C3C]/20 rounded-full blur-3xl pointer-events-none" />
+          <div className="relative w-full max-w-[420px] aspect-square rounded-3xl overflow-hidden shadow-[0_15px_40px_rgba(0,0,0,0.08)] border border-white/60">
+            <img
+              src="/welcome-hero.jpg"
+              alt="Plates 3D Dining Mascot"
+              className="w-full h-full object-cover"
+              loading="eager"
+            />
+          </div>
         </div>
 
-        {/* Error */}
-        {error && (
-          <p className="text-red-500 text-xs font-medium font-sans-app text-center -mb-2">{error}</p>
-        )}
-
-        {/* Google Sign In */}
-        <button
-          onClick={handleGoogleLogin}
-          disabled={isLoading}
-          className="w-full h-[52px] bg-[#1A1A1A] hover:bg-[#2d2d2d] text-white rounded-2xl flex items-center justify-center gap-3 font-sans-app font-semibold text-base transition-all active:scale-[0.98] disabled:opacity-60 cursor-pointer shadow-lg shadow-black/10"
-        >
-          <div className="w-6 h-6 bg-white rounded-full flex items-center justify-center">
-            <svg width="16" height="16" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-              <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
-              <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
-              <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
-              <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
-            </svg>
-          </div>
-          {isLoading ? 'Connecting...' : 'Continue with Google'}
-        </button>
-
-        {/* Guest / Demo mode */}
-        {onGuestLogin && (
-          <button
-            onClick={onGuestLogin}
-            className="w-full h-11 text-sm font-semibold font-sans-app text-gray-500 hover:text-gray-800 transition-colors cursor-pointer"
-          >
-            Explore Demo Mode (No Login)
-          </button>
-        )}
-
-        <p className="text-gray-400 text-[11px] font-sans-app text-center -mt-2">
-          Free to use · No credit card required
-        </p>
       </div>
-
-      {/* ── DESKTOP: wrap everything in a centered phone-like container ── */}
-      {/* The above layout is mobile-first; on desktop it auto-centers via max-w */}
     </div>
   );
 }
