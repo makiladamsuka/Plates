@@ -33,15 +33,15 @@ export function Login({ onGuestLogin }: LoginProps) {
       <div className="w-full max-w-5xl bg-white md:rounded-[36px] md:shadow-[0_20px_60px_-15px_rgba(0,0,0,0.07)] md:border md:border-gray-100 overflow-hidden flex flex-col md:flex-row min-h-screen md:min-h-0">
 
         {/* ── MOBILE ONLY: Full-width graphic on top ── */}
-        <div className="md:hidden w-full h-56 sm:h-72 bg-[#E9F3EE] relative overflow-hidden flex items-center justify-center flex-shrink-0">
+        <div className="md:hidden w-full h-56 sm:h-72 bg-[#E9F3EE] relative overflow-hidden flex-shrink-0">
           {/* Ambient glows */}
           <div className="absolute top-[-30%] right-[-20%] w-56 h-56 bg-[#F5C744]/35 rounded-full blur-3xl pointer-events-none" />
           <div className="absolute bottom-[-30%] left-[-20%] w-56 h-56 bg-[#4C8C3C]/20 rounded-full blur-3xl pointer-events-none" />
-          {/* 3D Illustration */}
+          {/* 3D Illustration - fully stretched */}
           <img
             src="/welcome-hero.jpg"
             alt="Plates 3D Dining Mascot"
-            className="h-full w-auto object-contain relative z-10 drop-shadow-xl"
+            className="absolute inset-0 w-full h-full object-cover"
             loading="eager"
           />
         </div>
