@@ -45,16 +45,12 @@ export function Login({ onGuestLogin }: LoginProps) {
       {/* Main Container */}
       <div className="w-full max-w-5xl bg-white md:rounded-[36px] md:shadow-[0_20px_60px_-15px_rgba(0,0,0,0.07)] md:border md:border-gray-100 overflow-hidden flex flex-col md:flex-row min-h-screen md:min-h-0">
 
-        {/* ── MOBILE ONLY: Full-width graphic on top ── */}
-        <div className="md:hidden w-full h-64 sm:h-80 bg-[#F7F6F3] relative overflow-hidden flex-shrink-0 border-b border-black/5 flex items-center justify-center p-3">
-          {/* Ambient subtle glow */}
-          <div className="absolute top-[-30%] right-[-20%] w-56 h-56 bg-[#F5C744]/20 rounded-full blur-3xl pointer-events-none" />
-          <div className="absolute bottom-[-30%] left-[-20%] w-56 h-56 bg-[#4C8C3C]/15 rounded-full blur-3xl pointer-events-none" />
-          {/* Random Line Art / Hero Illustration */}
+        {/* ── MOBILE ONLY: Full-width stretched image on top ── */}
+        <div className="md:hidden w-full h-64 sm:h-80 relative overflow-hidden flex-shrink-0 border-b border-black/5 bg-gray-50">
           <img
             src={heroImage}
             alt="Plates Dining Friends"
-            className="w-full h-full object-contain relative z-10"
+            className="w-full h-full object-cover"
             loading="eager"
             onError={() => setHeroImage('/welcome-heroes/hero-1.jpeg')}
           />
@@ -128,19 +124,15 @@ export function Login({ onGuestLogin }: LoginProps) {
           </div>
         </div>
 
-        {/* ── DESKTOP ONLY: Right-side Notion line-art panel ── */}
-        <div className="hidden md:flex w-1/2 bg-[#F7F6F3] p-8 md:p-12 items-center justify-center relative overflow-hidden border-l border-black/5">
-          <div className="absolute top-[-20%] right-[-20%] w-60 h-60 bg-[#F5C744]/25 rounded-full blur-3xl pointer-events-none" />
-          <div className="absolute bottom-[-20%] left-[-20%] w-60 h-60 bg-[#4C8C3C]/15 rounded-full blur-3xl pointer-events-none" />
-          <div className="relative w-full max-w-[440px] aspect-square rounded-3xl overflow-hidden shadow-sm border border-black/5 bg-white p-3">
-            <img
-              src={heroImage}
-              alt="Plates Dining Friends"
-              className="w-full h-full object-contain rounded-2xl"
-              loading="eager"
-              onError={() => setHeroImage('/welcome-heroes/hero-1.jpeg')}
-            />
-          </div>
+        {/* ── DESKTOP ONLY: Right-side fully stretched image panel ── */}
+        <div className="hidden md:block w-1/2 relative overflow-hidden border-l border-black/5 bg-gray-50">
+          <img
+            src={heroImage}
+            alt="Plates Dining Friends"
+            className="w-full h-full object-cover"
+            loading="eager"
+            onError={() => setHeroImage('/welcome-heroes/hero-1.jpeg')}
+          />
         </div>
 
       </div>
