@@ -29,40 +29,51 @@ export function Login({ onGuestLogin }: LoginProps) {
 
   return (
     <div className="min-h-screen bg-[#F6F7F9] text-[#1A1A1A] flex items-center justify-center p-4 sm:p-6 md:p-10 selection:bg-[#F5C744]/30">
-      {/* Main Container - Responsive Card on Desktop, Fluid on Mobile */}
-      <div className="w-full max-w-5xl bg-white rounded-3xl sm:rounded-[36px] shadow-[0_20px_60px_-15px_rgba(0,0,0,0.07)] border border-gray-100 overflow-hidden flex flex-col md:flex-row min-h-[580px] md:min-h-[640px]">
+      {/* Main Container - 50/50 Split on Desktop, Single Screen Card on Mobile */}
+      <div className="w-full max-w-5xl bg-white rounded-[28px] sm:rounded-[36px] shadow-[0_20px_60px_-15px_rgba(0,0,0,0.07)] border border-gray-100 overflow-hidden flex flex-col md:flex-row">
         
-        {/* Left Side: Brand, Slogan, Description & Google Sign In */}
-        <div className="w-full md:w-1/2 p-7 sm:p-10 md:p-14 flex flex-col justify-between order-2 md:order-1">
-          {/* Top Brand Logo */}
+        {/* Form Panel: Brand, Slogan, Description & Google Sign In */}
+        <div className="w-full md:w-1/2 p-6 sm:p-10 md:p-14 flex flex-col justify-between">
           <div>
-            <div className="flex items-center gap-3 mb-8">
-              <div className="w-11 h-11 bg-[#F5C744] rounded-2xl flex items-center justify-center shadow-md shadow-[#F5C744]/30 rotate-[-4deg] transition-transform hover:rotate-0">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#1A1A1A" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
-                </svg>
+            {/* Top Brand Logo & Mobile Mascot Avatar */}
+            <div className="flex items-center justify-between mb-6 md:mb-8">
+              <div className="flex items-center gap-3">
+                <div className="w-11 h-11 bg-[#F5C744] rounded-2xl flex items-center justify-center shadow-md shadow-[#F5C744]/30 rotate-[-4deg] transition-transform hover:rotate-0">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#1A1A1A" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+                  </svg>
+                </div>
+                <span className="text-2xl font-bold font-display tracking-tight text-[#1A1A1A]">Plates</span>
               </div>
-              <span className="text-2xl font-bold font-display tracking-tight text-[#1A1A1A]">Plates</span>
+
+              {/* Compact 3D mascot preview visible on Mobile only */}
+              <div className="md:hidden w-12 h-12 rounded-2xl overflow-hidden shadow-sm border border-emerald-100 bg-[#E9F3EE] p-0.5">
+                <img
+                  src="/welcome-hero.jpg"
+                  alt="Plates Mascot"
+                  className="w-full h-full object-cover rounded-xl"
+                />
+              </div>
             </div>
 
             {/* Slogan & Headline - Primary Display Font (Playfair Display) */}
-            <h1 className="text-3xl sm:text-4xl md:text-[42px] font-extrabold font-display tracking-tight text-[#1A1A1A] leading-[1.18] mb-4">
+            <h1 className="text-2xl sm:text-3xl md:text-[40px] font-extrabold font-display tracking-tight text-[#1A1A1A] leading-[1.2] mb-3 md:mb-4">
               Split dining bills effortlessly with friends.
             </h1>
 
             {/* Brief Description - Secondary Body Font (Plus Jakarta Sans) */}
-            <p className="text-gray-600 text-base sm:text-lg font-sans-app leading-relaxed mb-8">
+            <p className="text-gray-600 text-sm sm:text-base md:text-lg font-sans-app leading-relaxed mb-6 md:mb-8">
               The easiest way to track shared meals, split food tabs in real-time, and settle balances without the math headaches.
             </p>
           </div>
 
           {/* Action / Login Section */}
-          <div className="space-y-3.5 pt-4">
+          <div className="space-y-3 pt-2 md:pt-4">
             {/* Google Sign In Button */}
             <button
               onClick={handleGoogleLogin}
               disabled={isLoading}
-              className="w-full h-14 bg-[#1A1A1A] hover:bg-[#2A2A2A] text-white rounded-2xl flex items-center justify-center gap-3.5 transition-all duration-200 hover:shadow-lg hover:shadow-black/10 active:scale-[0.99] disabled:opacity-70 disabled:hover:scale-100 cursor-pointer group font-sans-app"
+              className="w-full h-13 sm:h-14 bg-[#1A1A1A] hover:bg-[#2A2A2A] text-white rounded-2xl flex items-center justify-center gap-3.5 transition-all duration-200 hover:shadow-lg hover:shadow-black/10 active:scale-[0.99] disabled:opacity-70 disabled:hover:scale-100 cursor-pointer group font-sans-app"
             >
               <div className="w-7 h-7 bg-white rounded-full flex items-center justify-center shadow-xs">
                 <svg width="18" height="18" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -81,7 +92,7 @@ export function Login({ onGuestLogin }: LoginProps) {
             {onGuestLogin && (
               <button
                 onClick={onGuestLogin}
-                className="w-full h-12 bg-gray-50 hover:bg-gray-100 text-gray-700 hover:text-gray-900 rounded-2xl flex items-center justify-center gap-2 text-sm font-semibold font-sans-app border border-gray-200/80 transition-all cursor-pointer"
+                className="w-full h-11 sm:h-12 bg-gray-50 hover:bg-gray-100 text-gray-700 hover:text-gray-900 rounded-2xl flex items-center justify-center gap-2 text-sm font-semibold font-sans-app border border-gray-200/80 transition-all cursor-pointer"
               >
                 <span>Explore Demo Mode (No Login)</span>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -94,20 +105,20 @@ export function Login({ onGuestLogin }: LoginProps) {
               <p className="text-red-500 text-xs font-medium font-sans-app mt-2 text-center">{error}</p>
             )}
 
-            <p className="text-gray-400 text-xs font-sans-app text-center pt-2">
+            <p className="text-gray-400 text-xs font-sans-app text-center pt-1">
               Free to use • No credit card required
             </p>
           </div>
         </div>
 
-        {/* Right Side: Custom 3D Illustration Scene */}
-        <div className="w-full md:w-1/2 bg-[#E9F3EE] p-5 sm:p-7 md:p-10 flex items-center justify-center order-1 md:order-2 relative overflow-hidden">
+        {/* Right Side: Custom 3D Illustration Scene (Only on Tablet & Desktop) */}
+        <div className="hidden md:flex w-1/2 bg-[#E9F3EE] p-8 md:p-12 items-center justify-center relative overflow-hidden">
           {/* Ambient decorative background blurs */}
           <div className="absolute top-[-20%] right-[-20%] w-60 h-60 bg-[#F5C744]/30 rounded-full blur-3xl pointer-events-none" />
           <div className="absolute bottom-[-20%] left-[-20%] w-60 h-60 bg-[#4C8C3C]/20 rounded-full blur-3xl pointer-events-none" />
 
           {/* 3D Image Artwork */}
-          <div className="relative w-full max-w-[260px] sm:max-w-[320px] md:max-w-[440px] aspect-square rounded-2xl sm:rounded-3xl overflow-hidden shadow-[0_12px_35px_rgba(0,0,0,0.08)] border border-white/60">
+          <div className="relative w-full max-w-[420px] aspect-square rounded-3xl overflow-hidden shadow-[0_15px_40px_rgba(0,0,0,0.08)] border border-white/60">
             <img
               src="/welcome-hero.jpg"
               alt="Plates 3D Dining Mascot"
