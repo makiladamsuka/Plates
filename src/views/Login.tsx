@@ -61,8 +61,8 @@ export function Login({ onGuestLogin }: LoginProps) {
         <div className="absolute top-[-10%] left-[-10%] w-96 h-96 bg-[#F5C744]/15 rounded-full blur-3xl pointer-events-none" />
         <div className="absolute bottom-[-10%] right-[-10%] w-96 h-96 bg-[#4C8C3C]/10 rounded-full blur-3xl pointer-events-none" />
 
-        {/* Top: Brand Logo & Status Pill */}
-        <div className="relative z-10 flex items-center justify-between mb-8 md:mb-12">
+        {/* Top: Brand Logo */}
+        <div className="relative z-10 flex items-center mb-8 md:mb-12">
           <div className="flex items-center gap-3">
             <div className="w-11 h-11 bg-[#F5C744] rounded-2xl flex items-center justify-center shadow-xs border border-black/5 rotate-[-3deg] transition-transform hover:rotate-0">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#1A1A1A" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -71,10 +71,6 @@ export function Login({ onGuestLogin }: LoginProps) {
             </div>
             <span className="text-2xl font-bold font-display tracking-tight text-[#1A1A1A]">Plates</span>
           </div>
-
-          <span className="hidden sm:inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold font-sans-app bg-white border border-black/5 text-gray-600 shadow-2xs">
-            ✨ Social Bill Splitting
-          </span>
         </div>
 
         {/* Center: Slogan & Action Area */}
