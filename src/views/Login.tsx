@@ -69,9 +69,10 @@ export function Login({ onGuestLogin }: LoginProps) {
               <span className="text-2xl font-bold font-display tracking-tight text-[#1A1A1A]">Plates</span>
             </div>
 
-            {/* Headline */}
-            <h1 className="text-2xl sm:text-3xl md:text-[38px] font-extrabold font-display tracking-tight text-[#1A1A1A] leading-[1.2] mb-3 md:mb-4">
-              Split dining bills effortlessly with friends.
+            {/* Slogan & Headline */}
+            <h1 className="text-3xl sm:text-4xl md:text-[44px] font-extrabold font-display tracking-tight text-[#1A1A1A] leading-[1.15] mb-3 md:mb-4">
+              Eat together.<br />
+              Settle later.
             </h1>
 
             {/* Description */}
