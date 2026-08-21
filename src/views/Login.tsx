@@ -1,6 +1,14 @@
 import { useState } from 'react';
 import { supabase } from '../lib/supabase';
 
+// List of background / hero images located in public/welcome-heroes/
+// You can add more image paths here as you paste new photos into public/welcome-heroes/
+const HERO_IMAGES = [
+  '/welcome-heroes/hero-1.jpg',
+  '/welcome-heroes/hero-2.jpg',
+  '/welcome-heroes/hero-3.jpg',
+];
+
 interface LoginProps {
   onGuestLogin?: () => void;
 }
@@ -8,6 +16,12 @@ interface LoginProps {
 export function Login({ onGuestLogin }: LoginProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Randomly pick one hero image on each load / refresh
+  const [heroImage, setHeroImage] = useState(() => {
+    const randomIndex = Math.floor(Math.random() * HERO_IMAGES.length);
+    return HERO_IMAGES[randomIndex];
+  });
 
   const handleGoogleLogin = async () => {
     try {
@@ -37,12 +51,13 @@ export function Login({ onGuestLogin }: LoginProps) {
           {/* Ambient subtle glow */}
           <div className="absolute top-[-30%] right-[-20%] w-56 h-56 bg-[#F5C744]/20 rounded-full blur-3xl pointer-events-none" />
           <div className="absolute bottom-[-30%] left-[-20%] w-56 h-56 bg-[#4C8C3C]/15 rounded-full blur-3xl pointer-events-none" />
-          {/* Notion Line Art Illustration */}
+          {/* Random Line Art / Hero Illustration */}
           <img
-            src="/welcome-hero.jpg"
+            src={heroImage}
             alt="Plates Dining Friends"
             className="w-full h-full object-contain relative z-10"
             loading="eager"
+            onError={() => setHeroImage('/welcome-heroes/hero-1.jpg')}
           />
         </div>
 
@@ -120,10 +135,11 @@ export function Login({ onGuestLogin }: LoginProps) {
           <div className="absolute bottom-[-20%] left-[-20%] w-60 h-60 bg-[#4C8C3C]/15 rounded-full blur-3xl pointer-events-none" />
           <div className="relative w-full max-w-[440px] aspect-square rounded-3xl overflow-hidden shadow-sm border border-black/5 bg-white p-3">
             <img
-              src="/welcome-hero.jpg"
+              src={heroImage}
               alt="Plates Dining Friends"
               className="w-full h-full object-contain rounded-2xl"
               loading="eager"
+              onError={() => setHeroImage('/welcome-heroes/hero-1.jpg')}
             />
           </div>
         </div>
