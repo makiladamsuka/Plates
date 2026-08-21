@@ -33,15 +33,15 @@ export function Login({ onGuestLogin }: LoginProps) {
       <div className="w-full max-w-5xl bg-white md:rounded-[36px] md:shadow-[0_20px_60px_-15px_rgba(0,0,0,0.07)] md:border md:border-gray-100 overflow-hidden flex flex-col md:flex-row min-h-screen md:min-h-0">
 
         {/* ── MOBILE ONLY: Full-width graphic on top ── */}
-        <div className="md:hidden w-full h-56 sm:h-72 bg-[#E9F3EE] relative overflow-hidden flex-shrink-0">
-          {/* Ambient glows */}
-          <div className="absolute top-[-30%] right-[-20%] w-56 h-56 bg-[#F5C744]/35 rounded-full blur-3xl pointer-events-none" />
-          <div className="absolute bottom-[-30%] left-[-20%] w-56 h-56 bg-[#4C8C3C]/20 rounded-full blur-3xl pointer-events-none" />
-          {/* 3D Illustration - fully stretched */}
+        <div className="md:hidden w-full h-64 sm:h-80 bg-[#F7F6F3] relative overflow-hidden flex-shrink-0 border-b border-black/5 flex items-center justify-center p-3">
+          {/* Ambient subtle glow */}
+          <div className="absolute top-[-30%] right-[-20%] w-56 h-56 bg-[#F5C744]/20 rounded-full blur-3xl pointer-events-none" />
+          <div className="absolute bottom-[-30%] left-[-20%] w-56 h-56 bg-[#4C8C3C]/15 rounded-full blur-3xl pointer-events-none" />
+          {/* Notion Line Art Illustration */}
           <img
             src="/welcome-hero.jpg"
-            alt="Plates 3D Dining Mascot"
-            className="absolute inset-0 w-full h-full object-cover"
+            alt="Plates Dining Friends"
+            className="w-full h-full object-contain relative z-10"
             loading="eager"
           />
         </div>
@@ -51,7 +51,7 @@ export function Login({ onGuestLogin }: LoginProps) {
           <div>
             {/* Brand Logo */}
             <div className="flex items-center gap-3 mb-6 md:mb-8">
-              <div className="w-11 h-11 bg-[#F5C744] rounded-2xl flex items-center justify-center shadow-md shadow-[#F5C744]/30 rotate-[-4deg] transition-transform hover:rotate-0">
+              <div className="w-11 h-11 bg-[#F5C744] rounded-2xl flex items-center justify-center shadow-xs border border-black/5 rotate-[-3deg] transition-transform hover:rotate-0">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#1A1A1A" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
                 </svg>
@@ -60,7 +60,7 @@ export function Login({ onGuestLogin }: LoginProps) {
             </div>
 
             {/* Headline */}
-            <h1 className="text-2xl sm:text-3xl md:text-[40px] font-extrabold font-display tracking-tight text-[#1A1A1A] leading-[1.2] mb-3 md:mb-4">
+            <h1 className="text-2xl sm:text-3xl md:text-[38px] font-extrabold font-display tracking-tight text-[#1A1A1A] leading-[1.2] mb-3 md:mb-4">
               Split dining bills effortlessly with friends.
             </h1>
 
@@ -76,7 +76,7 @@ export function Login({ onGuestLogin }: LoginProps) {
             <button
               onClick={handleGoogleLogin}
               disabled={isLoading}
-              className="w-full h-13 sm:h-14 bg-[#1A1A1A] hover:bg-[#2A2A2A] text-white rounded-2xl flex items-center justify-center gap-3.5 transition-all duration-200 hover:shadow-lg hover:shadow-black/10 active:scale-[0.99] disabled:opacity-70 cursor-pointer font-sans-app"
+              className="w-full h-13 sm:h-14 bg-[#1A1A1A] hover:bg-[#2A2A2A] text-white rounded-2xl flex items-center justify-center gap-3.5 transition-all duration-200 hover:shadow-md active:scale-[0.99] disabled:opacity-70 cursor-pointer font-sans-app"
             >
               <div className="w-7 h-7 bg-white rounded-full flex items-center justify-center">
                 <svg width="18" height="18" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -114,15 +114,15 @@ export function Login({ onGuestLogin }: LoginProps) {
           </div>
         </div>
 
-        {/* ── DESKTOP ONLY: Right-side 3D illustration panel ── */}
-        <div className="hidden md:flex w-1/2 bg-[#E9F3EE] p-8 md:p-12 items-center justify-center relative overflow-hidden">
-          <div className="absolute top-[-20%] right-[-20%] w-60 h-60 bg-[#F5C744]/30 rounded-full blur-3xl pointer-events-none" />
-          <div className="absolute bottom-[-20%] left-[-20%] w-60 h-60 bg-[#4C8C3C]/20 rounded-full blur-3xl pointer-events-none" />
-          <div className="relative w-full max-w-[420px] aspect-square rounded-3xl overflow-hidden shadow-[0_15px_40px_rgba(0,0,0,0.08)] border border-white/60">
+        {/* ── DESKTOP ONLY: Right-side Notion line-art panel ── */}
+        <div className="hidden md:flex w-1/2 bg-[#F7F6F3] p-8 md:p-12 items-center justify-center relative overflow-hidden border-l border-black/5">
+          <div className="absolute top-[-20%] right-[-20%] w-60 h-60 bg-[#F5C744]/25 rounded-full blur-3xl pointer-events-none" />
+          <div className="absolute bottom-[-20%] left-[-20%] w-60 h-60 bg-[#4C8C3C]/15 rounded-full blur-3xl pointer-events-none" />
+          <div className="relative w-full max-w-[440px] aspect-square rounded-3xl overflow-hidden shadow-sm border border-black/5 bg-white p-3">
             <img
               src="/welcome-hero.jpg"
-              alt="Plates 3D Dining Mascot"
-              className="w-full h-full object-cover"
+              alt="Plates Dining Friends"
+              className="w-full h-full object-contain rounded-2xl"
               loading="eager"
             />
           </div>
