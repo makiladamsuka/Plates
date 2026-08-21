@@ -6,6 +6,7 @@ import { FriendsList } from './views/FriendsList';
 import { FriendDetail } from './views/FriendDetail';
 import { SearchFriends } from './views/SearchFriends';
 import { BottomNav } from './components/BottomNav';
+import { SidebarNav } from './components/SidebarNav';
 import { Login } from './views/Login';
 import { Profile } from './views/Profile';
 import { supabase } from './lib/supabase';
@@ -40,7 +41,16 @@ function App() {
   }, []);
 
   if (isInitializing) {
-    return <div className="min-h-screen bg-[#EDEDF1] flex items-center justify-center"><div className="text-black">Loading...</div></div>;
+    return (
+      <div className="min-h-screen bg-[#FBFBFA] flex items-center justify-center font-sans-app">
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 rounded-xl bg-[#F5C744] flex items-center justify-center font-bold text-sm animate-pulse">
+            P
+          </div>
+          <span className="text-gray-500 text-sm font-medium">Loading Plates...</span>
+        </div>
+      </div>
+    );
   }
 
   // Active session or mock guest session for testing without backend
@@ -56,89 +66,99 @@ function App() {
     return <Login onGuestLogin={() => setIsGuestMode(true)} />;
   }
 
+  const handleTabChange = (tab: string) => {
+    setCurrentTab(tab);
+    if (tab === 'bills') setCurrentView('list');
+    if (tab === 'friends') {
+      setFriendsView('list');
+      setSelectedFriendId(null);
+    }
+  };
+
   return (
-    <div id="root-container" className="max-w-[480px] mx-auto w-full min-h-screen bg-[#EDEDF1] relative shadow-sm">
-      {/* Views */}
-      {currentTab === 'home' && (
-        <Home 
-          onBillClick={(id) => {
-            setSelectedBillId(id);
-            setCurrentView('detail');
-            setCurrentTab('bills');
-          }}
-          onSearchClick={() => {
-            setFriendsView('search');
-            setCurrentTab('friends');
-          }}
-        />
-      )}
-      
-      {currentTab === 'friends' && (
-        friendsView === 'search' ? (
-          <SearchFriends 
-            session={activeSession}
-            onBack={() => setFriendsView('list')} 
-          />
-        ) : friendsView === 'detail' && selectedFriendId ? (
-          <FriendDetail 
-            friendId={selectedFriendId}
-            onBack={() => {
-              setFriendsView('list');
-              setSelectedFriendId(null);
-            }}
-            onBillClick={(billId) => {
-              setSelectedBillId(billId);
-              setCurrentView('detail');
-              setCurrentTab('bills');
-            }}
-          />
-        ) : (
-          <FriendsList 
-            session={activeSession}
-            onFriendClick={(id) => {
-              setSelectedFriendId(id);
-              setFriendsView('detail');
-            }}
-            onSearchClick={() => setFriendsView('search')}
-          />
-        )
-      )}
-      
-      {currentTab === 'bills' && (
-        currentView === 'list' ? (
-          <BillsList 
+    <div id="root-container" className="w-full min-h-screen bg-[#FBFBFA] flex flex-col md:flex-row text-[#1A1A1A]">
+      {/* Desktop Left Sidebar Navigation */}
+      <SidebarNav 
+        currentTab={currentTab} 
+        onTabChange={handleTabChange} 
+        session={activeSession} 
+      />
+
+      {/* Main Content Workspace */}
+      <main className="flex-1 w-full max-w-full md:max-w-4xl lg:max-w-5xl xl:max-w-6xl mx-auto p-0 md:p-8 lg:p-10 pb-24 md:pb-12">
+        {/* Views */}
+        {currentTab === 'home' && (
+          <Home 
             onBillClick={(id) => {
               setSelectedBillId(id);
               setCurrentView('detail');
+              setCurrentTab('bills');
+            }}
+            onSearchClick={() => {
+              setFriendsView('search');
+              setCurrentTab('friends');
             }}
           />
-        ) : (
-          <BillDetail 
-            billId={selectedBillId}
-            onBack={() => {
-              setCurrentView('list');
-              setSelectedBillId(null);
-            }}
-          />
-        )
-      )}
+        )}
+        
+        {currentTab === 'friends' && (
+          friendsView === 'search' ? (
+            <SearchFriends 
+              session={activeSession}
+              onBack={() => setFriendsView('list')} 
+            />
+          ) : friendsView === 'detail' && selectedFriendId ? (
+            <FriendDetail 
+              friendId={selectedFriendId}
+              onBack={() => {
+                setFriendsView('list');
+                setSelectedFriendId(null);
+              }}
+              onBillClick={(billId) => {
+                setSelectedBillId(billId);
+                setCurrentView('detail');
+                setCurrentTab('bills');
+              }}
+            />
+          ) : (
+            <FriendsList 
+              session={activeSession}
+              onFriendClick={(id) => {
+                setSelectedFriendId(id);
+                setFriendsView('detail');
+              }}
+              onSearchClick={() => setFriendsView('search')}
+            />
+          )
+        )}
+        
+        {currentTab === 'bills' && (
+          currentView === 'list' ? (
+            <BillsList 
+              onBillClick={(id) => {
+                setSelectedBillId(id);
+                setCurrentView('detail');
+              }}
+            />
+          ) : (
+            <BillDetail 
+              billId={selectedBillId}
+              onBack={() => {
+                setCurrentView('list');
+                setSelectedBillId(null);
+              }}
+            />
+          )
+        )}
 
-      {currentTab === 'profile' && <Profile session={activeSession} />}
+        {currentTab === 'profile' && <Profile session={activeSession} />}
+      </main>
 
-      {/* Shared Bottom Navigation */}
+      {/* Shared Mobile Bottom Navigation */}
       <BottomNav 
         currentTab={currentTab} 
-        onTabChange={(tab) => {
-          setCurrentTab(tab);
-          if (tab === 'bills') setCurrentView('list');
-          if (tab === 'friends') {
-            setFriendsView('list');
-            setSelectedFriendId(null);
-          }
-        }} 
+        onTabChange={handleTabChange} 
       />
-      
-      {/* <IncomingBillModal /> */}
     </div>
   );
 }

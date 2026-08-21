@@ -81,81 +81,107 @@ export function Home({
   const pendingFriendRequests = friends.filter(f => f.isPendingRequest);
 
   return (
-    <div className="min-h-screen bg-[#EDEDF1] pb-36 pt-0">
+    <div className="w-full pb-20 md:pb-6 font-sans-app">
       
       {/* Top Header Container */}
-      <div className="px-6 pt-10 pb-4 h-[88px] flex justify-between items-center max-w-[480px] mx-auto">
-        <h1 className="text-black text-5xl font-bold font-display tracking-tight leading-none">Plates</h1>
-        <div className="w-10 h-10 rounded-full bg-[#D9D9D9] flex items-center justify-center font-bold text-black text-sm shadow-sm">
+      <div className="px-5 pt-6 pb-4 md:px-0 md:pt-0 md:pb-8 flex justify-between items-center">
+        <div>
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold font-display tracking-tight text-[#1A1A1A]">
+            Dashboard
+          </h1>
+          <p className="text-xs sm:text-sm text-gray-500 font-sans-app mt-1">
+            Track your dining balances and split requests.
+          </p>
+        </div>
+
+        {/* Mobile-only avatar */}
+        <div className="md:hidden w-10 h-10 rounded-full bg-white border border-black/8 flex items-center justify-center font-bold text-[#1A1A1A] text-sm shadow-2xs">
           ME
         </div>
       </div>
 
-      <div className="max-w-[480px] mx-auto px-5 flex flex-col gap-6">
+      <div className="px-5 md:px-0 flex flex-col gap-6 md:gap-8">
 
-        {/* 1. Net Balance Overview Card */}
-        <div className="w-full bg-[#D9D9D9] rounded-[26px] p-5 shadow-sm flex flex-col gap-3">
-          <div className="flex justify-between items-start">
-            <div className="flex flex-col">
-              <span className="text-black/60 text-xs font-medium uppercase tracking-wider">Overall Balance</span>
-              <span className="text-[#1A1A1A] text-3xl font-bold mt-0.5">
-                LKR {Math.abs(netBalance).toLocaleString()}
-              </span>
-            </div>
-            <div className={`px-3 py-1 rounded-full text-xs font-semibold ${
-              netBalance >= 0 ? 'bg-[#4C8C3C] text-white' : 'bg-[#F6D6DA] text-black'
-            }`}>
-              {netBalance >= 0 ? 'You are owed' : 'You owe'}
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-2.5 pt-2 border-t border-black/10">
-            {/* You are owed */}
-            <div className="bg-[#EDEDF1]/70 rounded-2xl px-3.5 py-2.5 flex flex-col gap-0.5">
-              <div className="flex items-center gap-1.5 text-[#4C8C3C]">
-                <ArrowDownLeft size={15} strokeWidth={2.5} />
-                <span className="text-xs font-medium text-black/70">Owed to you</span>
-              </div>
-              <span className="text-base sm:text-lg font-bold text-[#1A1A1A]">LKR {totalYouAreOwed.toLocaleString()}</span>
-            </div>
-
-            {/* You owe */}
-            <div className="bg-[#EDEDF1]/70 rounded-2xl px-3.5 py-2.5 flex flex-col gap-0.5">
-              <div className="flex items-center gap-1.5 text-black">
-                <ArrowUpRight size={15} strokeWidth={2.5} />
-                <span className="text-xs font-medium text-black/70">You owe</span>
-              </div>
-              <span className="text-base sm:text-lg font-bold text-[#1A1A1A]">LKR {totalYouOwe.toLocaleString()}</span>
-            </div>
-          </div>
-        </div>
-
-        {/* 2. Quick Action Buttons */}
-        <div className="flex gap-3">
-          <button 
-            onClick={() => setIsNewBillModalOpen(true)}
-            className="flex-1 bg-[#1A1A1A] text-[#EDEDF1] h-12 rounded-[25px] flex items-center justify-center gap-2 font-semibold text-sm shadow-sm active:scale-95 transition-transform cursor-pointer"
-          >
-            <Plus size={18} strokeWidth={2.5} />
-            <span>Split a Plate</span>
-          </button>
+        {/* Top Section Grid (Balance & Actions on Desktop) */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
           
-          <button 
-            onClick={onSearchClick}
-            className="flex-1 bg-[#D9D9D9] text-[#1A1A1A] h-12 rounded-[25px] flex items-center justify-center gap-2 font-semibold text-sm shadow-sm active:scale-95 transition-transform cursor-pointer hover:bg-zinc-300"
-          >
-            <UserPlus size={18} strokeWidth={2.5} />
-            <span>Add Friend</span>
-          </button>
+          {/* 1. Net Balance Overview Card */}
+          <div className="lg:col-span-2 w-full bg-white rounded-3xl p-6 shadow-2xs border border-black/8 flex flex-col justify-between gap-5">
+            <div className="flex justify-between items-start">
+              <div className="flex flex-col">
+                <span className="text-gray-400 text-xs font-semibold uppercase tracking-wider">Overall Balance</span>
+                <span className="text-[#1A1A1A] text-3xl sm:text-4xl font-extrabold font-display mt-1">
+                  LKR {Math.abs(netBalance).toLocaleString()}
+                </span>
+              </div>
+              <div className={`px-3 py-1 rounded-full text-xs font-semibold border ${
+                netBalance >= 0 
+                  ? 'bg-emerald-50 text-emerald-800 border-emerald-200/60' 
+                  : 'bg-rose-50 text-rose-800 border-rose-200/60'
+              }`}>
+                {netBalance >= 0 ? 'You are owed' : 'You owe'}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3 pt-3 border-t border-black/5">
+              {/* You are owed */}
+              <div className="bg-[#FBFBFA] rounded-2xl p-3.5 sm:p-4 border border-black/5 flex flex-col gap-1">
+                <div className="flex items-center gap-1.5 text-emerald-600">
+                  <ArrowDownLeft size={16} strokeWidth={2.5} />
+                  <span className="text-xs font-medium text-gray-600">Owed to you</span>
+                </div>
+                <span className="text-lg sm:text-xl font-bold text-[#1A1A1A]">LKR {totalYouAreOwed.toLocaleString()}</span>
+              </div>
+
+              {/* You owe */}
+              <div className="bg-[#FBFBFA] rounded-2xl p-3.5 sm:p-4 border border-black/5 flex flex-col gap-1">
+                <div className="flex items-center gap-1.5 text-rose-600">
+                  <ArrowUpRight size={16} strokeWidth={2.5} />
+                  <span className="text-xs font-medium text-gray-600">You owe</span>
+                </div>
+                <span className="text-lg sm:text-xl font-bold text-[#1A1A1A]">LKR {totalYouOwe.toLocaleString()}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* 2. Quick Actions Panel */}
+          <div className="w-full bg-white rounded-3xl p-6 shadow-2xs border border-black/8 flex flex-col justify-between gap-4 h-full">
+            <div>
+              <span className="text-gray-400 text-xs font-semibold uppercase tracking-wider">Quick Actions</span>
+              <h3 className="text-lg font-bold font-display text-[#1A1A1A] mt-1">Split or Add</h3>
+            </div>
+
+            <div className="flex flex-col gap-2.5">
+              <button 
+                onClick={() => setIsNewBillModalOpen(true)}
+                className="w-full bg-[#1A1A1A] hover:bg-[#2A2A2A] text-white h-12 rounded-2xl flex items-center justify-center gap-2 font-semibold text-sm shadow-xs active:scale-[0.99] transition-all cursor-pointer"
+              >
+                <Plus size={18} strokeWidth={2.5} />
+                <span>Split a Plate</span>
+              </button>
+              
+              <button 
+                onClick={onSearchClick}
+                className="w-full bg-white hover:bg-gray-50 text-[#1A1A1A] h-12 rounded-2xl flex items-center justify-center gap-2 font-semibold text-sm border border-black/10 shadow-2xs active:scale-[0.99] transition-all cursor-pointer"
+              >
+                <UserPlus size={18} strokeWidth={2.5} />
+                <span>Add Friend</span>
+              </button>
+            </div>
+          </div>
+
         </div>
 
         {/* 3. Waiting on You Section */}
-        <div className="flex flex-col gap-3">
-          <h2 className="text-[#1A1A1A] text-2xl font-bold font-display tracking-tight px-1">
-            Waiting on You
-          </h2>
+        <div className="flex flex-col gap-3.5">
+          <div className="flex items-center justify-between">
+            <h2 className="text-[#1A1A1A] text-xl sm:text-2xl font-bold font-display tracking-tight">
+              Waiting on You
+            </h2>
+            <span className="text-xs text-gray-400 font-medium">Pending approvals</span>
+          </div>
 
-          <div className="flex flex-col gap-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {/* Bills pending acceptance (accepted === false) */}
             {bills.filter(b => {
               const isCreator = b.creator_id === userId;
@@ -166,18 +192,18 @@ export function Home({
               <div 
                 key={`pending-accept-${bill.id}`}
                 onClick={() => setSelectedIncomingBill(bill)}
-                className="w-full bg-[#D9D9D9] rounded-[25px] p-4 flex items-center justify-between shadow-sm cursor-pointer hover:bg-zinc-300/80 transition-colors"
+                className="w-full bg-white border border-black/8 rounded-2xl p-4 flex items-center justify-between shadow-2xs cursor-pointer hover:border-amber-400/50 hover:bg-[#FDFDFB] transition-all"
               >
                 <div className="flex flex-col gap-1 min-w-0 pr-2">
-                  <span className="text-[#1A1A1A] text-base font-semibold truncate">{bill.title}</span>
-                  <span className="text-black/60 text-xs font-normal">Incoming request · LKR {bill.total}</span>
+                  <span className="text-[#1A1A1A] text-sm font-semibold truncate">{bill.title}</span>
+                  <span className="text-gray-500 text-xs font-normal">Incoming split request · LKR {bill.total}</span>
                 </div>
 
                 <div className="flex items-center gap-2 shrink-0">
-                  <span className="bg-[#F5C744] text-black text-xs font-semibold px-4 py-1.5 rounded-full">
-                    Accept Request
+                  <span className="bg-amber-50 text-amber-900 border border-amber-200/80 text-xs font-semibold px-3 py-1 rounded-full">
+                    Review
                   </span>
-                  <ChevronRight size={18} className="text-black/40" />
+                  <ChevronRight size={16} className="text-gray-400" />
                 </div>
               </div>
             ))}
@@ -186,22 +212,24 @@ export function Home({
             {pendingFriendRequests.map(friend => (
               <div 
                 key={friend.id}
-                className="w-full bg-[#F6D6DA]/80 rounded-[25px] p-4 flex items-center justify-between shadow-sm"
+                className="w-full bg-white border border-black/8 rounded-2xl p-4 flex items-center justify-between shadow-2xs"
               >
                 <div className="flex items-center gap-3">
                   <div 
-                    className="w-10 h-10 rounded-full opacity-60 shrink-0" 
+                    className="w-10 h-10 rounded-full shrink-0 flex items-center justify-center font-bold text-xs text-black border border-black/5" 
                     style={{ backgroundColor: friend.color }}
-                  />
+                  >
+                    {friend.name.charAt(0)}
+                  </div>
                   <div className="flex flex-col">
                     <span className="text-[#1A1A1A] text-sm font-semibold leading-tight">{friend.name}</span>
-                    <span className="text-black/60 text-xs font-normal">Wants to follow you</span>
+                    <span className="text-gray-400 text-xs font-normal">Friend request</span>
                   </div>
                 </div>
 
                 <button 
                   onClick={() => onApproveFriend?.(friend.id)}
-                  className="bg-[#1A1A1A] text-[#EDEDF1] px-4 py-2 rounded-full text-xs font-semibold flex items-center gap-1.5 active:scale-95 transition-transform cursor-pointer"
+                  className="bg-[#1A1A1A] hover:bg-[#2A2A2A] text-white px-3.5 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 active:scale-95 transition-transform cursor-pointer"
                 >
                   <Check size={14} strokeWidth={2.5} />
                   <span>Accept</span>
@@ -215,26 +243,23 @@ export function Home({
               const myPart = (b.participants || []).find((p: any) => p.friend_id === userId || p.friendId === userId);
               return myPart && myPart.accepted === false;
             }).length === 0 && (
-              <div className="bg-[#D9D9D9]/50 rounded-[25px] p-6 text-center text-black/50 text-sm">
-                All caught up! No pending requests to accept.
+              <div className="md:col-span-2 bg-white border border-dashed border-black/10 rounded-2xl p-6 text-center text-gray-400 text-sm">
+                ✨ All caught up! No pending requests.
               </div>
             )}
           </div>
         </div>
 
-        {/* 4. Recent Plates Horizontal Carousel */}
-        <div className="flex flex-col gap-3">
+        {/* 4. Recent Plates Grid */}
+        <div className="flex flex-col gap-3.5">
           <div className="flex justify-between items-end">
-            <h2 className="text-[#1A1A1A] text-2xl font-bold font-display tracking-tight">
+            <h2 className="text-[#1A1A1A] text-xl sm:text-2xl font-bold font-display tracking-tight">
               Recent Plates
             </h2>
-            <span className="text-xs font-medium text-black/40">Swipe →</span>
+            <span className="text-xs font-medium text-gray-400">All activity</span>
           </div>
 
-          <div
-            className="-mx-5 flex gap-3.5 overflow-x-auto no-scrollbar pb-4 pt-1 snap-x snap-mandatory"
-            style={{ paddingLeft: '20px' }}
-          >
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
             {[...bills]
               .sort((a, b) => {
                 const aIsPending = a.status !== 'Settled';
@@ -246,65 +271,50 @@ export function Home({
                 return timeB - timeA;
               })
               .map((bill) => {
-              const tagColors: Record<string, { bg: string, text: string }> = {
-                'Restaurant': { bg: '#F6D6DA', text: '#1A1A1A' },
-                'Grocery': { bg: '#D7ECD1', text: '#1A1A1A' },
-                'Entertainment': { bg: '#CDE1FF', text: '#1A1A1A' },
-              };
-              const tagStyle = tagColors[bill.category] || { bg: '#E5E7EB', text: '#1A1A1A' };
               const displayStatus = bill.status === 'Settled' ? 'Settled' : 'Pending';
 
               return (
                 <div
-                  key={`carousel-${bill.id}`}
+                  key={`card-${bill.id}`}
                   onClick={() => onBillClick?.(bill.id)}
-                  className="w-[200px] h-[205px] shrink-0 bg-[#D9D9D9] rounded-[28px] flex flex-col justify-between shadow-sm snap-start cursor-pointer active:scale-[0.98] hover:bg-zinc-300/80 transition-all"
-                  style={{ padding: '16px' }}
+                  className="bg-white rounded-2xl p-4.5 border border-black/8 flex flex-col justify-between gap-4 shadow-2xs cursor-pointer hover:border-black/20 hover:shadow-xs transition-all"
                 >
-                  <h3 className="text-[#1A1A1A] text-base font-bold leading-snug line-clamp-2">
-                    {bill.title}
-                  </h3>
+                  <div>
+                    <div className="flex items-center justify-between gap-2 mb-2">
+                      <span className="text-[11px] font-semibold px-2 py-0.5 rounded-md bg-gray-100 text-gray-700 border border-black/5">
+                        {bill.category || 'General'}
+                      </span>
+                      <span className="text-gray-400 text-[11px]">
+                        {new Date(bill.createdAt || bill.created_at || Date.now()).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                      </span>
+                    </div>
 
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="text-black/50 text-xs font-normal">
-                      {new Date(bill.createdAt || bill.created_at || Date.now()).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                    </span>
-                    <span
-                      className="text-[11px] font-semibold px-2 py-0.5 rounded-full"
-                      style={{ backgroundColor: tagStyle.bg, color: tagStyle.text }}
-                    >
-                      {bill.category}
-                    </span>
+                    <h3 className="text-[#1A1A1A] text-base font-bold leading-snug line-clamp-2">
+                      {bill.title}
+                    </h3>
                   </div>
 
-                  <div className="flex justify-between items-end border-t border-black/10 pt-2.5">
-                    <div className="flex flex-col gap-1">
-                      <span
-                        className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full w-fit ${
-                          displayStatus === 'Settled' ? 'bg-[#4C8C3C] text-white' : 'bg-[#F5C744] text-black'
-                        }`}
-                      >
-                        {displayStatus}
-                      </span>
+                  <div className="flex justify-between items-end border-t border-black/5 pt-3">
+                    <div className="flex flex-col">
+                      <span className="text-gray-400 text-[10px] uppercase font-semibold">Total</span>
                       <span className="text-[#1A1A1A] text-base font-extrabold tracking-tight">
                         LKR {bill.total}
                       </span>
                     </div>
-                    <div className="flex -space-x-1.5">
-                      {(bill.participants || []).slice(0, 3).map((p: any, i: number) => (
-                        <div
-                          key={i}
-                          className="w-6 h-6 rounded-full border border-[#EDEDF1] bg-black/20 flex items-center justify-center text-[9px] font-bold text-black shrink-0"
-                        >
-                          {(p.friend_id === userId || p.friendId === userId) ? 'Y' : 'P'}
-                        </div>
-                      ))}
-                    </div>
+
+                    <span
+                      className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full border ${
+                        displayStatus === 'Settled' 
+                          ? 'bg-emerald-50 text-emerald-800 border-emerald-200/60' 
+                          : 'bg-amber-50 text-amber-800 border-amber-200/60'
+                      }`}
+                    >
+                      {displayStatus}
+                    </span>
                   </div>
                 </div>
               );
             })}
-            <div className="shrink-0" style={{ width: '20px' }} />
           </div>
         </div>
 
