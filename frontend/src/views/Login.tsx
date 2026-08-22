@@ -70,7 +70,7 @@ export function Login() {
           <div>
             {/* Brand Logo */}
             <div className="flex items-center gap-3 mb-8 md:mb-10">
-              <img src="/logo.svg" alt="Plates logo" className="w-11 h-11 shrink-0" />
+              <img src="/logo.svg" alt="Plates logo" className="w-11 h-11 rounded-[22.5%] shrink-0" />
               <span className="text-2xl font-bold font-display tracking-tight text-[#1A1A1A]">Plates</span>
             </div>
 
