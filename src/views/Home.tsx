@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { ArrowDownLeft, ArrowUpRight, Plus, UserPlus, ChevronRight, Check } from 'lucide-react';
 import { NewBillModal } from '../components/NewBillModal';
 import { IncomingBillModal } from '../components/IncomingBillModal';
@@ -20,7 +20,6 @@ export function Home({
   session,
   bills: initialBills, 
   friends = [], 
-  onAddBill, 
   onBillClick, 
   onSearchClick,
   onApproveFriend 
@@ -77,7 +76,6 @@ export function Home({
   const netBalance = totalYouAreOwed - totalYouOwe;
 
   // Pending items requiring attention
-  const pendingBills = bills.filter(b => b.status === 'Pending');
   const pendingFriendRequests = friends.filter(f => f.isPendingRequest);
 
   return (

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { ArrowUpRight, ArrowDownLeft, ChevronLeft, Plus } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { api } from '../services/api';

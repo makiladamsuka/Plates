@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { X, Check, CreditCard } from 'lucide-react';
+import { useState } from 'react';
+import { X, CreditCard } from 'lucide-react';
 import { api } from '../services/api';
 import { supabase } from '../lib/supabase';
 import { ConfirmTransferModal } from './ConfirmTransferModal';

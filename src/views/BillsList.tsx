@@ -1,16 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { NewBillModal } from '../components/NewBillModal';
 import { api } from '../services/api';
 import { supabase } from '../lib/supabase';
-
-const getTagColor = (category: string) => {
-  switch (category) {
-    case 'Restaurant': return 'bg-[#F6D6DA]';
-    case 'Grocery': return 'bg-[#D7ECD1]';
-    case 'Entertainment': return 'bg-[#CDE1FF]';
-    default: return 'bg-zinc-200';
-  }
-};
 
 const formatTime = (ts: any) => {
   if (!ts) return 'Recent';
@@ -39,8 +30,6 @@ export function BillsList({ onBillClick }: BillsListProps) {
   const [bills, setBills] = useState<any[]>([]);
   const [isNewBillModalOpen, setIsNewBillModalOpen] = useState(false);
   const [sortKey, setSortKey] = useState<SortKey>('all');
-  const [showHeader, setShowHeader] = useState(true);
-  const lastScrollY = React.useRef(0);
 
   const fetchBills = () => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -55,23 +44,6 @@ export function BillsList({ onBillClick }: BillsListProps) {
 
   useEffect(() => {
     fetchBills();
-  }, []);
-
-  useEffect(() => {
-    const handleScroll = () => {
-      const currentScrollY = window.scrollY;
-      
-      if (currentScrollY > lastScrollY.current && currentScrollY > 50) {
-        setShowHeader(false);
-      } else if (currentScrollY < lastScrollY.current) {
-        setShowHeader(true);
-      }
-      
-      lastScrollY.current = currentScrollY;
-    };
-
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
   const sortedBills = [...bills].sort((a, b) => {

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { ChevronLeft } from 'lucide-react';
 import { ConfirmTransferModal } from '../components/ConfirmTransferModal';
 import { api } from '../services/api';

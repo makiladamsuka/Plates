@@ -1,15 +1,61 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
 import { supabase } from './utils/supabase';
+import { authenticate } from './middleware/auth';
 
 dotenv.config();
 
 const app = express();
 const port = process.env.PORT || 3000;
 
-app.use(cors());
-app.use(express.json());
+// Security HTTP Headers
+app.use(helmet());
+
+// CORS configuration - Restrict allowed origins
+const allowedOrigins = [
+  process.env.CLIENT_URL,
+  'http://localhost:5173',
+  'http://localhost:3000'
+].filter(Boolean) as string[];
+
+app.use(cors({
+  origin: (origin, callback) => {
+    if (!origin || allowedOrigins.includes(origin) || process.env.NODE_ENV !== 'production') {
+      callback(null, true);
+    } else {
+      callback(new Error('CORS policy: Access denied for this origin'));
+    }
+  },
+  credentials: true,
+}));
+
+app.use(express.json({ limit: '10mb' }));
+
+// Rate Limiter: Max 200 requests per 15 minutes per IP
+const apiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 200,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many requests, please try again later.' }
+});
+
+app.use('/api/', apiLimiter);
+
+// Enforce JWT authentication on API endpoints
+app.use('/api/', authenticate);
+
+// Helper function for safe error responses
+const handleError = (res: express.Response, err: any) => {
+  console.error('API Error:', err);
+  if (process.env.NODE_ENV === 'production') {
+    return res.status(500).json({ error: 'Internal Server Error' });
+  }
+  return res.status(500).json({ error: err.message || 'Internal Server Error' });
+};
 
 // =============== BILLS ROUTES ===============
 
@@ -64,7 +110,7 @@ app.get('/api/bills', async (req, res) => {
 
     res.json(enrichedBills);
   } catch (err: any) {
-    res.status(500).json({ error: err.message });
+    handleError(res, err);
   }
 });
 
@@ -106,7 +152,7 @@ app.get('/api/bills/:id', async (req, res) => {
 
     res.json(enrichedBill);
   } catch (err: any) {
-    res.status(500).json({ error: err.message });
+    handleError(res, err);
   }
 });
 
@@ -138,8 +184,8 @@ app.post('/api/bills', async (req, res) => {
           bill_id: bill.id,
           friend_id: p.friendId,
           share: p.share,
-          paid: isCreator ? true : (p.paid || false), // Creator is ALREADY paid!
-          accepted: isCreator ? true : false // Creator auto-accepts
+          paid: isCreator ? true : (p.paid || false),
+          accepted: isCreator ? true : false
         };
       });
       
@@ -161,7 +207,7 @@ app.post('/api/bills', async (req, res) => {
     
     res.status(201).json(completeBill);
   } catch (err: any) {
-    res.status(500).json({ error: err.message });
+    handleError(res, err);
   }
 });
 
@@ -171,7 +217,6 @@ app.post('/api/bills/:id/accept', async (req, res) => {
     const { id } = req.params;
     const { userId } = req.body;
     
-    // Update participant accepted status (paid remains false until settled)
     const { data, error } = await supabase
       .from('participants')
       .update({ accepted: true, paid: false })
@@ -181,7 +226,6 @@ app.post('/api/bills/:id/accept', async (req, res) => {
       
     if (error) throw error;
 
-    // Bill status remains Pending until settled
     await supabase
       .from('bills')
       .update({ status: 'Pending' })
@@ -189,7 +233,7 @@ app.post('/api/bills/:id/accept', async (req, res) => {
 
     res.json({ message: 'Bill accepted', data, status: 'Pending' });
   } catch (err: any) {
-    res.status(500).json({ error: err.message });
+    handleError(res, err);
   }
 });
 
@@ -199,7 +243,6 @@ app.post('/api/bills/:id/decline', async (req, res) => {
     const { id } = req.params;
     const { userId } = req.body;
     
-    // Update participant accepted status to false
     const { error } = await supabase
       .from('participants')
       .update({ accepted: false, paid: false })
@@ -208,7 +251,6 @@ app.post('/api/bills/:id/decline', async (req, res) => {
       
     if (error) throw error;
 
-    // Update overall bill status to Rejected
     await supabase
       .from('bills')
       .update({ status: 'Rejected' })
@@ -216,7 +258,7 @@ app.post('/api/bills/:id/decline', async (req, res) => {
 
     res.json({ message: 'Bill declined' });
   } catch (err: any) {
-    res.status(500).json({ error: err.message });
+    handleError(res, err);
   }
 });
 
@@ -235,7 +277,6 @@ app.post('/api/bills/:id/pay', async (req, res) => {
       
     if (error) throw error;
 
-    // Check if ALL participants for this bill are paid
     const { data: parts } = await supabase
       .from('participants')
       .select('paid')
@@ -251,13 +292,13 @@ app.post('/api/bills/:id/pay', async (req, res) => {
 
     res.json({ message: 'Share paid', data, allPaid });
   } catch (err: any) {
-    res.status(500).json({ error: err.message });
+    handleError(res, err);
   }
 });
 
 // =============== FRIENDS ROUTES ===============
 
-// Search profiles by name or email
+// Search profiles by name or email with input sanitization
 app.get('/api/profiles/search', async (req, res) => {
   try {
     const { q, userId } = req.query;
@@ -265,10 +306,16 @@ app.get('/api/profiles/search', async (req, res) => {
       return res.json([]);
     }
 
+    // Strip special control characters to prevent filter injection
+    const sanitizedQ = (q as string).replace(/[,()%.]/g, '').trim();
+    if (sanitizedQ.length < 1) {
+      return res.json([]);
+    }
+
     let query = supabase
       .from('profiles')
       .select('id, full_name, email, avatar_url')
-      .or(`full_name.ilike.%${q}%,email.ilike.%${q}%`)
+      .or(`full_name.ilike.%${sanitizedQ}%,email.ilike.%${sanitizedQ}%`)
       .limit(10);
     
     if (userId) {
@@ -279,7 +326,7 @@ app.get('/api/profiles/search', async (req, res) => {
     if (error) throw error;
     res.json(data);
   } catch (err: any) {
-    res.status(500).json({ error: err.message });
+    handleError(res, err);
   }
 });
 
@@ -304,7 +351,7 @@ app.get('/api/friends/:userId', async (req, res) => {
     if (error) throw error;
     res.json(data?.map(d => d.profiles) || []);
   } catch (err: any) {
-    res.status(500).json({ error: err.message });
+    handleError(res, err);
   }
 });
 
@@ -325,7 +372,7 @@ app.post('/api/friends', async (req, res) => {
     }
     res.status(201).json(data);
   } catch (err: any) {
-    res.status(500).json({ error: err.message });
+    handleError(res, err);
   }
 });
 
@@ -342,10 +389,10 @@ app.delete('/api/friends', async (req, res) => {
     if (error) throw error;
     res.json({ message: 'Friend removed' });
   } catch (err: any) {
-    res.status(500).json({ error: err.message });
+    handleError(res, err);
   }
 });
 
 app.listen(port, () => {
-  console.log(`Server running on port ${port}`);
+  console.log(`🔒 Security-hardened server running on port ${port}`);
 });
