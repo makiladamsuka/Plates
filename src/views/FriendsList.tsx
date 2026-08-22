@@ -131,7 +131,7 @@ export function FriendsList({
   const displayList = activeTab === 'pending' ? pendingRequests : acceptedFriends;
 
   return (
-    <div className="min-h-screen bg-[#EDEDF1] dark:bg-zinc-950 pb-32 pt-[160px] md:pt-0 transition-colors">
+    <div className="min-h-screen bg-[#EDEDF1] dark:bg-zinc-950 pb-32 pt-[160px] md:pt-0 font-['Sora'] transition-colors">
       
       {/* Header Container */}
       <div className="fixed top-0 left-1/2 -translate-x-1/2 w-full max-w-[480px] z-30 bg-[#EDEDF1] dark:bg-zinc-950 md:sticky md:left-0 md:translate-x-0 md:max-w-full md:px-10 md:pt-4 transition-colors">
@@ -162,9 +162,9 @@ export function FriendsList({
       <div className="max-w-[480px] md:max-w-6xl mx-auto md:px-10">
         
         {/* Friends Cards */}
-        <div className="px-5 md:px-0 flex flex-col md:grid md:grid-cols-2 lg:grid-cols-3 gap-3.5 md:gap-4">
+        <div className="px-5 md:px-0 mt-2 flex flex-col md:grid md:grid-cols-2 lg:grid-cols-3 gap-4">
           {isLoading ? (
-            <div className="text-center mt-10 text-black/50 dark:text-zinc-500">Loading friends...</div>
+            <div className="text-center mt-10 text-black/50 dark:text-zinc-500 text-sm">Loading friends...</div>
           ) : displayList.length > 0 ? (
             displayList.map((friend) => (
               <div 
@@ -230,7 +230,7 @@ export function FriendsList({
               </div>
             ))
           ) : (
-            <div className="text-center mt-10 text-black/50 dark:text-zinc-500">
+            <div className="text-center mt-10 text-black/50 dark:text-zinc-500 text-sm">
               {activeTab === 'pending' ? 'No pending friend requests.' : 'No friends found. Tap + to search and add friends!'}
             </div>
           )}

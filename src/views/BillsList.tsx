@@ -156,7 +156,7 @@ export function BillsList({ onBillClick }: BillsListProps) {
           })}
 
           {sortedBills.length === 0 && (
-            <div className="text-center mt-10 text-black/50 dark:text-zinc-500">No bills found. Create one!</div>
+            <div className="text-center mt-10 text-black/50 dark:text-zinc-500 text-sm">No bills found. Create one!</div>
           )}
         </div>
       </div>

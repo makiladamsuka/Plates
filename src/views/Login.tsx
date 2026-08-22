@@ -37,53 +37,61 @@ export function Login() {
   };
 
   return (
-    <div className="min-h-screen w-full bg-[#FBFBFA] text-[#1A1A1A] flex flex-col md:flex-row selection:bg-[#F5C744]/30">
+    /* Full-screen background with dot-grid texture */
+    <div
+      className="min-h-screen bg-[#F0F0F4] text-[#1A1A1A] flex items-center justify-center p-4 md:p-8 lg:p-12 selection:bg-[#F5C744]/30"
+      style={{
+        backgroundImage: 'radial-gradient(#c9cad1 1.2px, transparent 1.2px)',
+        backgroundSize: '22px 22px',
+      }}
+    >
+      {/* Ambient glows on the page background itself */}
+      <div className="fixed top-[-10%] left-[-5%] w-[500px] h-[500px] bg-[#F5C744]/10 rounded-full blur-3xl pointer-events-none" />
+      <div className="fixed bottom-[-10%] right-[-5%] w-[500px] h-[500px] bg-[#4C8C3C]/8 rounded-full blur-3xl pointer-events-none" />
 
-      {/* ── MOBILE ONLY: Full-width stretched image on top ── */}
-      <div className="md:hidden w-full h-64 sm:h-80 relative overflow-hidden flex-shrink-0 border-b border-black/5 bg-gray-100">
-        <img
-          src={heroImage}
-          alt="Plates Dining Friends"
-          className="w-full h-full object-cover"
-          loading="eager"
-          onError={() => setHeroImage('/welcome-heroes/hero-1.jpeg')}
-        />
-      </div>
+      {/* Main Card Container — centered, NOT fullscreen on desktop */}
+      <div className="relative w-full max-w-[1100px] bg-white rounded-[40px] shadow-[0_24px_80px_-16px_rgba(0,0,0,0.10)] border border-black/[0.06] overflow-hidden flex flex-col md:flex-row min-h-screen md:min-h-0 md:h-[680px]">
 
-      {/* ── Left Half: Notion Dot-Grid + Brand, Slogan, Description & Buttons ── */}
-      <div className="w-full md:w-1/2 min-h-[calc(100vh-16rem)] md:min-h-screen p-6 sm:p-10 md:p-12 lg:p-16 xl:p-20 flex flex-col justify-between relative bg-[#FDFDFD] [background-image:radial-gradient(#e5e7eb_1.3px,transparent_1.3px)] [background-size:24px_24px] overflow-hidden">
-        
-        {/* Subtle Ambient Glows */}
-        <div className="absolute top-[-10%] left-[-10%] w-96 h-96 bg-[#F5C744]/15 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute bottom-[-10%] right-[-10%] w-96 h-96 bg-[#4C8C3C]/10 rounded-full blur-3xl pointer-events-none" />
-
-        {/* Top: Brand Logo */}
-        <div className="relative z-10 flex items-center mb-8 md:mb-12">
-          <div className="flex items-center gap-3">
-            <div className="w-11 h-11 bg-[#F5C744] rounded-2xl flex items-center justify-center shadow-xs border border-black/5 rotate-[-3deg] transition-transform hover:rotate-0">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#1A1A1A" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
-              </svg>
-            </div>
-            <span className="text-2xl font-bold font-display tracking-tight text-[#1A1A1A]">Plates</span>
-          </div>
+        {/* ── MOBILE ONLY: Full-width image on top ── */}
+        <div className="md:hidden w-full h-60 sm:h-72 bg-[#F7F6F3] relative overflow-hidden flex-shrink-0 border-b border-black/5 flex items-center justify-center p-4">
+          <div className="absolute top-[-30%] right-[-20%] w-56 h-56 bg-[#F5C744]/20 rounded-full blur-3xl pointer-events-none" />
+          <div className="absolute bottom-[-30%] left-[-20%] w-56 h-56 bg-[#4C8C3C]/15 rounded-full blur-3xl pointer-events-none" />
+          <img
+            src={heroImage}
+            alt="Plates Dining Friends"
+            className="w-full h-full object-cover relative z-10"
+            loading="eager"
+            onError={() => setHeroImage('/welcome-heroes/hero-1.jpeg')}
+          />
         </div>
 
-        {/* Center: Slogan & Action Area */}
-        <div className="relative z-10 my-auto max-w-lg">
-          {/* Slogan & Headline */}
-          <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-[54px] font-extrabold font-display tracking-tight text-[#1A1A1A] leading-[1.12] mb-4 md:mb-6">
-            Eat together.<br />
-            Settle later.
-          </h1>
+        {/* ── Left Panel: Brand, Headline, Buttons ── */}
+        <div className="w-full md:w-[46%] px-8 py-9 sm:px-10 sm:py-10 md:p-14 flex flex-col justify-between flex-1">
+          <div>
+            {/* Brand Logo */}
+            <div className="flex items-center gap-3 mb-8 md:mb-10">
+              <div className="w-11 h-11 bg-[#F5C744] rounded-2xl flex items-center justify-center shadow-xs border border-black/5 rotate-[-3deg] transition-transform hover:rotate-0">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#1A1A1A" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+                </svg>
+              </div>
+              <span className="text-2xl font-bold font-display tracking-tight text-[#1A1A1A]">Plates</span>
+            </div>
 
-          {/* Description */}
-          <p className="text-gray-600 text-base sm:text-lg lg:text-xl font-sans-app leading-relaxed mb-8 md:mb-10">
-            The easiest way to track shared meals, split food tabs in real-time, and settle balances without the math headaches.
-          </p>
+            {/* Headline */}
+            <h1 className="text-3xl sm:text-4xl md:text-[42px] font-extrabold font-display tracking-tight text-[#1A1A1A] leading-[1.15] mb-4 md:mb-5">
+              Eat together.<br />
+              Settle later.
+            </h1>
+
+            {/* Description */}
+            <p className="text-gray-500 text-sm sm:text-base md:text-[17px] font-sans-app leading-relaxed mb-8 md:mb-10 max-w-sm">
+              The easiest way to track shared meals, split food tabs in real-time, and settle balances without the math headaches.
+            </p>
+          </div>
 
           {/* Buttons */}
-          <div className="space-y-3.5 max-w-md">
+          <div className="space-y-3 max-w-sm">
             {/* Google Sign In */}
             <button
               onClick={handleGoogleLogin}
@@ -106,33 +114,47 @@ export function Login() {
             {error && (
               <p className="text-red-500 text-xs font-medium font-sans-app mt-2 text-center">{error}</p>
             )}
+
+            <p className="text-gray-400 text-xs font-sans-app text-center pt-1">
+              Free to use • No credit card required
+            </p>
           </div>
         </div>
 
-        {/* Bottom Footer */}
-        <div className="relative z-10 pt-8 mt-auto flex flex-col sm:flex-row items-center justify-between text-xs text-gray-600 font-sans-app border-t border-black/5 gap-2">
-          <span>© 2026 Plates • Free to use</span>
-          <div className="flex gap-4">
-            <span className="hover:text-gray-600 transition">Privacy</span>
-            <span>•</span>
-            <span className="hover:text-gray-600 transition">Terms</span>
+        {/* ── Right Panel: Desktop Photo in rounded frame ── */}
+        <div className="hidden md:flex flex-1 bg-[#F2F2F5] p-6 items-center justify-center relative overflow-hidden border-l border-black/[0.05]"
+          style={{
+            backgroundImage: 'radial-gradient(#dddee4 1.2px, transparent 1.2px)',
+            backgroundSize: '20px 20px',
+          }}
+        >
+          {/* Ambient glows inside the right panel */}
+          <div className="absolute top-[-15%] right-[-15%] w-72 h-72 bg-[#F5C744]/20 rounded-full blur-3xl pointer-events-none" />
+          <div className="absolute bottom-[-15%] left-[-15%] w-72 h-72 bg-[#4C8C3C]/12 rounded-full blur-3xl pointer-events-none" />
+
+          {/* Photo Card */}
+          <div className="relative w-full max-w-[480px] aspect-square rounded-3xl overflow-hidden shadow-md border border-black/[0.06] bg-white p-3 z-10">
+            <img
+              src={heroImage}
+              alt="Plates Dining Friends"
+              className="w-full h-full object-cover rounded-2xl"
+              loading="eager"
+              onError={() => setHeroImage('/welcome-heroes/hero-1.jpeg')}
+            />
           </div>
         </div>
 
       </div>
 
-      {/* ── Right Half: Desktop Full-Bleed 50% Photo Panel ── */}
-      <div className="hidden md:block md:w-1/2 min-h-screen h-screen sticky top-0 relative overflow-hidden border-l border-black/10 bg-gray-100">
-        <img
-          src={heroImage}
-          alt="Plates Dining Friends"
-          className="w-full h-full object-cover"
-          loading="eager"
-          onError={() => setHeroImage('/welcome-heroes/hero-1.jpeg')}
-        />
+      {/* Footer below card */}
+      <div className="absolute bottom-4 left-0 right-0 flex items-center justify-center gap-4 text-xs text-gray-400 font-sans-app">
+        <span>© 2026 Plates</span>
+        <span>•</span>
+        <span>Privacy</span>
+        <span>•</span>
+        <span>Terms</span>
       </div>
 
     </div>
   );
 }
-
