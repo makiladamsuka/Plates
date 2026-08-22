@@ -5,10 +5,10 @@ import { supabase } from '../lib/supabase';
 
 const getTagColor = (category: string) => {
   switch (category) {
-    case 'Restaurant': return 'bg-[#F6D6DA]';
-    case 'Grocery': return 'bg-[#D7ECD1]';
-    case 'Entertainment': return 'bg-[#CDE1FF]';
-    default: return 'bg-zinc-200';
+    case 'Restaurant': return 'bg-[#F6D6DA] dark:bg-red-900/40';
+    case 'Grocery': return 'bg-[#D7ECD1] dark:bg-green-900/40';
+    case 'Entertainment': return 'bg-[#CDE1FF] dark:bg-blue-900/40';
+    default: return 'bg-zinc-200 dark:bg-zinc-800';
   }
 };
 
@@ -80,15 +80,15 @@ export function BillsList({ onBillClick }: BillsListProps) {
   });
 
   return (
-    <div className="min-h-screen bg-[#EDEDF1] pb-32 pt-[160px] font-['Sora']">
+    <div className="min-h-screen bg-[#EDEDF1] dark:bg-zinc-950 pb-32 pt-[160px] md:pt-0 font-['Sora'] relative transition-colors">
       
-      {/* Fixed Header Container */}
-      <div className="fixed top-0 left-1/2 -translate-x-1/2 w-full max-w-[480px] z-30 bg-[#EDEDF1]">
-        <div className="max-w-[480px] mx-auto">
-          <div className="px-6 pt-10 pb-4 flex justify-between items-center h-[88px]">
-            <h1 className="text-black text-5xl font-bold font-display tracking-tight leading-none">Bills</h1>
+      {/* Header Container */}
+      <div className="fixed top-0 left-1/2 -translate-x-1/2 w-full max-w-[480px] z-30 bg-[#EDEDF1] dark:bg-zinc-950 md:sticky md:left-0 md:translate-x-0 md:max-w-full md:px-10 md:pt-4 transition-colors">
+        <div className="max-w-[480px] md:max-w-6xl mx-auto">
+          <div className="px-6 md:px-0 pt-10 pb-4 flex justify-between items-center h-[88px] md:hidden">
+            <h1 className="text-black dark:text-zinc-100 text-5xl font-bold font-display tracking-tight leading-none">Bills</h1>
             <div className="w-6 h-6 flex items-center justify-center">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-black">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-black dark:text-zinc-100">
                 <circle cx="11" cy="11" r="8" />
                 <path d="M21 21l-4.35-4.35" />
               </svg>
@@ -96,7 +96,7 @@ export function BillsList({ onBillClick }: BillsListProps) {
           </div>
 
           {/* Filter Tabs */}
-          <div className="px-6 pb-4 flex gap-2 overflow-x-auto no-scrollbar">
+          <div className="px-6 md:px-0 pb-4 md:pt-12 flex gap-2 overflow-x-auto no-scrollbar">
             {[
               { key: 'all', label: 'All' },
               { key: 'highest', label: 'Highest' },
@@ -106,8 +106,8 @@ export function BillsList({ onBillClick }: BillsListProps) {
               <button 
                 key={t.key}
                 onClick={() => setSortKey(t.key as SortKey)}
-                className={`h-8 px-5 rounded-[35px] text-lg font-semibold whitespace-nowrap flex items-center justify-center transition-colors cursor-pointer ${
-                  sortKey === t.key ? 'bg-[#1A1A1A] text-[#EDEDF1]' : 'bg-[#D9D9D9] text-black'
+                className={`h-8 px-4 md:px-5 rounded-[35px] text-sm md:text-base font-semibold whitespace-nowrap shrink-0 flex items-center justify-center transition-colors cursor-pointer ${
+                  sortKey === t.key ? 'bg-[#1A1A1A] dark:bg-zinc-100 text-[#EDEDF1] dark:text-zinc-950' : 'bg-[#D9D9D9] dark:bg-zinc-900 text-black dark:text-zinc-100'
                 }`}
               >
                 {t.label}
@@ -118,10 +118,10 @@ export function BillsList({ onBillClick }: BillsListProps) {
       </div>
 
       {/* Main Content */}
-      <div className="max-w-[480px] mx-auto">
+      <div className="max-w-[480px] md:max-w-6xl mx-auto md:px-10">
         
         {/* Bills Cards */}
-        <div className="px-5 mt-2 flex flex-col gap-3.5">
+        <div className="px-5 md:px-0 mt-2 flex flex-col md:grid md:grid-cols-2 lg:grid-cols-3 gap-4">
           {sortedBills.map(bill => {
             const displayStatus = bill.status === 'Settled' ? 'Settled' : 'Pending';
 
@@ -129,11 +129,11 @@ export function BillsList({ onBillClick }: BillsListProps) {
               <div 
                 key={bill.id}
                 onClick={() => onBillClick?.(bill.id)}
-                className="w-full bg-[#D9D9D9] rounded-[30px] px-6 py-4.5 flex flex-col gap-3 shadow-sm cursor-pointer hover:bg-zinc-300/80 transition-colors"
+                className="w-full bg-[#D9D9D9] dark:bg-zinc-900 rounded-[30px] px-6 py-4.5 flex flex-col gap-3 shadow-sm cursor-pointer hover:bg-zinc-300/80 dark:hover:bg-zinc-800 transition-colors border border-transparent dark:border-white/5"
               >
                 {/* Top Row: Title + Status Pill */}
                 <div className="flex justify-between items-center gap-3">
-                  <h2 className="text-[#1A1A1A] text-xl font-semibold leading-tight truncate">{bill.title}</h2>
+                  <h2 className="text-[#1A1A1A] dark:text-zinc-100 text-xl font-semibold leading-tight truncate">{bill.title}</h2>
                   <div className={`rounded-full px-3.5 py-1 flex items-center justify-center shrink-0 ${
                     displayStatus === 'Settled' ? 'bg-[#4C8C3C] text-white' : 'bg-[#F5C744] text-black'
                   }`}>
@@ -144,31 +144,31 @@ export function BillsList({ onBillClick }: BillsListProps) {
                 {/* Bottom Row: Category Tag, Date & Amount */}
                 <div className="flex items-center justify-between mt-0.5">
                   <div className="flex items-center gap-2.5">
-                    <span className={`${getTagColor(bill.category)} text-black px-3 py-1 rounded-full font-medium text-xs`}>
+                    <span className={`${getTagColor(bill.category)} text-black dark:text-zinc-100 px-3 py-1 rounded-full font-medium text-xs`}>
                       {bill.category}
                     </span>
-                    <span className="text-black/60 font-normal text-xs">{formatTime(bill.created_at || bill.createdAt)}</span>
+                    <span className="text-black/60 dark:text-zinc-400 font-normal text-xs">{formatTime(bill.created_at || bill.createdAt)}</span>
                   </div>
-                  <span className="text-[#1A1A1A] text-2xl font-semibold">LKR {bill.total}</span>
+                  <span className="text-[#1A1A1A] dark:text-zinc-100 text-2xl font-semibold">LKR {bill.total}</span>
                 </div>
               </div>
             );
           })}
 
           {sortedBills.length === 0 && (
-            <div className="text-center mt-10 text-black/50">No bills found. Create one!</div>
+            <div className="text-center mt-10 text-black/50 dark:text-zinc-500">No bills found. Create one!</div>
           )}
         </div>
       </div>
 
       {/* Floating Action Button */}
-      <div className="fixed bottom-[140px] left-0 w-full z-40 pointer-events-none flex justify-center">
-        <div className="w-full max-w-[480px] relative">
+      <div className="fixed bottom-[140px] md:bottom-10 left-0 md:left-auto md:right-10 w-full md:w-auto z-40 pointer-events-none flex justify-center">
+        <div className="w-full max-w-[480px] md:w-auto relative">
           <button 
             onClick={() => setIsNewBillModalOpen(true)}
-            className="absolute bottom-0 right-6 w-20 h-20 bg-[#1A1A1A] rounded-full flex items-center justify-center shadow-lg pointer-events-auto active:scale-95 transition-transform cursor-pointer"
+            className="absolute bottom-0 right-6 md:static w-20 h-20 md:w-16 md:h-16 bg-[#1A1A1A] dark:bg-zinc-100 rounded-full flex items-center justify-center shadow-lg pointer-events-auto active:scale-95 transition-transform cursor-pointer hover:bg-black/80 dark:hover:bg-zinc-300"
           >
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-[#EDEDF1]">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-[#EDEDF1] dark:text-zinc-950">
               <line x1="12" y1="5" x2="12" y2="19" />
               <line x1="5" y1="12" x2="19" y2="12" />
             </svg>

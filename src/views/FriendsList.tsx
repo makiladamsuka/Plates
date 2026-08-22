@@ -131,26 +131,26 @@ export function FriendsList({
   const displayList = activeTab === 'pending' ? pendingRequests : acceptedFriends;
 
   return (
-    <div className="min-h-screen bg-[#EDEDF1] pb-32 pt-[160px]">
+    <div className="min-h-screen bg-[#EDEDF1] dark:bg-zinc-950 pb-32 pt-[160px] md:pt-0 transition-colors">
       
-      {/* Fixed Header Container */}
-      <div className="fixed top-0 left-1/2 -translate-x-1/2 w-full max-w-[480px] z-30 bg-[#EDEDF1]">
-        <div className="max-w-[480px] mx-auto">
-          <div className="px-6 pt-10 pb-4 flex justify-between items-center h-[88px]">
-            <h1 className="text-black text-5xl font-bold font-display tracking-tight leading-none">Friends</h1>
+      {/* Header Container */}
+      <div className="fixed top-0 left-1/2 -translate-x-1/2 w-full max-w-[480px] z-30 bg-[#EDEDF1] dark:bg-zinc-950 md:sticky md:left-0 md:translate-x-0 md:max-w-full md:px-10 md:pt-4 transition-colors">
+        <div className="max-w-[480px] md:max-w-6xl mx-auto">
+          <div className="px-6 md:px-0 pt-10 pb-4 flex justify-between items-center h-[88px] md:hidden">
+            <h1 className="text-black dark:text-zinc-100 text-5xl font-bold font-display tracking-tight leading-none">Friends</h1>
           </div>
 
           {/* Filter Tabs */}
-          <div className="px-6 pb-4 flex gap-2 overflow-x-auto no-scrollbar">
+          <div className="px-6 md:px-0 pb-4 md:pt-12 flex gap-2 overflow-x-auto no-scrollbar">
             <button 
               onClick={() => setActiveTab('all')}
-              className={`h-8 px-5 rounded-[35px] text-lg font-semibold whitespace-nowrap flex items-center justify-center transition-colors cursor-pointer ${activeTab === 'all' ? 'bg-[#1A1A1A] text-[#EDEDF1]' : 'bg-[#D9D9D9] text-black'}`}
+              className={`h-8 px-4 md:px-5 rounded-[35px] text-sm md:text-base font-semibold whitespace-nowrap shrink-0 flex items-center justify-center transition-colors cursor-pointer ${activeTab === 'all' ? 'bg-[#1A1A1A] dark:bg-zinc-100 text-[#EDEDF1] dark:text-zinc-950' : 'bg-[#D9D9D9] dark:bg-zinc-900 text-black dark:text-zinc-100'}`}
             >
               All
             </button>
             <button 
               onClick={() => setActiveTab('pending')}
-              className={`h-8 px-5 rounded-[35px] text-lg font-semibold whitespace-nowrap flex items-center justify-center transition-colors cursor-pointer ${activeTab === 'pending' ? 'bg-[#1A1A1A] text-[#EDEDF1]' : 'bg-[#D9D9D9] text-black'}`}
+              className={`h-8 px-4 md:px-5 rounded-[35px] text-sm md:text-base font-semibold whitespace-nowrap shrink-0 flex items-center justify-center transition-colors cursor-pointer ${activeTab === 'pending' ? 'bg-[#1A1A1A] dark:bg-zinc-100 text-[#EDEDF1] dark:text-zinc-950' : 'bg-[#D9D9D9] dark:bg-zinc-900 text-black dark:text-zinc-100'}`}
             >
               Pending {pendingRequests.length > 0 && `(${pendingRequests.length})`}
             </button>
@@ -159,12 +159,12 @@ export function FriendsList({
       </div>
 
       {/* Main Content */}
-      <div className="max-w-[480px] mx-auto">
+      <div className="max-w-[480px] md:max-w-6xl mx-auto md:px-10">
         
         {/* Friends Cards */}
-        <div className="px-5 flex flex-col gap-3.5">
+        <div className="px-5 md:px-0 flex flex-col md:grid md:grid-cols-2 lg:grid-cols-3 gap-3.5 md:gap-4">
           {isLoading ? (
-            <div className="text-center mt-10 text-black/50">Loading friends...</div>
+            <div className="text-center mt-10 text-black/50 dark:text-zinc-500">Loading friends...</div>
           ) : displayList.length > 0 ? (
             displayList.map((friend) => (
               <div 
@@ -176,20 +176,20 @@ export function FriendsList({
                     onFriendClick?.(friend.id);
                   }
                 }}
-                className="w-full bg-[#D9D9D9] rounded-[30px] px-6 py-4.5 relative flex items-center justify-between shadow-sm cursor-pointer hover:bg-zinc-300/80 transition-colors"
+                className="w-full bg-[#D9D9D9] dark:bg-zinc-900 rounded-[30px] px-6 py-4.5 relative flex items-center justify-between shadow-sm cursor-pointer hover:bg-zinc-300/80 dark:hover:bg-zinc-800 transition-colors border border-transparent dark:border-white/5"
               >
                 {/* Left Side: Avatar & Details */}
                 <div className="flex items-center gap-3.5">
                   {friend.avatar_url ? (
                     <img src={friend.avatar_url} alt="" className="w-[44px] h-[44px] rounded-full object-cover shrink-0" />
                   ) : (
-                    <div className="w-[44px] h-[44px] rounded-full bg-[#E5E7EB] opacity-50 shrink-0" />
+                    <div className="w-[44px] h-[44px] rounded-full bg-[#E5E7EB] dark:bg-zinc-800 opacity-50 shrink-0" />
                   )}
                   <div className="flex flex-col">
-                    <span className="text-[#1A1A1A] text-xl font-semibold leading-tight">
+                    <span className="text-[#1A1A1A] dark:text-zinc-100 text-xl font-semibold leading-tight">
                       {friend.name}
                     </span>
-                    <span className="text-black/60 text-xs font-normal mt-0.5">
+                    <span className="text-black/60 dark:text-zinc-400 text-xs font-normal mt-0.5">
                       {friend.username}
                     </span>
                   </div>
@@ -201,27 +201,27 @@ export function FriendsList({
                     <button 
                       onClick={() => handleApprove(friend.id)}
                       title="Accept Request"
-                      className="w-[32px] h-[32px] flex items-center justify-center rounded-full active:scale-95 transition-transform bg-[#EDEDF1] border border-black/10 shadow-sm cursor-pointer hover:bg-[#4C8C3C] hover:text-white group"
+                      className="w-[32px] h-[32px] flex items-center justify-center rounded-full active:scale-95 transition-transform bg-[#EDEDF1] dark:bg-zinc-800 border border-black/10 dark:border-white/10 shadow-sm cursor-pointer hover:bg-[#4C8C3C] dark:hover:bg-[#4C8C3C] hover:text-white group"
                     >
-                      <Check size={18} strokeWidth={3} className="text-[#4C8C3C] group-hover:text-white" />
+                      <Check size={18} strokeWidth={3} className="text-[#4C8C3C] dark:text-[#5FAD4B] group-hover:text-white" />
                     </button>
                     <button 
                       onClick={() => handleDecline(friend.id)}
                       title="Decline Request"
-                      className="w-[32px] h-[32px] flex items-center justify-center rounded-full active:scale-95 transition-transform bg-[#EDEDF1] border border-black/10 shadow-sm cursor-pointer hover:bg-[#F6D6DA] group"
+                      className="w-[32px] h-[32px] flex items-center justify-center rounded-full active:scale-95 transition-transform bg-[#EDEDF1] dark:bg-zinc-800 border border-black/10 dark:border-white/10 shadow-sm cursor-pointer hover:bg-[#F6D6DA] dark:hover:bg-red-900/50 group"
                     >
-                      <X size={16} strokeWidth={3} className="text-[#F6D6DA] group-hover:text-red-600" />
+                      <X size={16} strokeWidth={3} className="text-[#F6D6DA] dark:text-red-400 group-hover:text-red-600 dark:group-hover:text-red-300" />
                     </button>
                   </div>
                 ) : (
                   friend.balance !== 0 && (
                     <div className="flex items-center gap-2 shrink-0">
                       {friend.balance > 0 ? (
-                        <ArrowDownLeft size={22} strokeWidth={2.5} className="text-black" />
+                        <ArrowDownLeft size={22} strokeWidth={2.5} className="text-black dark:text-zinc-100" />
                       ) : (
-                        <ArrowUpRight size={22} strokeWidth={2.5} className="text-black" />
+                        <ArrowUpRight size={22} strokeWidth={2.5} className="text-black dark:text-zinc-100" />
                       )}
-                      <span className="text-[#1A1A1A] text-2xl font-semibold whitespace-nowrap">
+                      <span className="text-[#1A1A1A] dark:text-zinc-100 text-2xl font-semibold whitespace-nowrap">
                         LKR {Math.abs(friend.balance)}
                       </span>
                     </div>
@@ -230,7 +230,7 @@ export function FriendsList({
               </div>
             ))
           ) : (
-            <div className="text-center mt-10 text-black/50">
+            <div className="text-center mt-10 text-black/50 dark:text-zinc-500">
               {activeTab === 'pending' ? 'No pending friend requests.' : 'No friends found. Tap + to search and add friends!'}
             </div>
           )}
@@ -238,13 +238,13 @@ export function FriendsList({
       </div>
 
       {/* Floating Action Button */}
-      <div className="fixed bottom-[140px] left-0 w-full z-40 pointer-events-none flex justify-center">
-        <div className="w-full max-w-[480px] relative">
+      <div className="fixed bottom-[140px] md:bottom-10 left-0 md:left-auto md:right-10 w-full md:w-auto z-40 pointer-events-none flex justify-center">
+        <div className="w-full max-w-[480px] md:w-auto relative">
           <button 
             onClick={onSearchClick}
-            className="absolute bottom-0 right-6 w-20 h-20 bg-[#1A1A1A] rounded-full flex items-center justify-center shadow-lg pointer-events-auto active:scale-95 transition-transform cursor-pointer"
+            className="absolute bottom-0 right-6 md:static w-20 h-20 md:w-16 md:h-16 bg-[#1A1A1A] dark:bg-zinc-100 rounded-full flex items-center justify-center shadow-lg pointer-events-auto active:scale-95 transition-transform cursor-pointer hover:bg-black/80 dark:hover:bg-zinc-300"
           >
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-[#EDEDF1]">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-[#EDEDF1] dark:text-zinc-950">
               <line x1="12" y1="5" x2="12" y2="19" />
               <line x1="5" y1="12" x2="19" y2="12" />
             </svg>

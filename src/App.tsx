@@ -6,8 +6,9 @@ import { FriendsList } from './views/FriendsList';
 import { FriendDetail } from './views/FriendDetail';
 import { SearchFriends } from './views/SearchFriends';
 import { BottomNav } from './components/BottomNav';
+import { DesktopNav } from './components/DesktopNav';
 import { Login } from './views/Login';
-import { Profile } from './views/Profile';
+import { Settings } from './views/Settings';
 import { supabase } from './lib/supabase';
 
 function App() {
@@ -22,6 +23,26 @@ function App() {
   // Auth state
   const [session, setSession] = useState<any>(null);
   const [isInitializing, setIsInitializing] = useState(true);
+
+  // Settings view state
+  const [settingsView, setSettingsView] = useState<'main' | 'account'>('main');
+
+  // Theme state
+  const [isDarkTheme, setIsDarkTheme] = useState(() => {
+    const saved = localStorage.getItem('theme');
+    if (saved) return saved === 'dark';
+    return window.matchMedia('(prefers-color-scheme: dark)').matches;
+  });
+
+  useEffect(() => {
+    if (isDarkTheme) {
+      document.documentElement.classList.add('dark');
+      localStorage.setItem('theme', 'dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+      localStorage.setItem('theme', 'light');
+    }
+  }, [isDarkTheme]);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -39,7 +60,7 @@ function App() {
   }, []);
 
   if (isInitializing) {
-    return <div className="min-h-screen bg-[#EDEDF1] flex items-center justify-center"><div className="text-black font-['Sora']">Loading...</div></div>;
+    return <div className="min-h-screen bg-[#EDEDF1] dark:bg-zinc-950 flex items-center justify-center"><div className="text-black dark:text-zinc-100 font-['Sora']">Loading...</div></div>;
   }
 
   if (!session) {
@@ -49,10 +70,34 @@ function App() {
   const activeSession = session;
 
   return (
-    <div id="root-container" className="max-w-[480px] mx-auto w-full min-h-screen bg-[#EDEDF1] relative shadow-sm">
-      {/* Views */}
-      {currentTab === 'home' && (
+    <div id="root-container" className="w-full min-h-screen bg-[#EDEDF1] dark:bg-zinc-950 relative md:flex">
+      {/* Desktop Navigation */}
+      <DesktopNav 
+        currentTab={currentTab}
+        session={activeSession}
+        onTabChange={(tab) => {
+          setCurrentTab(tab);
+          if (tab === 'bills') setCurrentView('list');
+          if (tab === 'friends') {
+            setFriendsView('list');
+            setSelectedFriendId(null);
+          }
+          if (tab === 'settings') {
+            setSettingsView('main');
+          }
+        }} 
+        onAvatarClick={() => {
+          setSettingsView('account');
+          setCurrentTab('settings');
+        }}
+      />
+
+      {/* Main Content Area */}
+      <main className="flex-1 w-full max-w-[480px] md:max-w-full mx-auto md:mx-0 relative">
+        {/* Views */}
+        {currentTab === 'home' && (
         <Home 
+          session={activeSession}
           onBillClick={(id) => {
             setSelectedBillId(id);
             setCurrentView('detail');
@@ -61,6 +106,10 @@ function App() {
           onSearchClick={() => {
             setFriendsView('search');
             setCurrentTab('friends');
+          }}
+          onAvatarClick={() => {
+            setSettingsView('account');
+            setCurrentTab('settings');
           }}
         />
       )}
@@ -115,7 +164,7 @@ function App() {
         )
       )}
 
-      {currentTab === 'profile' && <Profile session={activeSession} />}
+      {currentTab === 'settings' && <Settings session={activeSession} initialView={settingsView} isDarkTheme={isDarkTheme} onThemeChange={setIsDarkTheme} />}
 
       {/* Shared Bottom Navigation */}
       <BottomNav 
@@ -127,10 +176,14 @@ function App() {
             setFriendsView('list');
             setSelectedFriendId(null);
           }
+          if (tab === 'settings') {
+            setSettingsView('main');
+          }
         }} 
       />
       
       {/* <IncomingBillModal /> */}
+      </main>
     </div>
   );
 }
