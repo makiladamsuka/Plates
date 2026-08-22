@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { X, CreditCard } from 'lucide-react';
 import { api } from '../services/api';
 import { supabase } from '../lib/supabase';
@@ -11,6 +11,84 @@ interface IncomingBillModalProps {
   userId: string;
   onSuccess?: () => void;
   readOnly?: boolean;
+}
+
+function SlideToAccept({ onAccept, isSubmitting }: { onAccept: () => void; isSubmitting: boolean }) {
+  const [slideProgress, setSlideProgress] = useState(0);
+  const trackRef = useRef<HTMLDivElement>(null);
+  const isDragging = useRef(false);
+
+  const handlePointerDown = (e: React.PointerEvent) => {
+    if (isSubmitting) return;
+    isDragging.current = true;
+    (e.target as HTMLElement).setPointerCapture(e.pointerId);
+  };
+
+  const handlePointerMove = (e: React.PointerEvent) => {
+    if (!isDragging.current || !trackRef.current || isSubmitting) return;
+    const trackRect = trackRef.current.getBoundingClientRect();
+    const thumbWidth = 64; 
+    const minX = 0;
+    const maxX = trackRect.width - thumbWidth - 16;
+
+    let newX = e.clientX - trackRect.left - (thumbWidth / 2);
+    newX = Math.max(minX, Math.min(newX, maxX));
+
+    setSlideProgress(newX);
+  };
+
+  const handlePointerUp = (e: React.PointerEvent) => {
+    if (!isDragging.current) return;
+    isDragging.current = false;
+    try {
+      (e.target as HTMLElement).releasePointerCapture(e.pointerId);
+    } catch {}
+
+    if (!trackRef.current) return;
+    const trackRect = trackRef.current.getBoundingClientRect();
+    const thumbWidth = 64;
+    const maxX = trackRect.width - thumbWidth - 16;
+
+    if (slideProgress > maxX * 0.7) {
+      setSlideProgress(maxX);
+      onAccept();
+    } else {
+      setSlideProgress(0);
+    }
+  };
+
+  return (
+    <div 
+      ref={trackRef}
+      className="w-full h-20 bg-[#D9D9D9] rounded-[50px] relative flex items-center px-2 shadow-inner overflow-hidden select-none touch-none"
+    >
+      {/* Slider Knob */}
+      <div 
+        className="w-16 h-16 bg-[#F5C744] hover:bg-[#f3bd24] active:scale-95 rounded-full flex items-center justify-center z-20 shadow-md cursor-grab active:cursor-grabbing touch-none select-none shrink-0"
+        style={{ 
+          transform: `translateX(${slideProgress}px)`,
+          transition: isDragging.current ? 'none' : 'transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)'
+        }}
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerUp}
+        onPointerCancel={handlePointerUp}
+      >
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="text-black ml-0.5">
+          <polyline points="13 17 18 12 13 7" />
+          <polyline points="6 17 11 12 6 7" />
+        </svg>
+      </div>
+
+      {/* Text */}
+      <div 
+        className="absolute inset-0 flex items-center justify-center text-black text-lg font-bold font-['Sora'] pointer-events-none transition-opacity duration-200"
+        style={{ opacity: slideProgress > 60 ? 0.2 : 1 }}
+      >
+        {isSubmitting ? 'Accepting...' : 'Slide to accept'}
+      </div>
+    </div>
+  );
 }
 
 export function IncomingBillModal({ 
@@ -223,22 +301,7 @@ export function IncomingBillModal({
             {/* Actions (Commit 9a3a00e style) */}
             {!isEffectiveReadOnly ? (
               <div className="flex flex-col items-center gap-4 mt-2">
-                {/* Slide to approve pill */}
-                <div 
-                  onClick={handleAccept}
-                  className="w-full h-20 bg-zinc-300 rounded-[50px] relative flex items-center px-2 shadow-inner overflow-hidden cursor-pointer active:scale-[0.99] transition-transform"
-                >
-                  {/* Slider Knob */}
-                  <div className="w-16 h-16 bg-amber-300 rounded-full flex items-center justify-center z-10 shadow-md">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="text-black">
-                      <path d="M9 18l6-6-6-6" />
-                    </svg>
-                  </div>
-                  {/* Text */}
-                  <div className="absolute inset-0 flex items-center justify-center text-black text-lg font-bold font-['Sora'] pointer-events-none">
-                    {isSubmitting ? 'Approving...' : 'Slide to approve'}
-                  </div>
-                </div>
+                <SlideToAccept onAccept={handleAccept} isSubmitting={isSubmitting} />
 
                 <button 
                   onClick={handleDecline}
