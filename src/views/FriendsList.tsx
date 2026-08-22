@@ -131,147 +131,129 @@ export function FriendsList({
   const displayList = activeTab === 'pending' ? pendingRequests : acceptedFriends;
 
   return (
-    <div className="w-full pb-24 md:pb-8 font-sans-app">
+    <div className="min-h-screen bg-[#EDEDF1] pb-32 pt-[160px]">
       
-      {/* Header Container */}
-      <div className="px-5 pt-6 pb-4 md:px-0 md:pt-0 md:pb-6 flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold font-display tracking-tight text-[#1A1A1A]">
-            Friends
-          </h1>
-          <p className="text-xs sm:text-sm text-gray-500 font-sans-app mt-1">
-            Manage your dining circle and pending invitations.
-          </p>
-        </div>
-
-        {/* Desktop Add Friend Button */}
-        <button
-          onClick={onSearchClick}
-          className="hidden md:flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-[#1A1A1A] hover:bg-[#2A2A2A] text-white text-sm font-semibold shadow-xs transition-all cursor-pointer"
-        >
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            <line x1="12" y1="5" x2="12" y2="19" />
-            <line x1="5" y1="12" x2="19" y2="12" />
-          </svg>
-          <span>Add Friend</span>
-        </button>
-      </div>
-
-      {/* Filter Tabs */}
-      <div className="px-5 md:px-0 pb-6 flex gap-2 overflow-x-auto no-scrollbar">
-        <button 
-          onClick={() => setActiveTab('all')}
-          className={`h-8 px-4 rounded-full text-xs font-semibold whitespace-nowrap flex items-center justify-center transition-all cursor-pointer border ${
-            activeTab === 'all' 
-              ? 'bg-[#1A1A1A] text-white border-[#1A1A1A] shadow-2xs' 
-              : 'bg-white text-gray-600 border-black/8 hover:bg-gray-50'
-          }`}
-        >
-          All Friends ({acceptedFriends.length})
-        </button>
-        <button 
-          onClick={() => setActiveTab('pending')}
-          className={`h-8 px-4 rounded-full text-xs font-semibold whitespace-nowrap flex items-center justify-center transition-all cursor-pointer border ${
-            activeTab === 'pending' 
-              ? 'bg-[#1A1A1A] text-white border-[#1A1A1A] shadow-2xs' 
-              : 'bg-white text-gray-600 border-black/8 hover:bg-gray-50'
-          }`}
-        >
-          Pending Requests {pendingRequests.length > 0 && `(${pendingRequests.length})`}
-        </button>
-      </div>
-
-      {/* Main Content: Responsive Grid */}
-      <div className="px-5 md:px-0 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {isLoading ? (
-          <div className="col-span-full text-center py-12 text-gray-400 text-sm">Loading friends...</div>
-        ) : displayList.length > 0 ? (
-          displayList.map((friend) => (
-            <div 
-              key={friend.id}
-              onClick={() => {
-                if (activeTab === 'pending') {
-                  setIncomingFriend(friend);
-                } else {
-                  onFriendClick?.(friend.id);
-                }
-              }}
-              className="w-full bg-white border border-black/8 rounded-2xl p-4.5 flex items-center justify-between shadow-2xs cursor-pointer hover:border-black/20 hover:shadow-xs transition-all"
-            >
-              {/* Left Side: Avatar & Details */}
-              <div className="flex items-center gap-3.5 min-w-0 pr-2">
-                {friend.avatar_url ? (
-                  <img src={friend.avatar_url} alt="" className="w-11 h-11 rounded-full object-cover shrink-0 border border-black/5" />
-                ) : (
-                  <div className="w-11 h-11 rounded-full bg-[#EDEDF1] border border-black/5 flex items-center justify-center font-bold text-sm text-[#1A1A1A] shrink-0">
-                    {friend.name.charAt(0).toUpperCase()}
-                  </div>
-                )}
-                <div className="flex flex-col min-w-0">
-                  <span className="text-[#1A1A1A] text-base font-bold leading-tight truncate">
-                    {friend.name}
-                  </span>
-                  <span className="text-gray-400 text-xs font-normal truncate mt-0.5">
-                    {friend.username}
-                  </span>
-                </div>
-              </div>
-
-              {/* Right Side: Action Icons OR Balances */}
-              {activeTab === 'pending' ? (
-                <div className="flex items-center gap-2 shrink-0" onClick={(e) => e.stopPropagation()}>
-                  <button 
-                    onClick={() => handleApprove(friend.id)}
-                    title="Accept Request"
-                    className="w-8 h-8 flex items-center justify-center rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 hover:bg-emerald-600 hover:text-white transition-all cursor-pointer"
-                  >
-                    <Check size={16} strokeWidth={2.5} />
-                  </button>
-                  <button 
-                    onClick={() => handleDecline(friend.id)}
-                    title="Decline Request"
-                    className="w-8 h-8 flex items-center justify-center rounded-xl bg-rose-50 border border-rose-200 text-rose-700 hover:bg-rose-600 hover:text-white transition-all cursor-pointer"
-                  >
-                    <X size={16} strokeWidth={2.5} />
-                  </button>
-                </div>
-              ) : (
-                friend.balance !== 0 && (
-                  <div className="flex items-center gap-1.5 shrink-0">
-                    {friend.balance > 0 ? (
-                      <div className="flex items-center gap-1 text-emerald-700 bg-emerald-50 border border-emerald-200/60 px-2.5 py-1 rounded-xl text-xs font-bold">
-                        <ArrowDownLeft size={14} strokeWidth={2.5} />
-                        <span>LKR {Math.abs(friend.balance)}</span>
-                      </div>
-                    ) : (
-                      <div className="flex items-center gap-1 text-rose-700 bg-rose-50 border border-rose-200/60 px-2.5 py-1 rounded-xl text-xs font-bold">
-                        <ArrowUpRight size={14} strokeWidth={2.5} />
-                        <span>LKR {Math.abs(friend.balance)}</span>
-                      </div>
-                    )}
-                  </div>
-                )
-              )}
-            </div>
-          ))
-        ) : (
-          <div className="col-span-full bg-white border border-dashed border-black/10 rounded-2xl p-12 text-center text-gray-400 text-sm">
-            {activeTab === 'pending' ? '✨ No pending friend requests.' : '✨ No friends found yet. Click "Add Friend" to search by username!'}
+      {/* Fixed Header Container */}
+      <div 
+        className={`fixed top-0 left-1/2 -translate-x-1/2 w-full max-w-[480px] z-30 bg-[#EDEDF1] transition-transform duration-300 ease-in-out ${
+          showHeader ? 'translate-y-0' : '-translate-y-full'
+        }`}
+      >
+        <div className="max-w-[480px] mx-auto">
+          <div className="px-6 pt-10 pb-4 flex justify-between items-center h-[88px]">
+            <h1 className="text-black text-5xl font-bold font-display tracking-tight leading-none">Friends</h1>
           </div>
-        )}
+
+          {/* Filter Tabs */}
+          <div className="px-6 pb-4 flex gap-2 overflow-x-auto no-scrollbar">
+            <button 
+              onClick={() => setActiveTab('all')}
+              className={`h-8 px-5 rounded-[35px] text-lg font-semibold whitespace-nowrap flex items-center justify-center transition-colors cursor-pointer ${activeTab === 'all' ? 'bg-[#1A1A1A] text-[#EDEDF1]' : 'bg-[#D9D9D9] text-black'}`}
+            >
+              All
+            </button>
+            <button 
+              onClick={() => setActiveTab('pending')}
+              className={`h-8 px-5 rounded-[35px] text-lg font-semibold whitespace-nowrap flex items-center justify-center transition-colors cursor-pointer ${activeTab === 'pending' ? 'bg-[#1A1A1A] text-[#EDEDF1]' : 'bg-[#D9D9D9] text-black'}`}
+            >
+              Pending {pendingRequests.length > 0 && `(${pendingRequests.length})`}
+            </button>
+          </div>
+        </div>
       </div>
 
-      {/* Mobile Floating Action Button */}
-      <div className="md:hidden fixed bottom-20 right-5 z-40">
-        <button 
-          onClick={onSearchClick}
-          className="w-14 h-14 bg-[#1A1A1A] hover:bg-[#2A2A2A] text-white rounded-full flex items-center justify-center shadow-lg active:scale-95 transition-transform cursor-pointer"
-        >
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            <line x1="12" y1="5" x2="12" y2="19" />
-            <line x1="5" y1="12" x2="19" y2="12" />
-          </svg>
-        </button>
+      {/* Main Content */}
+      <div className="max-w-[480px] mx-auto">
+        
+        {/* Friends Cards */}
+        <div className="px-5 flex flex-col gap-3.5">
+          {isLoading ? (
+            <div className="text-center mt-10 text-black/50">Loading friends...</div>
+          ) : displayList.length > 0 ? (
+            displayList.map((friend) => (
+              <div 
+                key={friend.id}
+                onClick={() => {
+                  if (activeTab === 'pending') {
+                    setIncomingFriend(friend);
+                  } else {
+                    onFriendClick?.(friend.id);
+                  }
+                }}
+                className="w-full bg-[#D9D9D9] rounded-[30px] px-6 py-4.5 relative flex items-center justify-between shadow-sm cursor-pointer hover:bg-zinc-300/80 transition-colors"
+              >
+                {/* Left Side: Avatar & Details */}
+                <div className="flex items-center gap-3.5">
+                  {friend.avatar_url ? (
+                    <img src={friend.avatar_url} alt="" className="w-[44px] h-[44px] rounded-full object-cover shrink-0" />
+                  ) : (
+                    <div className="w-[44px] h-[44px] rounded-full bg-[#E5E7EB] opacity-50 shrink-0" />
+                  )}
+                  <div className="flex flex-col">
+                    <span className="text-[#1A1A1A] text-xl font-semibold leading-tight">
+                      {friend.name}
+                    </span>
+                    <span className="text-black/60 text-xs font-normal mt-0.5">
+                      {friend.username}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Right Side: Action Icons OR Balances */}
+                {activeTab === 'pending' ? (
+                  <div className="flex items-center gap-3 shrink-0 pr-1" onClick={(e) => e.stopPropagation()}>
+                    <button 
+                      onClick={() => handleApprove(friend.id)}
+                      title="Accept Request"
+                      className="w-[32px] h-[32px] flex items-center justify-center rounded-full active:scale-95 transition-transform bg-[#EDEDF1] border border-black/10 shadow-sm cursor-pointer hover:bg-[#4C8C3C] hover:text-white group"
+                    >
+                      <Check size={18} strokeWidth={3} className="text-[#4C8C3C] group-hover:text-white" />
+                    </button>
+                    <button 
+                      onClick={() => handleDecline(friend.id)}
+                      title="Decline Request"
+                      className="w-[32px] h-[32px] flex items-center justify-center rounded-full active:scale-95 transition-transform bg-[#EDEDF1] border border-black/10 shadow-sm cursor-pointer hover:bg-[#F6D6DA] group"
+                    >
+                      <X size={16} strokeWidth={3} className="text-[#F6D6DA] group-hover:text-red-600" />
+                    </button>
+                  </div>
+                ) : (
+                  friend.balance !== 0 && (
+                    <div className="flex items-center gap-2 shrink-0">
+                      {friend.balance > 0 ? (
+                        <ArrowDownLeft size={22} strokeWidth={2.5} className="text-black" />
+                      ) : (
+                        <ArrowUpRight size={22} strokeWidth={2.5} className="text-black" />
+                      )}
+                      <span className="text-[#1A1A1A] text-2xl font-semibold whitespace-nowrap">
+                        LKR {Math.abs(friend.balance)}
+                      </span>
+                    </div>
+                  )
+                )}
+              </div>
+            ))
+          ) : (
+            <div className="text-center mt-10 text-black/50">
+              {activeTab === 'pending' ? 'No pending friend requests.' : 'No friends found. Tap + to search and add friends!'}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Floating Action Button */}
+      <div className="fixed bottom-[140px] left-0 w-full z-40 pointer-events-none flex justify-center">
+        <div className="w-full max-w-[480px] relative">
+          <button 
+            onClick={onSearchClick}
+            className="absolute bottom-0 right-6 w-20 h-20 bg-[#1A1A1A] rounded-full flex items-center justify-center shadow-lg pointer-events-auto active:scale-95 transition-transform cursor-pointer"
+          >
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-[#EDEDF1]">
+              <line x1="12" y1="5" x2="12" y2="19" />
+              <line x1="5" y1="12" x2="19" y2="12" />
+            </svg>
+          </button>
+        </div>
       </div>
 
       {/* Incoming Friend Request Modal */}
@@ -281,6 +263,7 @@ export function FriendsList({
         onApprove={() => incomingFriend && handleApprove(incomingFriend.id)}
         friend={incomingFriend || undefined}
       />
+
     </div>
   );
 }
