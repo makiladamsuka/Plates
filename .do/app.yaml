@@ -1,0 +1,47 @@
+name: plates
+
+services:
+  - name: backend
+    source_dir: backend
+    github:
+      branch: design2
+      deploy_on_push: true
+    run_command: npm start
+    build_command: npm install
+    environment_slug: node-js
+    http_port: 3001
+    instance_count: 1
+    instance_size_slug: apps-s-1vcpu-0.5gb
+    envs:
+      - key: SUPABASE_URL
+        scope: RUN_TIME
+        type: SECRET
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        scope: RUN_TIME
+        type: SECRET
+      - key: API_SECRET_KEY
+        scope: RUN_TIME
+        type: SECRET
+      - key: PORT
+        scope: RUN_TIME
+        value: "3001"
+
+static_sites:
+  - name: frontend
+    source_dir: frontend
+    github:
+      branch: design2
+      deploy_on_push: true
+    build_command: npm run build
+    output_dir: dist
+    environment_slug: node-js
+    envs:
+      - key: VITE_SUPABASE_URL
+        scope: BUILD_TIME
+        type: SECRET
+      - key: VITE_SUPABASE_ANON_KEY
+        scope: BUILD_TIME
+        type: SECRET
+      - key: VITE_API_URL
+        scope: BUILD_TIME
+        type: SECRET
