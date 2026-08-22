@@ -2,16 +2,11 @@
   "name": "plates-monorepo",
   "version": "1.0.0",
   "private": true,
-  "description": "Plates — split-bill dining app. Frontend in /frontend, backend in /backend.",
+  "description": "Plates — split-bill dining app.",
   "scripts": {
+    "build": "npm --prefix frontend install && npm --prefix frontend run build && npm --prefix backend install",
+    "start": "npm --prefix backend start",
     "dev:frontend": "npm --prefix frontend run dev",
-    "dev:backend": "npm --prefix backend run dev",
-    "install:all": "npm --prefix frontend install && npm --prefix backend install",
-    "build:frontend": "npm --prefix frontend run build",
-    "start:backend": "npm --prefix backend start"
-  },
-  "workspaces": [
-    "frontend",
-    "backend"
-  ]
+    "dev:backend": "npm --prefix backend run dev"
+  }
 }

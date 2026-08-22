@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import path from 'path';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import { supabase } from './utils/supabase';
@@ -415,6 +416,17 @@ app.delete('/api/friends', async (req, res) => {
   } catch (err: any) {
     handleError(res, err);
   }
+});
+
+// Serve static frontend files in production
+const frontendDistPath = path.join(__dirname, '../../frontend/dist');
+app.use(express.static(frontendDistPath));
+
+app.get('*', (req, res, next) => {
+  if (req.path.startsWith('/api')) {
+    return next();
+  }
+  res.sendFile(path.join(frontendDistPath, 'index.html'));
 });
 
 app.listen(port, () => {
