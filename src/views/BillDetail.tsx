@@ -3,6 +3,7 @@ import { ChevronLeft } from 'lucide-react';
 import { ConfirmTransferModal } from '../components/ConfirmTransferModal';
 import { api } from '../services/api';
 import { supabase } from '../lib/supabase';
+import { MOCK_BILLS, MOCK_FRIENDS } from '../data/mockData';
 
 interface BillDetailProps {
   onBack: () => void;
@@ -43,24 +44,36 @@ export function BillDetail({ onBack, billId }: BillDetailProps) {
   const [userId, setUserId] = useState<string>('');
 
   const fetchBill = async () => {
-    if (!billId) return;
+    if (!billId) {
+      setLoading(false);
+      return;
+    }
     try {
       setLoading(true);
       const data = await api.getBill(billId);
-      setBill(data);
-
-      if (data?.creator_id) {
-        const { data: creator } = await supabase
-          .from('profiles')
-          .select('full_name, email')
-          .eq('id', data.creator_id)
-          .single();
-        if (creator) {
-          setCreatorName(creator.full_name || creator.email || '');
+      if (data && data.id) {
+        setBill(data);
+        if (data?.creator_id) {
+          const { data: creator } = await supabase
+            .from('profiles')
+            .select('full_name, email')
+            .eq('id', data.creator_id)
+            .single();
+          if (creator) {
+            setCreatorName(creator.full_name || creator.email || '');
+          }
         }
+      } else {
+        // Fallback to mock data if API returns empty
+        const mock = MOCK_BILLS.find(b => b.id === billId);
+        if (mock) setBill(mock);
       }
     } catch (e) {
-      console.error('Error fetching bill details:', e);
+      console.warn('API bill fetch failed, checking mock data:', e);
+      const mock = MOCK_BILLS.find(b => b.id === billId);
+      if (mock) {
+        setBill(mock);
+      }
     } finally {
       setLoading(false);
     }
@@ -90,7 +103,21 @@ export function BillDetail({ onBack, billId }: BillDetailProps) {
   }, [billId]);
 
   if (loading) return <div className="min-h-screen bg-[#EDEDF1] flex items-center justify-center font-['Sora']">Loading...</div>;
-  if (!bill) return null;
+
+  if (!bill) {
+    return (
+      <div className="min-h-screen bg-[#EDEDF1] flex flex-col items-center justify-center p-6 text-center font-['Sora']">
+        <p className="text-gray-700 text-lg font-semibold mb-2">Bill Not Found</p>
+        <p className="text-gray-500 text-sm mb-6">The requested bill could not be loaded.</p>
+        <button
+          onClick={onBack}
+          className="px-6 py-2.5 bg-[#1A1A1A] text-white rounded-full text-sm font-semibold cursor-pointer active:scale-95 transition-transform"
+        >
+          Go Back
+        </button>
+      </div>
+    );
+  }
 
   const isCreator = bill.creator_id === userId;
   const myParticipant = (bill.participants || []).find((p: any) => p.friend_id === userId || p.friendId === userId);
@@ -167,7 +194,8 @@ export function BillDetail({ onBack, billId }: BillDetailProps) {
       <div className="px-6 mt-6 flex flex-col gap-3 relative">
         {(bill.participants || []).map((participant: any, i: number) => {
           const isPMe = participant.friendId === 'me' || participant.friend_id === userId || participant.friendId === userId;
-          const pName = isPMe ? 'You' : (participant.full_name || participant.profile?.full_name || `Friend ${(participant.friendId || participant.friend_id || '').substring(0, 4)}`);
+          const mockFriend = MOCK_FRIENDS.find(f => f.id === (participant.friendId || participant.friend_id));
+          const pName = isPMe ? 'You' : (participant.full_name || participant.profile?.full_name || mockFriend?.name || `Friend ${(participant.friendId || participant.friend_id || '').substring(0, 4)}`);
           const pAvatar = participant.avatar_url || participant.profile?.avatar_url;
           const isPCreator = bill.creator_id === (participant.friend_id || participant.friendId);
           const isPPaid = isPCreator || participant.paid;
