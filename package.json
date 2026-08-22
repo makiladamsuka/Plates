@@ -4,9 +4,23 @@
   "private": true,
   "description": "Plates — split-bill dining app.",
   "scripts": {
-    "build": "npm --prefix frontend install --include=dev && npm --prefix frontend run build && npm --prefix backend install --include=dev",
-    "start": "npm --prefix backend start",
+    "build": "npm --prefix frontend install --include=dev && npm --prefix frontend run build && npm install && npm --prefix backend install",
+    "start": "npx tsx backend/src/server.ts",
     "dev:frontend": "npm --prefix frontend run dev",
     "dev:backend": "npm --prefix backend run dev"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.112.3",
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6",
+    "@types/node": "^22.10.0",
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "express-rate-limit": "^8.6.2",
+    "helmet": "^8.3.0",
+    "ts-node": "^10.9.2",
+    "tsx": "^4.23.12",
+    "typescript": "~5.7.2"
   }
 }
