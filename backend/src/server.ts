@@ -26,7 +26,7 @@ app.use(cors({
     if (!origin || allowedOrigins.includes(origin) || process.env.NODE_ENV !== 'production') {
       callback(null, true);
     } else {
-      callback(new Error('CORS policy: Access denied for this origin'));
+      callback(null, false);
     }
   },
   credentials: true,
