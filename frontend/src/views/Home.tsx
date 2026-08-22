@@ -100,7 +100,10 @@ export function Home({
       
       {/* Top Header Container */}
       <div className="px-6 pt-10 pb-4 h-[88px] flex justify-between items-center max-w-[480px] md:max-w-6xl md:px-10 mx-auto md:hidden">
-        <h1 className="text-black dark:text-zinc-100 text-5xl md:text-6xl font-bold font-display tracking-tight leading-none">Plates</h1>
+        <div className="flex items-center gap-3">
+          <img src="/logo.svg" alt="Plates logo" className="w-11 h-11 rounded-[22.5%] shrink-0" />
+          <h1 className="text-black dark:text-zinc-100 text-5xl font-extrabold font-display tracking-tight leading-none">Plates</h1>
+        </div>
         <button 
           onClick={onAvatarClick}
           className="w-10 h-10 rounded-full bg-[#D9D9D9] dark:bg-zinc-800 flex items-center justify-center font-bold text-black dark:text-zinc-100 text-sm cursor-pointer hover:opacity-80 transition-opacity overflow-hidden md:hidden"
