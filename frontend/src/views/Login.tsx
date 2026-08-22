@@ -70,11 +70,7 @@ export function Login() {
           <div>
             {/* Brand Logo */}
             <div className="flex items-center gap-3 mb-8 md:mb-10">
-              <div className="w-11 h-11 bg-[#F5C744] rounded-2xl flex items-center justify-center shadow-xs border border-black/5 rotate-[-3deg] transition-transform hover:rotate-0">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#1A1A1A" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
-                </svg>
-              </div>
+              <img src="/logo.svg" alt="Plates logo" className="w-11 h-11 rounded-[22.5%] shrink-0" />
               <span className="text-2xl font-bold font-display tracking-tight text-[#1A1A1A]">Plates</span>
             </div>
 

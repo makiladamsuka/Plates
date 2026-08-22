@@ -20,7 +20,10 @@ export function DesktopNav({ currentTab, session, onTabChange, onAvatarClick }: 
 
   return (
     <div className="hidden md:flex flex-col w-[280px] min-h-screen sticky top-0 bg-[#EDEDF1] dark:bg-zinc-950 border-r border-black/5 dark:border-white/5 z-50 py-10 px-6 font-['Sora'] shrink-0 transition-colors">
-      <h1 className="text-black dark:text-zinc-100 text-4xl font-bold font-display tracking-tight leading-none mb-12 px-2">Plates</h1>
+      <div className="flex items-center gap-3 mb-12 px-2">
+        <img src="/logo.svg" alt="Plates logo" className="w-10 h-10 rounded-[22%] shrink-0" />
+        <h1 className="text-black dark:text-zinc-100 text-3xl font-bold font-display tracking-tight leading-none">Plates</h1>
+      </div>
 
       <div className="flex flex-col gap-2 flex-1">
         {navItems.map((item) => {
