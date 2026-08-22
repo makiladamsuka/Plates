@@ -11,14 +11,6 @@
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.112.3",
-    "clsx": "^2.1.1",
-    "lucide-react": "^1.16.0",
-    "react": "^19.2.8",
-    "react-dom": "^19.2.8",
-    "react-router-dom": "^7.18.2",
-    "tailwind-merge": "^3.3.1"
-  },
-  "devDependencies": {
     "@tailwindcss/postcss": "^4.3.3",
     "@tailwindcss/vite": "^4.0.9",
     "@types/node": "^22.10.0",
@@ -26,8 +18,14 @@
     "@types/react-dom": "^19.0.0",
     "@vitejs/plugin-react": "^4.3.4",
     "autoprefixer": "^10.5.4",
+    "clsx": "^2.1.1",
+    "lucide-react": "^1.16.0",
     "oxlint": "^1.75.0",
     "postcss": "^8.5.26",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
+    "react-router-dom": "^7.18.2",
+    "tailwind-merge": "^3.3.1",
     "tailwindcss": "^4.3.3",
     "typescript": "~5.7.2",
     "vite": "^6.2.0"
