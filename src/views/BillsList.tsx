@@ -3,6 +3,15 @@ import { NewBillModal } from '../components/NewBillModal';
 import { api } from '../services/api';
 import { supabase } from '../lib/supabase';
 
+const getTagColor = (category: string) => {
+  switch (category) {
+    case 'Restaurant': return 'bg-[#F6D6DA]';
+    case 'Grocery': return 'bg-[#D7ECD1]';
+    case 'Entertainment': return 'bg-[#CDE1FF]';
+    default: return 'bg-zinc-200';
+  }
+};
+
 const formatTime = (ts: any) => {
   if (!ts) return 'Recent';
   const date = new Date(typeof ts === 'string' && !isNaN(Number(ts)) ? Number(ts) : ts);
@@ -44,6 +53,21 @@ export function BillsList({ onBillClick }: BillsListProps) {
 
   useEffect(() => {
     fetchBills();
+
+    // Realtime subscription for instant bill/participant status sync
+    const channel = supabase
+      .channel('realtime-bills-list')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'bills' }, fetchBills)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'participants' }, fetchBills)
+      .subscribe();
+
+    const handleFocus = () => fetchBills();
+    window.addEventListener('focus', handleFocus);
+
+    return () => {
+      supabase.removeChannel(channel);
+      window.removeEventListener('focus', handleFocus);
+    };
   }, []);
 
   const sortedBills = [...bills].sort((a, b) => {
@@ -60,9 +84,7 @@ export function BillsList({ onBillClick }: BillsListProps) {
       
       {/* Fixed Header Container */}
       <div 
-        className={`fixed top-0 left-1/2 -translate-x-1/2 w-full max-w-[480px] z-30 bg-[#EDEDF1] transition-transform duration-300 ease-in-out ${
-          showHeader ? 'translate-y-0' : '-translate-y-full'
-        }`}
+        className="fixed top-0 left-1/2 -translate-x-1/2 w-full max-w-[480px] z-30 bg-[#EDEDF1] transition-transform duration-300 ease-in-out translate-y-0"
       >
         <div className="max-w-[480px] mx-auto">
           <div className="px-6 pt-10 pb-4 flex justify-between items-center h-[88px]">

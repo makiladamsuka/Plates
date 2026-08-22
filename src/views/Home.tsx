@@ -44,6 +44,21 @@ export function Home({
   useEffect(() => {
     if (!initialBills) {
       fetchBills();
+
+      // Realtime subscription for instant bill/participant status sync
+      const channel = supabase
+        .channel('realtime-bills-home')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'bills' }, fetchBills)
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'participants' }, fetchBills)
+        .subscribe();
+
+      const handleFocus = () => fetchBills();
+      window.addEventListener('focus', handleFocus);
+
+      return () => {
+        supabase.removeChannel(channel);
+        window.removeEventListener('focus', handleFocus);
+      };
     }
   }, [initialBills]);
 

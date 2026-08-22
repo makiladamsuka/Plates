@@ -135,9 +135,7 @@ export function FriendsList({
       
       {/* Fixed Header Container */}
       <div 
-        className={`fixed top-0 left-1/2 -translate-x-1/2 w-full max-w-[480px] z-30 bg-[#EDEDF1] transition-transform duration-300 ease-in-out ${
-          showHeader ? 'translate-y-0' : '-translate-y-full'
-        }`}
+        className="fixed top-0 left-1/2 -translate-x-1/2 w-full max-w-[480px] z-30 bg-[#EDEDF1] transition-transform duration-300 ease-in-out translate-y-0"
       >
         <div className="max-w-[480px] mx-auto">
           <div className="px-6 pt-10 pb-4 flex justify-between items-center h-[88px]">

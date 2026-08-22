@@ -204,8 +204,32 @@ app.post('/api/bills', async (req, res) => {
       .single();
       
     if (fetchError) throw fetchError;
+
+    // Enrich participants with profile information
+    const friendIds = (completeBill.participants || []).map((p: any) => p.friend_id);
+    let profilesMap: Record<string, any> = {};
+    if (friendIds.length > 0) {
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('id, full_name, avatar_url, email')
+        .in('id', friendIds);
+      
+      (profiles || []).forEach((prof: any) => {
+        profilesMap[prof.id] = prof;
+      });
+    }
+
+    const enrichedBill = {
+      ...completeBill,
+      participants: (completeBill.participants || []).map((p: any) => ({
+        ...p,
+        profile: profilesMap[p.friend_id] || null,
+        full_name: profilesMap[p.friend_id]?.full_name || null,
+        avatar_url: profilesMap[p.friend_id]?.avatar_url || null
+      }))
+    };
     
-    res.status(201).json(completeBill);
+    res.status(201).json(enrichedBill);
   } catch (err: any) {
     handleError(res, err);
   }

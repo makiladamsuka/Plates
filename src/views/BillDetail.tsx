@@ -71,6 +71,22 @@ export function BillDetail({ onBack, billId }: BillDetailProps) {
       if (session) setUserId(session.user.id);
     });
     fetchBill();
+
+    if (billId) {
+      const channel = supabase
+        .channel(`realtime-bill-${billId}`)
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'bills', filter: `id=eq.${billId}` }, fetchBill)
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'participants', filter: `bill_id=eq.${billId}` }, fetchBill)
+        .subscribe();
+
+      const handleFocus = () => fetchBill();
+      window.addEventListener('focus', handleFocus);
+
+      return () => {
+        supabase.removeChannel(channel);
+        window.removeEventListener('focus', handleFocus);
+      };
+    }
   }, [billId]);
 
   if (loading) return <div className="min-h-screen bg-[#EDEDF1] flex items-center justify-center font-['Sora']">Loading...</div>;
