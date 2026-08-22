@@ -59,11 +59,7 @@ export function BillsList({ onBillClick }: BillsListProps) {
     <div className="min-h-screen bg-[#EDEDF1] pb-32 pt-[160px] font-['Sora']">
       
       {/* Fixed Header Container */}
-      <div 
-        className={`fixed top-0 left-1/2 -translate-x-1/2 w-full max-w-[480px] z-30 bg-[#EDEDF1] transition-transform duration-300 ease-in-out ${
-          showHeader ? 'translate-y-0' : '-translate-y-full'
-        }`}
-      >
+      <div className="fixed top-0 left-1/2 -translate-x-1/2 w-full max-w-[480px] z-30 bg-[#EDEDF1]">
         <div className="max-w-[480px] mx-auto">
           <div className="px-6 pt-10 pb-4 flex justify-between items-center h-[88px]">
             <h1 className="text-black text-5xl font-bold font-display tracking-tight leading-none">Bills</h1>

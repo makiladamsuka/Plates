@@ -8,11 +8,7 @@ const HERO_IMAGES = [
   '/welcome-heroes/hero-2.jpeg',
 ];
 
-interface LoginProps {
-  onGuestLogin?: () => void;
-}
-
-export function Login({ onGuestLogin }: LoginProps) {
+export function Login() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -106,19 +102,6 @@ export function Login({ onGuestLogin }: LoginProps) {
                 {isLoading ? 'Connecting to Google...' : 'Continue with Google'}
               </span>
             </button>
-
-            {/* Guest Mode */}
-            {onGuestLogin && (
-              <button
-                onClick={onGuestLogin}
-                className="w-full h-12 bg-white hover:bg-gray-50 text-gray-700 hover:text-gray-900 rounded-2xl flex items-center justify-center gap-2 text-sm font-semibold font-sans-app border border-gray-200 shadow-2xs transition-all cursor-pointer"
-              >
-                <span>Explore Demo Mode (No Login)</span>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M5 12h14M12 5l7 7-7 7"/>
-                </svg>
-              </button>
-            )}
 
             {error && (
               <p className="text-red-500 text-xs font-medium font-sans-app mt-2 text-center">{error}</p>

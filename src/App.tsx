@@ -21,7 +21,6 @@ function App() {
 
   // Auth state
   const [session, setSession] = useState<any>(null);
-  const [isGuestMode, setIsGuestMode] = useState(false);
   const [isInitializing, setIsInitializing] = useState(true);
 
   useEffect(() => {
@@ -40,21 +39,14 @@ function App() {
   }, []);
 
   if (isInitializing) {
-    return <div className="min-h-screen bg-[#EDEDF1] flex items-center justify-center"><div className="text-black">Loading...</div></div>;
+    return <div className="min-h-screen bg-[#EDEDF1] flex items-center justify-center"><div className="text-black font-['Sora']">Loading...</div></div>;
   }
 
-  // Active session or mock guest session for testing without backend
-  const activeSession = session || (isGuestMode ? {
-    user: {
-      id: 'demo-user-me',
-      email: 'alex.demo@plates.app',
-      user_metadata: { full_name: 'Alex Rivera' }
-    }
-  } : null);
-
-  if (!activeSession) {
-    return <Login onGuestLogin={() => setIsGuestMode(true)} />;
+  if (!session) {
+    return <Login />;
   }
+
+  const activeSession = session;
 
   return (
     <div id="root-container" className="max-w-[480px] mx-auto w-full min-h-screen bg-[#EDEDF1] relative shadow-sm">
