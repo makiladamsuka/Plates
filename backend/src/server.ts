@@ -421,18 +421,27 @@ app.delete('/api/friends', async (req, res) => {
 
 // Serve static frontend files in production
 const possibleDistPaths = [
-  path.join(__dirname, '../../frontend/dist'),
-  path.join(__dirname, '../frontend/dist'),
-  path.resolve(process.cwd(), 'frontend/dist')
+  path.join(__dirname, '../../dist'),
+  path.join(__dirname, '../dist'),
+  path.resolve(process.cwd(), 'dist'),
+  path.resolve(process.cwd(), '../dist')
 ];
-const frontendDistPath = possibleDistPaths.find(p => fs.existsSync(p)) || path.resolve(process.cwd(), 'frontend/dist');
-app.use(express.static(frontendDistPath));
+const frontendDistPath = possibleDistPaths.find(p => fs.existsSync(p)) || path.resolve(process.cwd(), 'dist');
+if (fs.existsSync(frontendDistPath)) {
+  app.use(express.static(frontendDistPath));
+}
 
-app.get('*', (req, res, next) => {
+// Express 5 compatible catch-all route using regex /.*/
+app.get(/.*/, (req, res, next) => {
   if (req.path.startsWith('/api')) {
     return next();
   }
-  res.sendFile(path.join(frontendDistPath, 'index.html'));
+  const indexPath = path.join(frontendDistPath, 'index.html');
+  if (fs.existsSync(indexPath)) {
+    res.sendFile(indexPath);
+  } else {
+    res.status(404).json({ error: 'Endpoint not found' });
+  }
 });
 
 app.listen(port, () => {
