@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Routes, Route } from 'react-router-dom';
 import { Home } from './views/Home';
 import { BillsList } from './views/BillsList';
 import { BillDetail } from './views/BillDetail';
@@ -8,6 +9,7 @@ import { SearchFriends } from './views/SearchFriends';
 import { BottomNav } from './components/BottomNav';
 import { DesktopNav } from './components/DesktopNav';
 import { Login } from './views/Login';
+import { AuthCallback } from './views/AuthCallback';
 import { Settings } from './views/Settings';
 import { supabase } from './lib/supabase';
 
@@ -64,7 +66,12 @@ function App() {
   }
 
   if (!session) {
-    return <Login />;
+    return (
+      <Routes>
+        <Route path="/auth/callback" element={<AuthCallback />} />
+        <Route path="*" element={<Login />} />
+      </Routes>
+    );
   }
 
   const activeSession = session;
