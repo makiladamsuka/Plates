@@ -123,6 +123,44 @@ export function Home({
     }
   };
 
+  const handleDirectAcceptBill = async (bill: any) => {
+    const uid = await getActiveUserId();
+    if (!uid) return;
+
+    // Optimistic UI update: immediately mark accepted so it disappears instantly
+    setBills(prev => prev.map(b => {
+      if (b.id !== bill.id) return b;
+      return {
+        ...b,
+        participants: (b.participants || []).map((p: any) => 
+          (p.friend_id === uid || p.friendId === uid) ? { ...p, accepted: true } : p
+        )
+      };
+    }));
+
+    try {
+      // 1. Direct Supabase write
+      await supabase
+        .from('participants')
+        .update({ accepted: true, paid: false })
+        .eq('bill_id', bill.id)
+        .eq('friend_id', uid);
+
+      await supabase
+        .from('bills')
+        .update({ status: 'Pending' })
+        .eq('id', bill.id);
+
+      // 2. Background API call
+      api.acceptBill(bill.id, uid).catch(console.warn);
+
+      fetchBills(uid);
+    } catch (err) {
+      console.error('Error accepting bill directly:', err);
+      fetchBills(uid);
+    }
+  };
+
   const handleDeclineFriend = async (requesterId: string) => {
     const uid = await getActiveUserId();
     if (!uid) return;
@@ -389,30 +427,47 @@ export function Home({
 
             <div className="flex flex-col gap-3">
               {/* Bills pending acceptance (accepted === false) */}
-              {bills.filter(b => {
-                const isCreator = b.creator_id === userId;
+              {(bills || []).filter(b => {
+                const uid = userId || session?.user?.id;
+                if (!uid) return false;
+                const isCreator = b.creator_id === uid;
                 if (isCreator) return false;
-                const myPart = (b.participants || []).find((p: any) => p.friend_id === userId || p.friendId === userId);
-                return myPart && myPart.accepted === false;
-              }).map(bill => (
-                <div 
-                  key={`pending-accept-${bill.id}`}
-                  onClick={() => setSelectedIncomingBill(bill)}
-                  className="w-full bg-[#D9D9D9] dark:bg-zinc-900 rounded-[25px] p-4 flex items-center justify-between shadow-sm cursor-pointer hover:bg-zinc-300/80 dark:hover:bg-zinc-800 transition-colors border border-transparent dark:border-white/5"
-                >
-                  <div className="flex flex-col gap-1 min-w-0 pr-2">
-                    <span className="text-[#1A1A1A] dark:text-zinc-100 text-base font-semibold truncate">{bill.title}</span>
-                    <span className="text-black/60 dark:text-zinc-400 text-xs font-normal">Incoming request · LKR {bill.total}</span>
-                  </div>
+                const myPart = (b.participants || []).find((p: any) => p.friend_id === uid || p.friendId === uid);
+                return myPart && (myPart.accepted === false || myPart.accepted === null || myPart.accepted === undefined);
+              }).map(bill => {
+                const uid = userId || session?.user?.id;
+                const myPart = (bill.participants || []).find((p: any) => p.friend_id === uid || p.friendId === uid);
+                const myShare = myPart ? myPart.share : bill.total;
 
-                  <div className="flex items-center gap-2 shrink-0">
-                    <span className="bg-[#F5C744] text-black text-xs font-semibold px-4 py-1.5 rounded-full">
-                      Accept Request
-                    </span>
-                    <ChevronRight size={18} className="text-black/40 dark:text-zinc-600" />
+                return (
+                  <div 
+                    key={`pending-accept-${bill.id}`}
+                    onClick={() => setSelectedIncomingBill(bill)}
+                    className="w-full bg-[#D9D9D9] dark:bg-zinc-900 rounded-[25px] p-4 flex items-center justify-between shadow-sm cursor-pointer hover:bg-zinc-300/80 dark:hover:bg-zinc-800 transition-colors border border-transparent dark:border-white/5"
+                  >
+                    <div className="flex flex-col gap-1 min-w-0 pr-2">
+                      <span className="text-[#1A1A1A] dark:text-zinc-100 text-base font-semibold truncate">{bill.title}</span>
+                      <span className="text-black/60 dark:text-zinc-400 text-xs font-normal">
+                        Your share: LKR {myShare} · Total: LKR {bill.total}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center gap-2 shrink-0">
+                      <button 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDirectAcceptBill(bill);
+                        }}
+                        className="bg-[#F5C744] hover:bg-[#ebd538] active:scale-95 text-black text-xs font-semibold px-3.5 py-1.5 rounded-full flex items-center gap-1 transition-transform cursor-pointer shadow-xs"
+                      >
+                        <Check size={14} strokeWidth={2.5} />
+                        <span>Accept</span>
+                      </button>
+                      <ChevronRight size={18} className="text-black/40 dark:text-zinc-600" />
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
 
               {/* Pending Friend Requests */}
               {pendingFriendRequests.map(friend => (
@@ -459,11 +514,13 @@ export function Home({
                 </div>
               ))}
 
-              {pendingFriendRequests.length === 0 && bills.filter(b => {
-                const isCreator = b.creator_id === userId;
+              {pendingFriendRequests.length === 0 && (bills || []).filter(b => {
+                const uid = userId || session?.user?.id;
+                if (!uid) return false;
+                const isCreator = b.creator_id === uid;
                 if (isCreator) return false;
-                const myPart = (b.participants || []).find((p: any) => p.friend_id === userId || p.friendId === userId);
-                return myPart && myPart.accepted === false;
+                const myPart = (b.participants || []).find((p: any) => p.friend_id === uid || p.friendId === uid);
+                return myPart && (myPart.accepted === false || myPart.accepted === null || myPart.accepted === undefined);
               }).length === 0 && (
                 <div className="bg-[#D9D9D9]/50 dark:bg-zinc-900/50 rounded-[25px] p-6 text-center text-black/50 dark:text-zinc-500 text-sm border border-transparent dark:border-white/5">
                   All caught up! No pending requests to accept.

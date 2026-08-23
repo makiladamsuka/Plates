@@ -112,26 +112,32 @@ export function IncomingBillModal({
   const isMySharePaid = isCreator || myParticipant?.paid === true;
   const isFullySettled = bill.status === 'Settled';
 
+  const getEffectiveUserId = async (): Promise<string> => {
+    if (userId) return userId;
+    const { data: { session } } = await supabase.auth.getSession();
+    return session?.user?.id || '';
+  };
+
   const handleAccept = async () => {
     setIsSubmitting(true);
     try {
-      // 1. Try API endpoint
-      try {
-        await api.acceptBill(bill.id, userId);
-      } catch (apiErr) {
-        // 2. Direct Supabase fallback
-        const { error } = await supabase
-          .from('participants')
-          .update({ accepted: true, paid: false })
-          .eq('bill_id', bill.id)
-          .eq('friend_id', userId);
-        if (error) throw error;
+      const activeUid = await getEffectiveUserId();
+      if (!activeUid) throw new Error('User not authenticated');
 
-        await supabase
-          .from('bills')
-          .update({ status: 'Pending' })
-          .eq('id', bill.id);
-      }
+      // 1. Direct Supabase update for immediate DB write
+      await supabase
+        .from('participants')
+        .update({ accepted: true, paid: false })
+        .eq('bill_id', bill.id)
+        .eq('friend_id', activeUid);
+
+      await supabase
+        .from('bills')
+        .update({ status: 'Pending' })
+        .eq('id', bill.id);
+
+      // 2. Also notify backend API (in background, non-blocking)
+      api.acceptBill(bill.id, activeUid).catch(console.warn);
 
       if (onSuccess) onSuccess();
       onClose();
@@ -146,21 +152,21 @@ export function IncomingBillModal({
   const handleDecline = async () => {
     setIsSubmitting(true);
     try {
-      try {
-        await api.declineBill(bill.id, userId);
-      } catch (apiErr) {
-        const { error } = await supabase
-          .from('participants')
-          .update({ accepted: false, paid: false })
-          .eq('bill_id', bill.id)
-          .eq('friend_id', userId);
-        if (error) throw error;
+      const activeUid = await getEffectiveUserId();
+      if (!activeUid) throw new Error('User not authenticated');
 
-        await supabase
-          .from('bills')
-          .update({ status: 'Rejected' })
-          .eq('id', bill.id);
-      }
+      await supabase
+        .from('participants')
+        .update({ accepted: false, paid: false })
+        .eq('bill_id', bill.id)
+        .eq('friend_id', activeUid);
+
+      await supabase
+        .from('bills')
+        .update({ status: 'Rejected' })
+        .eq('id', bill.id);
+
+      api.declineBill(bill.id, activeUid).catch(console.warn);
 
       if (onSuccess) onSuccess();
       onClose();
@@ -175,30 +181,30 @@ export function IncomingBillModal({
   const handleExecuteSettle = async () => {
     setIsSubmitting(true);
     try {
-      try {
-        await api.payBill(bill.id, userId);
-      } catch (apiErr) {
-        const { error } = await supabase
-          .from('participants')
-          .update({ paid: true, accepted: true })
-          .eq('bill_id', bill.id)
-          .eq('friend_id', userId);
-        if (error) throw error;
+      const activeUid = await getEffectiveUserId();
+      if (!activeUid) throw new Error('User not authenticated');
 
-        // Check if all participants are paid
-        const { data: parts } = await supabase
-          .from('participants')
-          .select('paid')
-          .eq('bill_id', bill.id);
+      await supabase
+        .from('participants')
+        .update({ paid: true, accepted: true })
+        .eq('bill_id', bill.id)
+        .eq('friend_id', activeUid);
 
-        const allPaid = parts && parts.length > 0 && parts.every((p: any) => p.paid === true);
-        if (allPaid) {
-          await supabase
-            .from('bills')
-            .update({ status: 'Settled' })
-            .eq('id', bill.id);
-        }
+      // Check if all participants are paid
+      const { data: parts } = await supabase
+        .from('participants')
+        .select('paid')
+        .eq('bill_id', bill.id);
+
+      const allPaid = parts && parts.length > 0 && parts.every((p: any) => p.paid === true);
+      if (allPaid) {
+        await supabase
+          .from('bills')
+          .update({ status: 'Settled' })
+          .eq('id', bill.id);
       }
+
+      api.payBill(bill.id, activeUid).catch(console.warn);
 
       if (onSuccess) onSuccess();
       setIsConfirmTransferOpen(false);

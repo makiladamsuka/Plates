@@ -61,12 +61,19 @@ export function BillsList({ onBillClick }: BillsListProps) {
       .on('postgres_changes', { event: '*', schema: 'public', table: 'participants' }, fetchBills)
       .subscribe();
 
+    const interval = setInterval(() => {
+      fetchBills();
+    }, 3000);
+
     const handleFocus = () => fetchBills();
     window.addEventListener('focus', handleFocus);
+    document.addEventListener('visibilitychange', handleFocus);
 
     return () => {
       supabase.removeChannel(channel);
+      clearInterval(interval);
       window.removeEventListener('focus', handleFocus);
+      document.removeEventListener('visibilitychange', handleFocus);
     };
   }, []);
 
