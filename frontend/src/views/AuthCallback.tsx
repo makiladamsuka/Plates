@@ -15,13 +15,22 @@ export function AuthCallback() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    console.log('[AuthCallback] Component mounted');
+    console.log('[AuthCallback] Current URL:', window.location.href);
+    console.log('[AuthCallback] URL Hash:', window.location.hash);
+    console.log('[AuthCallback] URL Search:', window.location.search);
+
     // Listen for the auth state change that fires when Supabase
     // processes the tokens in the URL hash fragment.
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event, session) => {
+      console.log(`[AuthCallback] Auth event fired: ${event}`);
+      console.log(`[AuthCallback] Session present:`, !!session);
+      
       // SIGNED_IN fires once the tokens have been exchanged for a session
       if (event === 'SIGNED_IN' && session) {
+        console.log('[AuthCallback] Successfully signed in, navigating to /');
         // Navigate to the home/dashboard page, replacing the callback URL
         // in history so the user can't "back" into it.
         navigate('/', { replace: true });
@@ -31,10 +40,16 @@ export function AuthCallback() {
     // Safety net: if onAuthStateChange doesn't fire within 5 seconds,
     // check if we already have a session (e.g. from a page refresh).
     const timeout = setTimeout(async () => {
-      const { data: { session } } = await supabase.auth.getSession();
+      console.log('[AuthCallback] 5-second timeout reached, checking manual session...');
+      const { data: { session }, error } = await supabase.auth.getSession();
+      console.log('[AuthCallback] Manual session check result:', { hasSession: !!session, error });
+      
       if (session) {
+        console.log('[AuthCallback] Found session manually, navigating to /');
         navigate('/', { replace: true });
       } else {
+        console.error('[AuthCallback] Timeout reached and no session found. Error:', error);
+        setError('Authentication timed out. Please try logging in again.');
         setError('Authentication timed out. Please try logging in again.');
       }
     }, 5000);
