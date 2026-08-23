@@ -75,6 +75,26 @@ function App() {
     return () => subscription.unsubscribe();
   }, []);
 
+  // Subtle audio chime for live incoming requests
+  const playNotificationChime = () => {
+    try {
+      const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
+      if (!AudioCtx) return;
+      const ctx = new AudioCtx();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(587.33, ctx.currentTime); // D5
+      osc.frequency.setValueAtTime(880, ctx.currentTime + 0.08); // A5
+      gain.gain.setValueAtTime(0.12, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.3);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start();
+      osc.stop(ctx.currentTime + 0.3);
+    } catch {}
+  };
+
   // Check for live incoming requests in real-time while actively in app
   useEffect(() => {
     const uid = session?.user?.id;
@@ -83,27 +103,26 @@ function App() {
     const checkLiveIncoming = async () => {
       try {
         // 1. Check incoming friend requests
-        const { data: rawPendingFriends } = await supabase
+        const { data: rawPendingFriends, error: friendErr } = await supabase
           .from('friends')
           .select('user_id, status')
           .eq('friend_id', uid)
           .eq('status', 'pending');
 
-        if (rawPendingFriends) {
+        if (!friendErr && rawPendingFriends) {
           if (!isInitializedBaselineRef.current) {
-            // First load: record baseline without popups
+            // First load: record baseline IDs quietly without popups
             rawPendingFriends.forEach((f: any) => knownFriendRequestIdsRef.current.add(f.user_id));
           } else {
-            // Live check: find new ones
+            // Live check: find newly arrived requests
             for (const f of rawPendingFriends) {
               if (!knownFriendRequestIdsRef.current.has(f.user_id)) {
-                knownFriendRequestIdsRef.current.add(f.user_id);
-                
+                // Fetch profile safely without throwing
                 const { data: prof } = await supabase
                   .from('profiles')
                   .select('id, full_name, avatar_url, email')
                   .eq('id', f.user_id)
-                  .single();
+                  .maybeSingle();
 
                 const friendData = {
                   id: prof?.id || f.user_id,
@@ -112,6 +131,9 @@ function App() {
                   avatar_url: prof?.avatar_url,
                   isPendingRequest: true,
                 };
+
+                knownFriendRequestIdsRef.current.add(f.user_id);
+                playNotificationChime();
 
                 setActiveLiveAlert({
                   id: `friend-${f.user_id}`,
@@ -122,33 +144,45 @@ function App() {
                   name: prof?.full_name || 'Friend',
                   rawData: { requesterId: f.user_id, friend: friendData },
                 });
-                break; // Show one at a time
+                break; // Show one popup at a time
               }
             }
           }
         }
 
         // 2. Check incoming bill requests
-        const { data: rawPendingBills } = await supabase
+        const { data: rawPendingBills, error: billErr } = await supabase
           .from('participants')
           .select('bill_id, accepted, share')
           .eq('friend_id', uid)
           .or('accepted.eq.false,accepted.is.null');
 
-        if (rawPendingBills) {
+        if (!billErr && rawPendingBills) {
           if (!isInitializedBaselineRef.current) {
             rawPendingBills.forEach((p: any) => knownBillRequestIdsRef.current.add(p.bill_id));
           } else {
             for (const p of rawPendingBills) {
               if (!knownBillRequestIdsRef.current.has(p.bill_id)) {
-                knownBillRequestIdsRef.current.add(p.bill_id);
-
                 try {
-                  const billData = await api.getBill(p.bill_id);
+                  // Direct Supabase query to guarantee instant response
+                  const { data: billData } = await supabase
+                    .from('bills')
+                    .select('*, participants(*)')
+                    .eq('id', p.bill_id)
+                    .maybeSingle();
+
                   if (billData && billData.id && billData.creator_id !== uid) {
-                    const creatorParticipant = (billData.participants || []).find((part: any) => part.friend_id === billData.creator_id);
-                    const creatorName = creatorParticipant?.full_name || 'A friend';
+                    const { data: creatorProf } = await supabase
+                      .from('profiles')
+                      .select('full_name, avatar_url, email')
+                      .eq('id', billData.creator_id)
+                      .maybeSingle();
+
+                    const creatorName = creatorProf?.full_name || creatorProf?.email || 'A friend';
                     const myShare = p.share || (billData.participants || []).find((part: any) => part.friend_id === uid)?.share || billData.total;
+
+                    knownBillRequestIdsRef.current.add(p.bill_id);
+                    playNotificationChime();
 
                     setActiveLiveAlert({
                       id: `bill-${billData.id}`,
@@ -156,7 +190,7 @@ function App() {
                       title: billData.title || 'New Bill Request',
                       subtitle: `From ${creatorName} · Your share: LKR ${myShare}`,
                       amount: myShare,
-                      avatarUrl: creatorParticipant?.avatar_url,
+                      avatarUrl: creatorProf?.avatar_url,
                       name: creatorName,
                       rawData: { bill: billData },
                     });
@@ -179,19 +213,26 @@ function App() {
     // Initial baseline fetch
     checkLiveIncoming();
 
-    // Real-time channel listener
+    // Real-time channel listener for instant broadcast
     const channel = supabase
-      .channel('app-live-alerts')
+      .channel('app-live-alerts-sync')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'friends' }, checkLiveIncoming)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'bills' }, checkLiveIncoming)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'participants' }, checkLiveIncoming)
       .subscribe();
 
-    // 3-second live polling loop when active in app
-    const interval = setInterval(checkLiveIncoming, 3000);
+    // Fast 1.5s live polling loop when active in app
+    const interval = setInterval(checkLiveIncoming, 1500);
+
+    const handleVisibility = () => checkLiveIncoming();
+    window.addEventListener('focus', handleVisibility);
+    document.addEventListener('visibilitychange', handleVisibility);
 
     return () => {
       supabase.removeChannel(channel);
       clearInterval(interval);
+      window.removeEventListener('focus', handleVisibility);
+      document.removeEventListener('visibilitychange', handleVisibility);
     };
   }, [session]);
 
