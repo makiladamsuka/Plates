@@ -22,17 +22,44 @@ export function FriendsList({
 
   useEffect(() => {
     fetchFriendsAndRequests();
+
+    // Real-time listener for friends changes
+    const channel = supabase
+      .channel('realtime-friends-tab')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'friends' }, () => fetchFriendsAndRequests(true))
+      .subscribe();
+
+    // Fast polling fallback every 3s
+    const interval = setInterval(() => {
+      fetchFriendsAndRequests(true);
+    }, 3000);
+
+    const handleFocus = () => fetchFriendsAndRequests(true);
+    window.addEventListener('focus', handleFocus);
+    document.addEventListener('visibilitychange', handleFocus);
+
+    return () => {
+      supabase.removeChannel(channel);
+      clearInterval(interval);
+      window.removeEventListener('focus', handleFocus);
+      document.removeEventListener('visibilitychange', handleFocus);
+    };
   }, [session]);
 
-  const fetchFriendsAndRequests = async () => {
-    if (!session?.user) return;
-    setIsLoading(true);
+  const fetchFriendsAndRequests = async (isBackground = false) => {
+    let uid = session?.user?.id;
+    if (!uid) {
+      const { data: { session: s } } = await supabase.auth.getSession();
+      uid = s?.user?.id;
+    }
+    if (!uid) return;
+    if (!isBackground) setIsLoading(true);
     try {
-      // 1. Fetch Accepted Friends for current user (where user_id = session.user.id)
+      // 1. Fetch Accepted Friends for current user (where user_id = uid)
       const { data: rawAccepted } = await supabase
         .from('friends')
         .select('friend_id, status')
-        .eq('user_id', session.user.id)
+        .eq('user_id', uid)
         .or('status.eq.accepted,status.is.null');
 
       if (rawAccepted && rawAccepted.length > 0) {
@@ -55,11 +82,11 @@ export function FriendsList({
         setAcceptedFriends([]);
       }
 
-      // 2. Fetch Pending Friend Requests sent TO current user (where friend_id = session.user.id and status = 'pending')
+      // 2. Fetch Pending Friend Requests sent TO current user (where friend_id = uid and status = 'pending')
       const { data: rawPending } = await supabase
         .from('friends')
         .select('user_id, status')
-        .eq('friend_id', session.user.id)
+        .eq('friend_id', uid)
         .eq('status', 'pending');
 
       if (rawPending && rawPending.length > 0) {
@@ -84,7 +111,7 @@ export function FriendsList({
     } catch (err) {
       console.error('Error fetching friends:', err);
     } finally {
-      setIsLoading(false);
+      if (!isBackground) setIsLoading(false);
     }
   };
 

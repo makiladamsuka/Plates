@@ -33,8 +33,19 @@ export function Home({
   const [pendingFriendRequests, setPendingFriendRequests] = useState<any[]>([]);
   const [userId, setUserId] = useState<string>(session?.user?.id || '');
 
-  const fetchBills = (currentUid?: string) => {
-    const uid = currentUid || userId;
+  const getActiveUserId = async (): Promise<string> => {
+    if (session?.user?.id) return session.user.id;
+    if (userId) return userId;
+    const { data: { session: s } } = await supabase.auth.getSession();
+    const uid = s?.user?.id || '';
+    if (uid && uid !== userId) {
+      setUserId(uid);
+    }
+    return uid;
+  };
+
+  const fetchBills = async (currentUid?: string) => {
+    const uid = currentUid || await getActiveUserId();
     if (uid) {
       api.getBills(uid).then(setBills).catch(console.error);
     } else {
@@ -43,7 +54,7 @@ export function Home({
   };
 
   const fetchPendingFriends = async (currentUid?: string) => {
-    const uid = currentUid || userId;
+    const uid = currentUid || await getActiveUserId();
     if (!uid) return;
 
     try {
@@ -84,7 +95,7 @@ export function Home({
   };
 
   const handleApproveFriend = async (requesterId: string) => {
-    const uid = userId || session?.user?.id;
+    const uid = await getActiveUserId();
     if (!uid) return;
 
     try {
@@ -113,7 +124,7 @@ export function Home({
   };
 
   const handleDeclineFriend = async (requesterId: string) => {
-    const uid = userId || session?.user?.id;
+    const uid = await getActiveUserId();
     if (!uid) return;
 
     try {
@@ -131,10 +142,9 @@ export function Home({
   };
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      const uid = session?.user?.id;
+    // Initial fetch
+    getActiveUserId().then((uid) => {
       if (uid) {
-        setUserId(uid);
         if (!initialBills) fetchBills(uid);
         fetchPendingFriends(uid);
       }
@@ -142,23 +152,32 @@ export function Home({
 
     // Realtime subscription for instant sync on bills, participants, and friends
     const channel = supabase
-      .channel('realtime-home-data')
+      .channel('realtime-home-sync')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'bills' }, () => fetchBills())
       .on('postgres_changes', { event: '*', schema: 'public', table: 'participants' }, () => fetchBills())
       .on('postgres_changes', { event: '*', schema: 'public', table: 'friends' }, () => fetchPendingFriends())
       .subscribe();
+
+    // Fast polling fallback (every 3 seconds) to ensure real-time appearance even if DB replication isn't configured
+    const interval = setInterval(() => {
+      fetchBills();
+      fetchPendingFriends();
+    }, 3000);
 
     const handleFocus = () => {
       fetchBills();
       fetchPendingFriends();
     };
     window.addEventListener('focus', handleFocus);
+    document.addEventListener('visibilitychange', handleFocus);
 
     return () => {
       supabase.removeChannel(channel);
+      clearInterval(interval);
       window.removeEventListener('focus', handleFocus);
+      document.removeEventListener('visibilitychange', handleFocus);
     };
-  }, [initialBills]);
+  }, [initialBills, session]);
 
   // Compute dynamic balances from real bills data
   let totalYouAreOwed = 0;
