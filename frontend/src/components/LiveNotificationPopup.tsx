@@ -2,7 +2,7 @@ import { X, Check, Eye, UserPlus, Receipt } from 'lucide-react';
 
 export interface LiveAlert {
   id: string;
-  type: 'friend' | 'bill';
+  type: 'friend' | 'bill' | 'payment_received';
   title: string;
   subtitle: string;
   amount?: number;
@@ -27,6 +27,7 @@ export function LiveNotificationPopup({
   if (!alert) return null;
 
   const isFriend = alert.type === 'friend';
+  const isPaymentReceived = alert.type === 'payment_received';
 
   return (
     <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[100] w-full max-w-[440px] px-4 pointer-events-auto animate-in fade-in slide-in-from-top-6 duration-300 font-['Sora']">
@@ -35,7 +36,7 @@ export function LiveNotificationPopup({
         {/* Glow Accent */}
         <div 
           className={`absolute top-0 right-0 w-36 h-36 rounded-full blur-3xl pointer-events-none opacity-25 ${
-            isFriend ? 'bg-[#4C8C3C]' : 'bg-[#F5C744]'
+            isFriend || isPaymentReceived ? 'bg-[#4C8C3C]' : 'bg-[#F5C744]'
           }`} 
         />
 
@@ -58,7 +59,7 @@ export function LiveNotificationPopup({
               
               <div 
                 className={`absolute -bottom-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center text-black ${
-                  isFriend ? 'bg-[#4C8C3C] text-white' : 'bg-[#F5C744]'
+                  isFriend || isPaymentReceived ? 'bg-[#4C8C3C] text-white' : 'bg-[#F5C744]'
                 }`}
               >
                 {isFriend ? <UserPlus size={11} strokeWidth={2.5} /> : <Receipt size={11} strokeWidth={2.5} />}
@@ -69,9 +70,11 @@ export function LiveNotificationPopup({
             <div className="flex flex-col min-w-0">
               <div className="flex items-center gap-1.5">
                 <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${
-                  isFriend ? 'bg-[#4C8C3C]/30 text-[#85E070]' : 'bg-[#F5C744]/25 text-[#F5C744]'
+                  isFriend ? 'bg-[#4C8C3C]/30 text-[#85E070]' :
+                  isPaymentReceived ? 'bg-[#4C8C3C]/30 text-[#85E070]' :
+                  'bg-[#F5C744]/25 text-[#F5C744]'
                 }`}>
-                  {isFriend ? 'New Friend Request' : 'New Bill Request'}
+                  {isFriend ? 'New Friend Request' : isPaymentReceived ? 'Payment Sent' : 'New Bill Request'}
                 </span>
               </div>
               <h4 className="text-white text-base font-bold leading-snug truncate mt-0.5">
@@ -98,13 +101,13 @@ export function LiveNotificationPopup({
           <button
             onClick={onAccept}
             className={`flex-1 h-10 rounded-full font-semibold text-xs flex items-center justify-center gap-1.5 active:scale-95 transition-all cursor-pointer shadow-sm ${
-              isFriend 
+              isFriend || isPaymentReceived
                 ? 'bg-[#4C8C3C] hover:bg-[#437d35] text-white' 
                 : 'bg-[#F5C744] hover:bg-[#ebd538] text-black'
             }`}
           >
             <Check size={15} strokeWidth={2.5} />
-            <span>Accept Now</span>
+            <span>{isPaymentReceived ? 'Confirm Receipt' : 'Accept Now'}</span>
           </button>
 
           <button

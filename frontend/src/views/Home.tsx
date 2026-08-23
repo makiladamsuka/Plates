@@ -161,6 +161,81 @@ export function Home({
     }
   };
 
+  const handleConfirmPaymentReceipt = async (billId: string, friendId: string) => {
+    const uid = await getActiveUserId();
+    if (!uid) return;
+
+    // Optimistic UI update: mark participant as paid
+    setBills(prev => prev.map(b => {
+      if (b.id !== billId) return b;
+      const updatedParts = (b.participants || []).map((p: any) => 
+        (p.friend_id === friendId || p.friendId === friendId) ? { ...p, paid: true, payment_sent: true } : p
+      );
+      const allPaid = updatedParts.every((p: any) => p.paid === true);
+      return {
+        ...b,
+        status: allPaid ? 'Settled' : b.status,
+        participants: updatedParts
+      };
+    }));
+
+    try {
+      await supabase
+        .from('participants')
+        .update({ paid: true, payment_sent: true, accepted: true })
+        .eq('bill_id', billId)
+        .eq('friend_id', friendId);
+
+      const { data: parts } = await supabase
+        .from('participants')
+        .select('paid')
+        .eq('bill_id', billId);
+
+      const allPaid = parts && parts.length > 0 && parts.every((p: any) => p.paid === true);
+      if (allPaid) {
+        await supabase
+          .from('bills')
+          .update({ status: 'Settled' })
+          .eq('id', billId);
+      }
+
+      api.confirmPayment(billId, friendId).catch(console.warn);
+      fetchBills(uid);
+    } catch (err) {
+      console.error('Error confirming payment receipt:', err);
+      fetchBills(uid);
+    }
+  };
+
+  const handleDeclinePaymentReceipt = async (billId: string, friendId: string) => {
+    const uid = await getActiveUserId();
+    if (!uid) return;
+
+    setBills(prev => prev.map(b => {
+      if (b.id !== billId) return b;
+      return {
+        ...b,
+        participants: (b.participants || []).map((p: any) => 
+          (p.friend_id === friendId || p.friendId === friendId) ? { ...p, payment_sent: false, paid: false } : p
+        )
+      };
+    }));
+
+    try {
+      await supabase
+        .from('participants')
+        .update({ payment_sent: false, paid: false })
+        .eq('bill_id', billId)
+        .eq('friend_id', friendId);
+
+      api.declinePayment(billId, friendId).catch(console.warn);
+      fetchBills(uid);
+    } catch (err) {
+      console.error('Error declining payment receipt:', err);
+      fetchBills(uid);
+    }
+  };
+
   const handleDeclineFriend = async (requesterId: string) => {
     const uid = await getActiveUserId();
     if (!uid) return;
@@ -244,6 +319,22 @@ export function Home({
   });
 
   const netBalance = totalYouAreOwed - totalYouOwe;
+
+  // Find payments sent by participants awaiting current user's confirmation as creator
+  const pendingPaymentConfirmations: Array<{ bill: any; participant: any }> = [];
+  const currentUid = userId || session?.user?.id;
+  if (currentUid) {
+    (bills || []).forEach(b => {
+      if (b.creator_id === currentUid) {
+        (b.participants || []).forEach((p: any) => {
+          const isMe = p.friend_id === currentUid || p.friendId === currentUid;
+          if (!isMe && p.payment_sent === true && p.paid !== true) {
+            pendingPaymentConfirmations.push({ bill: b, participant: p });
+          }
+        });
+      }
+    });
+  }
 
   return (
     <div className="min-h-screen bg-[#EDEDF1] dark:bg-zinc-950 pb-36 pt-0 transition-colors">
@@ -426,7 +517,63 @@ export function Home({
             </h2>
 
             <div className="flex flex-col gap-3">
-              {/* Bills pending acceptance (accepted === false) */}
+              {/* 1. Pending Payment Confirmations (for Creator) */}
+              {pendingPaymentConfirmations.map(({ bill, participant }) => {
+                const pFriendId = participant.friend_id || participant.friendId;
+                const pName = participant.full_name || participant.profile?.full_name || 'A friend';
+                const pAvatar = participant.avatar_url || participant.profile?.avatar_url;
+
+                return (
+                  <div
+                    key={`payment-confirm-${bill.id}-${pFriendId}`}
+                    onClick={() => setSelectedIncomingBill(bill)}
+                    className="w-full bg-[#D7ECD1]/90 dark:bg-zinc-900 rounded-[25px] p-4 flex items-center justify-between shadow-sm cursor-pointer hover:bg-[#D7ECD1] dark:hover:bg-zinc-800 transition-colors border border-transparent dark:border-white/5"
+                  >
+                    <div className="flex items-center gap-3 min-w-0 pr-2">
+                      {pAvatar ? (
+                        <img src={pAvatar} alt="" className="w-10 h-10 rounded-full object-cover shrink-0" />
+                      ) : (
+                        <div className="w-10 h-10 rounded-full bg-[#4C8C3C]/20 dark:bg-zinc-800 flex items-center justify-center font-bold text-sm text-[#4C8C3C] dark:text-[#5FAD4B] shrink-0">
+                          {(pName || 'F').substring(0, 1).toUpperCase()}
+                        </div>
+                      )}
+                      <div className="flex flex-col min-w-0">
+                        <span className="text-[#1A1A1A] dark:text-zinc-100 text-sm font-semibold leading-tight truncate">
+                          {pName} sent payment
+                        </span>
+                        <span className="text-black/70 dark:text-zinc-400 text-xs font-normal truncate">
+                          LKR {participant.share} · {bill.title}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleConfirmPaymentReceipt(bill.id, pFriendId);
+                        }}
+                        className="bg-[#4C8C3C] hover:bg-[#437d35] active:scale-95 text-white text-xs font-semibold px-3 py-1.5 rounded-full flex items-center gap-1 transition-transform cursor-pointer shadow-xs"
+                      >
+                        <Check size={14} strokeWidth={2.5} />
+                        <span>Confirm</span>
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeclinePaymentReceipt(bill.id, pFriendId);
+                        }}
+                        className="bg-black/10 dark:bg-zinc-800 hover:bg-black/20 text-black dark:text-zinc-200 text-xs font-semibold px-2.5 py-1.5 rounded-full flex items-center transition-transform cursor-pointer"
+                        title="Not received"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+
+              {/* 2. Bills pending acceptance (accepted === false) */}
               {(bills || []).filter(b => {
                 const uid = userId || session?.user?.id;
                 if (!uid) return false;
@@ -469,7 +616,7 @@ export function Home({
                 );
               })}
 
-              {/* Pending Friend Requests */}
+              {/* 3. Pending Friend Requests */}
               {pendingFriendRequests.map(friend => (
                 <div 
                   key={friend.id}
@@ -514,7 +661,7 @@ export function Home({
                 </div>
               ))}
 
-              {pendingFriendRequests.length === 0 && (bills || []).filter(b => {
+              {pendingPaymentConfirmations.length === 0 && pendingFriendRequests.length === 0 && (bills || []).filter(b => {
                 const uid = userId || session?.user?.id;
                 if (!uid) return false;
                 const isCreator = b.creator_id === uid;

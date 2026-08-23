@@ -76,6 +76,39 @@ export const api = {
     return res.json();
   },
 
+  sendPayment: async (id: string, friendId: string) => {
+    const headers = await getAuthHeaders();
+    const res = await fetch(`${API_URL}/bills/${id}/send-payment`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ friendId }),
+    });
+    if (!res.ok) throw new Error('Failed to send payment confirmation');
+    return res.json();
+  },
+
+  confirmPayment: async (id: string, friendId: string) => {
+    const headers = await getAuthHeaders();
+    const res = await fetch(`${API_URL}/bills/${id}/confirm-payment`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ friendId }),
+    });
+    if (!res.ok) throw new Error('Failed to confirm payment receipt');
+    return res.json();
+  },
+
+  declinePayment: async (id: string, friendId: string) => {
+    const headers = await getAuthHeaders();
+    const res = await fetch(`${API_URL}/bills/${id}/decline-payment`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ friendId }),
+    });
+    if (!res.ok) throw new Error('Failed to decline payment receipt');
+    return res.json();
+  },
+
   payBill: async (id: string, friendId: string) => {
     const headers = await getAuthHeaders();
     const res = await fetch(`${API_URL}/bills/${id}/pay`, {

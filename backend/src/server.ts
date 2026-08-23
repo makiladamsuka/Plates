@@ -5,8 +5,8 @@ import path from 'path';
 import fs from 'fs';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
-import { supabase } from './utils/supabase';
-import { authenticate } from './middleware/auth';
+import { supabase } from './utils/supabase.js';
+import { authenticate } from './middleware/auth.js';
 
 dotenv.config();
 
@@ -312,7 +312,84 @@ app.post('/api/bills/:id/decline', async (req, res) => {
   }
 });
 
-// Settle user's share (Pay)
+// Step 1: Participant marks payment as sent (awaiting creator confirmation)
+app.post('/api/bills/:id/send-payment', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { friendId } = req.body;
+    
+    const { data, error } = await supabase
+      .from('participants')
+      .update({ payment_sent: true, accepted: true, paid: false })
+      .eq('bill_id', id)
+      .eq('friend_id', friendId)
+      .select();
+      
+    if (error) throw error;
+
+    res.json({ message: 'Payment marked as sent, awaiting creator confirmation', data });
+  } catch (err: any) {
+    handleError(res, err);
+  }
+});
+
+// Step 2: Creator confirms receipt of payment
+app.post('/api/bills/:id/confirm-payment', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { friendId } = req.body;
+    
+    const { data, error } = await supabase
+      .from('participants')
+      .update({ paid: true, payment_sent: true, accepted: true })
+      .eq('bill_id', id)
+      .eq('friend_id', friendId)
+      .select();
+      
+    if (error) throw error;
+
+    // Check if all participants are paid
+    const { data: parts } = await supabase
+      .from('participants')
+      .select('paid')
+      .eq('bill_id', id);
+
+    const allPaid = parts && parts.length > 0 && parts.every((p: any) => p.paid === true);
+    if (allPaid) {
+      await supabase
+        .from('bills')
+        .update({ status: 'Settled' })
+        .eq('id', id);
+    }
+
+    res.json({ message: 'Payment confirmed by creator', data, allPaid });
+  } catch (err: any) {
+    handleError(res, err);
+  }
+});
+
+// Step 2 Alternate: Creator declines receipt of payment (not received)
+app.post('/api/bills/:id/decline-payment', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { friendId } = req.body;
+    
+    const { data, error } = await supabase
+      .from('participants')
+      .update({ payment_sent: false, paid: false })
+      .eq('bill_id', id)
+      .eq('friend_id', friendId)
+      .select();
+      
+    if (error) throw error;
+
+    res.json({ message: 'Payment receipt declined', data });
+  } catch (err: any) {
+    handleError(res, err);
+  }
+});
+
+// Settle user's share (Legacy direct Pay endpoint)
 app.post('/api/bills/:id/pay', async (req, res) => {
   try {
     const { id } = req.params;
@@ -320,7 +397,7 @@ app.post('/api/bills/:id/pay', async (req, res) => {
     
     const { data, error } = await supabase
       .from('participants')
-      .update({ paid: true })
+      .update({ paid: true, payment_sent: true })
       .eq('bill_id', id)
       .eq('friend_id', friendId)
       .select();
@@ -399,7 +476,7 @@ app.get('/api/friends/:userId', async (req, res) => {
       .eq('user_id', userId);
     
     if (error) throw error;
-    res.json(data?.map(d => d.profiles) || []);
+    res.json(data?.map((d: any) => d.profiles) || []);
   } catch (err: any) {
     handleError(res, err);
   }

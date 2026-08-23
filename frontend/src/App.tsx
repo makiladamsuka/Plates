@@ -38,6 +38,7 @@ function App() {
   // Tracking baseline IDs so old pending items don't trigger popups on load
   const knownFriendRequestIdsRef = useRef<Set<string>>(new Set());
   const knownBillRequestIdsRef = useRef<Set<string>>(new Set());
+  const knownPaymentConfirmationIdsRef = useRef<Set<string>>(new Set());
   const isInitializedBaselineRef = useRef<boolean>(false);
 
   // Settings view state
@@ -117,7 +118,6 @@ function App() {
             // Live check: find newly arrived requests
             for (const f of rawPendingFriends) {
               if (!knownFriendRequestIdsRef.current.has(f.user_id)) {
-                // Fetch profile safely without throwing
                 const { data: prof } = await supabase
                   .from('profiles')
                   .select('id, full_name, avatar_url, email')
@@ -164,7 +164,6 @@ function App() {
             for (const p of rawPendingBills) {
               if (!knownBillRequestIdsRef.current.has(p.bill_id)) {
                 try {
-                  // Direct Supabase query to guarantee instant response
                   const { data: billData } = await supabase
                     .from('bills')
                     .select('*, participants(*)')
@@ -198,6 +197,49 @@ function App() {
                   }
                 } catch (e) {
                   console.warn('Error fetching new bill detail:', e);
+                }
+              }
+            }
+          }
+        }
+
+        // 3. Check incoming payments sent to creator's bills
+        const { data: creatorBills } = await supabase
+          .from('bills')
+          .select('id, title, creator_id, participants(*)')
+          .eq('creator_id', uid)
+          .neq('status', 'Settled');
+
+        if (creatorBills) {
+          for (const b of creatorBills) {
+            for (const p of (b.participants || [])) {
+              if (p.friend_id !== uid && p.payment_sent === true && !p.paid) {
+                const key = `${b.id}-${p.friend_id}`;
+                if (!isInitializedBaselineRef.current) {
+                  knownPaymentConfirmationIdsRef.current.add(key);
+                } else if (!knownPaymentConfirmationIdsRef.current.has(key)) {
+                  knownPaymentConfirmationIdsRef.current.add(key);
+
+                  const { data: senderProf } = await supabase
+                    .from('profiles')
+                    .select('full_name, avatar_url, email')
+                    .eq('id', p.friend_id)
+                    .maybeSingle();
+
+                  const senderName = senderProf?.full_name || senderProf?.email || 'A friend';
+
+                  playNotificationChime();
+                  setActiveLiveAlert({
+                    id: `payment-${key}`,
+                    type: 'payment_received',
+                    title: `${senderName} sent payment`,
+                    subtitle: `LKR ${p.share} for "${b.title}" · Confirm receipt?`,
+                    amount: p.share,
+                    avatarUrl: senderProf?.avatar_url,
+                    name: senderName,
+                    rawData: { billId: b.id, friendId: p.friend_id, bill: b },
+                  });
+                  break;
                 }
               }
             }
@@ -278,6 +320,32 @@ function App() {
       } catch (err) {
         console.error('Error accepting bill live:', err);
       }
+    } else if (activeLiveAlert.type === 'payment_received') {
+      const { billId, friendId } = activeLiveAlert.rawData;
+      try {
+        await supabase
+          .from('participants')
+          .update({ paid: true, payment_sent: true, accepted: true })
+          .eq('bill_id', billId)
+          .eq('friend_id', friendId);
+
+        const { data: parts } = await supabase
+          .from('participants')
+          .select('paid')
+          .eq('bill_id', billId);
+
+        const allPaid = parts && parts.length > 0 && parts.every((p: any) => p.paid === true);
+        if (allPaid) {
+          await supabase
+            .from('bills')
+            .update({ status: 'Settled' })
+            .eq('id', billId);
+        }
+
+        api.confirmPayment(billId, friendId).catch(console.warn);
+      } catch (err) {
+        console.error('Error confirming payment receipt live:', err);
+      }
     }
 
     setActiveLiveAlert(null);
@@ -287,7 +355,7 @@ function App() {
     if (!activeLiveAlert) return;
     if (activeLiveAlert.type === 'friend') {
       setReviewingFriend(activeLiveAlert.rawData.friend);
-    } else if (activeLiveAlert.type === 'bill') {
+    } else if (activeLiveAlert.type === 'bill' || activeLiveAlert.type === 'payment_received') {
       setReviewingBill(activeLiveAlert.rawData.bill);
     }
     setActiveLiveAlert(null);

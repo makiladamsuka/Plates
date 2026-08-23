@@ -123,18 +123,37 @@ export function BillDetail({ onBack, billId }: BillDetailProps) {
   const myParticipant = (bill.participants || []).find((p: any) => p.friend_id === userId || p.friendId === userId);
   const myShare = myParticipant ? Number(myParticipant.share || 0) : 0;
   const isMySharePaid = isCreator || myParticipant?.paid === true;
+  const isMyPaymentSent = myParticipant?.payment_sent === true && !myParticipant?.paid;
   const isFullySettled = bill.status === 'Settled';
 
   const handlePay = async () => {
     try {
       try {
-        await api.payBill(bill.id, userId);
+        await api.sendPayment(bill.id, userId);
       } catch (e) {
         await supabase
           .from('participants')
-          .update({ paid: true, accepted: true })
+          .update({ payment_sent: true, accepted: true, paid: false })
           .eq('bill_id', bill.id)
           .eq('friend_id', userId);
+      }
+      setIsConfirmModalOpen(false);
+      fetchBill();
+    } catch (err) {
+      console.error('Error sending payment:', err);
+    }
+  };
+
+  const handleConfirmParticipant = async (friendId: string) => {
+    try {
+      try {
+        await api.confirmPayment(bill.id, friendId);
+      } catch (e) {
+        await supabase
+          .from('participants')
+          .update({ paid: true, payment_sent: true, accepted: true })
+          .eq('bill_id', bill.id)
+          .eq('friend_id', friendId);
 
         const { data: parts } = await supabase
           .from('participants')
@@ -149,10 +168,26 @@ export function BillDetail({ onBack, billId }: BillDetailProps) {
             .eq('id', bill.id);
         }
       }
-      setIsConfirmModalOpen(false);
       fetchBill();
     } catch (err) {
-      console.error('Error paying bill:', err);
+      console.error('Error confirming participant payment:', err);
+    }
+  };
+
+  const handleDeclineParticipant = async (friendId: string) => {
+    try {
+      try {
+        await api.declinePayment(bill.id, friendId);
+      } catch (e) {
+        await supabase
+          .from('participants')
+          .update({ payment_sent: false, paid: false })
+          .eq('bill_id', bill.id)
+          .eq('friend_id', friendId);
+      }
+      fetchBill();
+    } catch (err) {
+      console.error('Error declining participant payment:', err);
     }
   };
 
@@ -199,9 +234,11 @@ export function BillDetail({ onBack, billId }: BillDetailProps) {
           const pAvatar = participant.avatar_url || participant.profile?.avatar_url;
           const isPCreator = bill.creator_id === (participant.friend_id || participant.friendId);
           const isPPaid = isPCreator || participant.paid;
+          const isPPaymentSent = participant.payment_sent === true && !participant.paid;
+          const pFriendId = participant.friend_id || participant.friendId;
 
           return (
-            <div key={i} className="w-full h-[59px] bg-[#D9D9D9] rounded-[30px] px-4 flex items-center justify-between shadow-sm relative">
+            <div key={i} className="w-full min-h-[59px] py-2.5 bg-[#D9D9D9] rounded-[30px] px-4 flex items-center justify-between shadow-sm relative">
               <div className="flex items-center gap-3 min-w-0 pr-2">
                 {pAvatar ? (
                   <img src={pAvatar} alt="" className="w-9 h-9 rounded-full object-cover shrink-0" />
@@ -215,13 +252,36 @@ export function BillDetail({ onBack, billId }: BillDetailProps) {
                     {pName}
                   </span>
                   {isPCreator && <span className="text-black/50 text-[10px]">Creator (Paid upfront)</span>}
+                  {isPPaymentSent && <span className="text-amber-800 text-[10px]">Sent payment · Awaiting confirmation</span>}
                 </div>
               </div>
 
               <div className="flex items-center gap-2 shrink-0">
                 <span className="text-[#1A1A1A] text-[18px] font-semibold">LKR {Number(participant.share || 0).toFixed(0)}</span>
+                
                 {isPPaid ? (
                   <span className="text-[10px] bg-[#4C8C3C] text-white px-2 py-0.5 rounded-full font-bold">Paid</span>
+                ) : isPPaymentSent ? (
+                  isCreator ? (
+                    <div className="flex items-center gap-1">
+                      <button
+                        onClick={() => handleConfirmParticipant(pFriendId)}
+                        title="Confirm received payment"
+                        className="bg-[#4C8C3C] hover:bg-[#437d35] active:scale-95 text-white text-[10px] font-bold px-2.5 py-1 rounded-full cursor-pointer transition-transform shadow-xs"
+                      >
+                        Confirm
+                      </button>
+                      <button
+                        onClick={() => handleDeclineParticipant(pFriendId)}
+                        title="Not received"
+                        className="bg-zinc-700 hover:bg-zinc-800 text-white text-[10px] font-bold px-2 py-1 rounded-full cursor-pointer transition-transform"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  ) : (
+                    <span className="text-[10px] bg-yellow-600 text-white px-2 py-0.5 rounded-full font-bold">Sent</span>
+                  )
                 ) : (
                   <span className="text-[10px] bg-[#F5C744] text-black px-2 py-0.5 rounded-full font-bold">Pending</span>
                 )}
@@ -239,12 +299,19 @@ export function BillDetail({ onBack, billId }: BillDetailProps) {
       {/* Floating Action Bar - Only show if not paid and not settled */}
       {!isMySharePaid && !isFullySettled && (
         <div className="fixed bottom-[130px] left-0 w-full z-[55] flex justify-center px-4 pointer-events-none">
-          <button 
-            onClick={() => setIsConfirmModalOpen(true)}
-            className="w-full max-w-[365px] h-[74px] bg-[#1A1A1A] rounded-[50px] flex items-center justify-center pointer-events-auto shadow-lg active:scale-95 transition-transform cursor-pointer"
-          >
-            <span className="text-[#EDEDF1] text-[20px] font-semibold">Pay LKR {myShare.toFixed(0)}</span>
-          </button>
+          {isMyPaymentSent ? (
+            <div className="w-full max-w-[365px] bg-[#1A1A1A] text-[#EDEDF1] rounded-[50px] p-4 text-center pointer-events-auto shadow-lg flex flex-col items-center gap-0.5">
+              <span className="text-base font-semibold text-[#F5C744]">✓ Payment Sent (LKR {myShare.toFixed(0)})</span>
+              <span className="text-xs text-white/60">Waiting for {creatorName || 'creator'} to confirm receipt</span>
+            </div>
+          ) : (
+            <button 
+              onClick={() => setIsConfirmModalOpen(true)}
+              className="w-full max-w-[365px] h-[74px] bg-[#1A1A1A] rounded-[50px] flex items-center justify-center pointer-events-auto shadow-lg active:scale-95 transition-transform cursor-pointer"
+            >
+              <span className="text-[#EDEDF1] text-[20px] font-semibold">Pay LKR {myShare.toFixed(0)}</span>
+            </button>
+          )}
         </div>
       )}
 
