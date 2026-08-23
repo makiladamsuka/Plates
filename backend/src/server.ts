@@ -421,12 +421,17 @@ app.delete('/api/friends', async (req, res) => {
 
 // Serve static frontend files in production
 const possibleDistPaths = [
+  path.join(__dirname, '../../frontend/dist'),
+  path.join(__dirname, '../frontend/dist'),
+  path.resolve(process.cwd(), 'frontend/dist'),
+  path.resolve(process.cwd(), '../frontend/dist'),
   path.join(__dirname, '../../dist'),
   path.join(__dirname, '../dist'),
   path.resolve(process.cwd(), 'dist'),
   path.resolve(process.cwd(), '../dist')
 ];
-const frontendDistPath = possibleDistPaths.find(p => fs.existsSync(p)) || path.resolve(process.cwd(), 'dist');
+const frontendDistPath = possibleDistPaths.find(p => fs.existsSync(p)) || path.resolve(process.cwd(), 'frontend/dist');
+console.log(`📦 Serving static frontend from: ${frontendDistPath} (exists: ${fs.existsSync(frontendDistPath)})`);
 if (fs.existsSync(frontendDistPath)) {
   app.use(express.static(frontendDistPath));
 }
