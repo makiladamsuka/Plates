@@ -4,10 +4,11 @@
   "private": true,
   "description": "Plates — split-bill dining app.",
   "scripts": {
-    "build": "npm --prefix frontend install --include=dev && npm --prefix frontend run build && npm install && npm --prefix backend install",
-    "start": "npx tsx backend/src/server.ts",
+    "dev": "npm --prefix frontend run dev",
     "dev:frontend": "npm --prefix frontend run dev",
-    "dev:backend": "npm --prefix backend run dev"
+    "dev:backend": "npm --prefix backend run dev",
+    "build": "npm --prefix frontend install --include=dev && npm --prefix frontend run build && npm install && npm --prefix backend install",
+    "start": "npx tsx backend/src/server.ts"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.112.3",
