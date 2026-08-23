@@ -5,6 +5,7 @@ interface IncomingFriendRequestModalProps {
   isOpen: boolean;
   onClose: () => void;
   onApprove: () => void;
+  onDecline?: () => void;
   friend?: Friend;
 }
 
@@ -12,6 +13,7 @@ export function IncomingFriendRequestModal({
   isOpen, 
   onClose, 
   onApprove, 
+  onDecline,
   friend 
 }: IncomingFriendRequestModalProps) {
   const [slideProgress, setSlideProgress] = useState(0);
@@ -83,22 +85,31 @@ export function IncomingFriendRequestModal({
           {/* Friend Request Card */}
           <div className="w-full max-w-[360px] h-[127px] bg-[#F6D6DA] rounded-[30px] p-5 flex flex-col justify-between shadow-md mt-2">
             <div className="flex items-center gap-3.5">
-              <div 
-                className="w-[50px] h-[50px] rounded-full opacity-40 shrink-0" 
-                style={{ backgroundColor: friend.color || '#4C8C3C' }}
-              />
-              <div className="flex flex-col">
-                <span className="text-[#1A1A1A] text-2xl font-semibold leading-tight">
+              {friend.avatar_url ? (
+                <img 
+                  src={friend.avatar_url} 
+                  alt="" 
+                  className="w-[50px] h-[50px] rounded-full object-cover shrink-0" 
+                />
+              ) : (
+                <div 
+                  className="w-[50px] h-[50px] rounded-full bg-black/10 flex items-center justify-center font-bold text-lg text-black shrink-0" 
+                >
+                  {(friend.name || 'U').substring(0, 1).toUpperCase()}
+                </div>
+              )}
+              <div className="flex flex-col min-w-0">
+                <span className="text-[#1A1A1A] text-2xl font-semibold leading-tight truncate">
                   {friend.name}
                 </span>
-                <span className="text-black text-[15px] font-normal leading-tight mt-0.5">
+                <span className="text-black/70 text-[15px] font-normal leading-tight mt-0.5 truncate">
                   {friend.username}
                 </span>
               </div>
             </div>
 
-            <div className="text-black text-base font-normal pl-1">
-              Wants to Follow You
+            <div className="text-black text-base font-medium pl-1">
+              Wants to connect with you
             </div>
           </div>
 
@@ -138,8 +149,8 @@ export function IncomingFriendRequestModal({
 
           {/* Decline Button */}
           <button 
-            onClick={onClose}
-            className="text-white text-[15px] font-normal mt-5 active:scale-95 transition-transform"
+            onClick={onDecline || onClose}
+            className="text-white text-[15px] font-normal mt-5 active:scale-95 transition-transform cursor-pointer hover:text-red-300"
           >
             Decline
           </button>

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { ArrowDownLeft, ArrowUpRight, Plus, UserPlus, ChevronRight, Check } from 'lucide-react';
 import { NewBillModal } from '../components/NewBillModal';
 import { IncomingBillModal } from '../components/IncomingBillModal';
+import { IncomingFriendRequestModal } from '../components/IncomingFriendRequestModal';
 import { api } from '../services/api';
 import { supabase } from '../lib/supabase';
 import type { Bill, Friend } from '../data/mockData';
@@ -20,7 +21,6 @@ interface HomeProps {
 export function Home({ 
   session,
   bills: initialBills, 
-  friends = [], 
   onBillClick, 
   onSearchClick,
   onAvatarClick,
@@ -28,40 +28,136 @@ export function Home({
 }: HomeProps) {
   const [isNewBillModalOpen, setIsNewBillModalOpen] = useState(false);
   const [selectedIncomingBill, setSelectedIncomingBill] = useState<any>(null);
+  const [selectedIncomingFriend, setSelectedIncomingFriend] = useState<any>(null);
   const [bills, setBills] = useState<any[]>(initialBills || []);
+  const [pendingFriendRequests, setPendingFriendRequests] = useState<any[]>([]);
   const [userId, setUserId] = useState<string>(session?.user?.id || '');
 
-  const fetchBills = () => {
+  const fetchBills = (currentUid?: string) => {
+    const uid = currentUid || userId;
+    if (uid) {
+      api.getBills(uid).then(setBills).catch(console.error);
+    } else {
+      api.getBills().then(setBills).catch(console.error);
+    }
+  };
+
+  const fetchPendingFriends = async (currentUid?: string) => {
+    const uid = currentUid || userId;
+    if (!uid) return;
+
+    try {
+      // Fetch Pending Friend Requests sent TO current user
+      const { data: rawPending, error } = await supabase
+        .from('friends')
+        .select('user_id, status')
+        .eq('friend_id', uid)
+        .eq('status', 'pending');
+
+      if (error) {
+        console.error('Error fetching pending friend requests:', error);
+        return;
+      }
+
+      if (rawPending && rawPending.length > 0) {
+        const requesterIds = rawPending.map((f: any) => f.user_id);
+        const { data: profs } = await supabase
+          .from('profiles')
+          .select('id, full_name, avatar_url, email')
+          .in('id', requesterIds);
+
+        const pending = (profs || []).map((p: any) => ({
+          id: p.id,
+          name: p.full_name || 'Friend',
+          username: p.email || '',
+          avatar_url: p.avatar_url,
+          color: '#4C8C3C',
+          isPendingRequest: true,
+        }));
+        setPendingFriendRequests(pending);
+      } else {
+        setPendingFriendRequests([]);
+      }
+    } catch (err) {
+      console.error('Error loading friend requests:', err);
+    }
+  };
+
+  const handleApproveFriend = async (requesterId: string) => {
+    const uid = userId || session?.user?.id;
+    if (!uid) return;
+
+    try {
+      // 1. Mark incoming request as accepted
+      await supabase
+        .from('friends')
+        .update({ status: 'accepted' })
+        .eq('user_id', requesterId)
+        .eq('friend_id', uid);
+
+      // 2. Insert reciprocal friendship
+      await supabase
+        .from('friends')
+        .upsert({
+          user_id: uid,
+          friend_id: requesterId,
+          status: 'accepted'
+        }, { onConflict: 'user_id,friend_id' });
+
+      setSelectedIncomingFriend(null);
+      fetchPendingFriends(uid);
+      onApproveFriend?.(requesterId);
+    } catch (err) {
+      console.error('Error approving friend request:', err);
+    }
+  };
+
+  const handleDeclineFriend = async (requesterId: string) => {
+    const uid = userId || session?.user?.id;
+    if (!uid) return;
+
+    try {
+      await supabase
+        .from('friends')
+        .delete()
+        .eq('user_id', requesterId)
+        .eq('friend_id', uid);
+
+      setSelectedIncomingFriend(null);
+      fetchPendingFriends(uid);
+    } catch (err) {
+      console.error('Error declining friend request:', err);
+    }
+  };
+
+  useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       const uid = session?.user?.id;
       if (uid) {
         setUserId(uid);
-        api.getBills(uid).then(setBills).catch(console.error);
-      } else {
-        api.getBills().then(setBills).catch(console.error);
+        if (!initialBills) fetchBills(uid);
+        fetchPendingFriends(uid);
       }
     });
-  };
 
-  useEffect(() => {
-    if (!initialBills) {
+    // Realtime subscription for instant sync on bills, participants, and friends
+    const channel = supabase
+      .channel('realtime-home-data')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'bills' }, () => fetchBills())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'participants' }, () => fetchBills())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'friends' }, () => fetchPendingFriends())
+      .subscribe();
+
+    const handleFocus = () => {
       fetchBills();
+      fetchPendingFriends();
+    };
+    window.addEventListener('focus', handleFocus);
 
-      // Realtime subscription for instant bill/participant status sync
-      const channel = supabase
-        .channel('realtime-bills-home')
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'bills' }, fetchBills)
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'participants' }, fetchBills)
-        .subscribe();
-
-      const handleFocus = () => fetchBills();
-      window.addEventListener('focus', handleFocus);
-
-      return () => {
-        supabase.removeChannel(channel);
-        window.removeEventListener('focus', handleFocus);
-      };
-    }
+    return () => {
+      supabase.removeChannel(channel);
+      window.removeEventListener('focus', handleFocus);
+    };
   }, [initialBills]);
 
   // Compute dynamic balances from real bills data
@@ -91,9 +187,6 @@ export function Home({
   });
 
   const netBalance = totalYouAreOwed - totalYouOwe;
-
-  // Pending items requiring attention
-  const pendingFriendRequests = friends.filter(f => f.isPendingRequest);
 
   return (
     <div className="min-h-screen bg-[#EDEDF1] dark:bg-zinc-950 pb-36 pt-0 transition-colors">
@@ -306,26 +399,44 @@ export function Home({
               {pendingFriendRequests.map(friend => (
                 <div 
                   key={friend.id}
-                  className="w-full bg-[#F6D6DA]/80 dark:bg-zinc-900 rounded-[25px] p-4 flex items-center justify-between shadow-sm border border-transparent dark:border-white/5"
+                  onClick={() => setSelectedIncomingFriend(friend)}
+                  className="w-full bg-[#F6D6DA]/80 dark:bg-zinc-900 rounded-[25px] p-4 flex items-center justify-between shadow-sm border border-transparent dark:border-white/5 cursor-pointer hover:bg-[#F6D6DA] dark:hover:bg-zinc-800/80 transition-colors"
                 >
-                  <div className="flex items-center gap-3">
-                    <div 
-                      className="w-10 h-10 rounded-full opacity-60 shrink-0" 
-                      style={{ backgroundColor: friend.color }}
-                    />
-                    <div className="flex flex-col">
-                      <span className="text-[#1A1A1A] dark:text-zinc-100 text-sm font-semibold leading-tight">{friend.name}</span>
-                      <span className="text-black/60 dark:text-zinc-400 text-xs font-normal">Wants to follow you</span>
+                  <div className="flex items-center gap-3 min-w-0 pr-2">
+                    {friend.avatar_url ? (
+                      <img 
+                        src={friend.avatar_url} 
+                        alt="" 
+                        className="w-10 h-10 rounded-full object-cover shrink-0" 
+                      />
+                    ) : (
+                      <div 
+                        className="w-10 h-10 rounded-full bg-[#1A1A1A]/10 dark:bg-zinc-800 flex items-center justify-center font-bold text-sm text-[#1A1A1A] dark:text-zinc-100 shrink-0"
+                      >
+                        {(friend.name || 'U').substring(0, 1).toUpperCase()}
+                      </div>
+                    )}
+                    <div className="flex flex-col min-w-0">
+                      <span className="text-[#1A1A1A] dark:text-zinc-100 text-sm font-semibold leading-tight truncate">{friend.name}</span>
+                      <span className="text-black/60 dark:text-zinc-400 text-xs font-normal truncate">
+                        {friend.username ? `${friend.username} · Wants to connect` : 'Wants to connect with you'}
+                      </span>
                     </div>
                   </div>
 
-                  <button 
-                    onClick={() => onApproveFriend?.(friend.id)}
-                    className="bg-[#1A1A1A] dark:bg-zinc-100 text-[#EDEDF1] dark:text-zinc-950 px-4 py-2 rounded-full text-xs font-semibold flex items-center gap-1.5 active:scale-95 transition-transform cursor-pointer"
-                  >
-                    <Check size={14} strokeWidth={2.5} />
-                    <span>Accept</span>
-                  </button>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <button 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleApproveFriend(friend.id);
+                      }}
+                      className="bg-[#1A1A1A] dark:bg-zinc-100 text-[#EDEDF1] dark:text-zinc-950 px-3.5 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1 active:scale-95 transition-transform cursor-pointer hover:bg-black/80 dark:hover:bg-zinc-300 shadow-xs"
+                    >
+                      <Check size={14} strokeWidth={2.5} />
+                      <span>Accept</span>
+                    </button>
+                    <ChevronRight size={18} className="text-black/40 dark:text-zinc-600" />
+                  </div>
                 </div>
               ))}
 
@@ -358,6 +469,15 @@ export function Home({
         bill={selectedIncomingBill}
         userId={userId}
         onSuccess={fetchBills}
+      />
+
+      {/* Incoming Friend Request Modal (Slide to Approve / Decline) */}
+      <IncomingFriendRequestModal 
+        isOpen={!!selectedIncomingFriend}
+        onClose={() => setSelectedIncomingFriend(null)}
+        onApprove={() => selectedIncomingFriend && handleApproveFriend(selectedIncomingFriend.id)}
+        onDecline={() => selectedIncomingFriend && handleDeclineFriend(selectedIncomingFriend.id)}
+        friend={selectedIncomingFriend || undefined}
       />
     </div>
   );

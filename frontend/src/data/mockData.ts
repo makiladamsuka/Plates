@@ -2,9 +2,10 @@ export type Friend = {
   id: string;
   name: string;
   username: string;
-  color: string;
-  balance: number; // positive = they owe you, negative = you owe them
+  color?: string;
+  balance?: number; // positive = they owe you, negative = you owe them
   isPendingRequest?: boolean;
+  avatar_url?: string | null;
 };
 
 export type Participant = {
