@@ -13,8 +13,32 @@ dotenv.config();
 const app = express();
 const port = process.env.PORT || 3000;
 
-// Security HTTP Headers
-app.use(helmet());
+// Security HTTP Headers with CSP configured for Supabase & Google OAuth
+app.use(
+  helmet({
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        connectSrc: [
+          "'self'",
+          "https://*.supabase.co",
+          "wss://*.supabase.co",
+          "https://accounts.google.com",
+        ],
+        imgSrc: [
+          "'self'",
+          "data:",
+          "blob:",
+          "https://*.googleusercontent.com",
+          "https://*.supabase.co",
+        ],
+        styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+        fontSrc: ["'self'", "https://fonts.gstatic.com", "data:"],
+        scriptSrc: ["'self'", "'unsafe-inline'"],
+      },
+    },
+  })
+);
 
 // CORS configuration - Restrict allowed origins
 const allowedOrigins = [

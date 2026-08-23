@@ -50,7 +50,6 @@ export function AuthCallback() {
       } else {
         console.error('[AuthCallback] Timeout reached and no session found. Error:', error);
         setError('Authentication timed out. Please try logging in again.');
-        setError('Authentication timed out. Please try logging in again.');
       }
     }, 5000);
 
