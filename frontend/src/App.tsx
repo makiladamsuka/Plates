@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Routes, Route } from 'react-router-dom';
 import { Home } from './views/Home';
 import { BillsList } from './views/BillsList';
@@ -11,7 +11,11 @@ import { DesktopNav } from './components/DesktopNav';
 import { Login } from './views/Login';
 import { AuthCallback } from './views/AuthCallback';
 import { Settings } from './views/Settings';
+import { LiveNotificationPopup, type LiveAlert } from './components/LiveNotificationPopup';
+import { IncomingBillModal } from './components/IncomingBillModal';
+import { IncomingFriendRequestModal } from './components/IncomingFriendRequestModal';
 import { supabase } from './lib/supabase';
+import { api } from './services/api';
 
 function App() {
   const [currentTab, setCurrentTab] = useState('home');
@@ -25,6 +29,16 @@ function App() {
   // Auth state
   const [session, setSession] = useState<any>(null);
   const [isInitializing, setIsInitializing] = useState(true);
+
+  // Live in-app alert state
+  const [activeLiveAlert, setActiveLiveAlert] = useState<LiveAlert | null>(null);
+  const [reviewingBill, setReviewingBill] = useState<any | null>(null);
+  const [reviewingFriend, setReviewingFriend] = useState<any | null>(null);
+
+  // Tracking baseline IDs so old pending items don't trigger popups on load
+  const knownFriendRequestIdsRef = useRef<Set<string>>(new Set());
+  const knownBillRequestIdsRef = useRef<Set<string>>(new Set());
+  const isInitializedBaselineRef = useRef<boolean>(false);
 
   // Settings view state
   const [settingsView, setSettingsView] = useState<'main' | 'account'>('main');
@@ -60,6 +74,183 @@ function App() {
 
     return () => subscription.unsubscribe();
   }, []);
+
+  // Check for live incoming requests in real-time while actively in app
+  useEffect(() => {
+    const uid = session?.user?.id;
+    if (!uid) return;
+
+    const checkLiveIncoming = async () => {
+      try {
+        // 1. Check incoming friend requests
+        const { data: rawPendingFriends } = await supabase
+          .from('friends')
+          .select('user_id, status')
+          .eq('friend_id', uid)
+          .eq('status', 'pending');
+
+        if (rawPendingFriends) {
+          if (!isInitializedBaselineRef.current) {
+            // First load: record baseline without popups
+            rawPendingFriends.forEach((f: any) => knownFriendRequestIdsRef.current.add(f.user_id));
+          } else {
+            // Live check: find new ones
+            for (const f of rawPendingFriends) {
+              if (!knownFriendRequestIdsRef.current.has(f.user_id)) {
+                knownFriendRequestIdsRef.current.add(f.user_id);
+                
+                const { data: prof } = await supabase
+                  .from('profiles')
+                  .select('id, full_name, avatar_url, email')
+                  .eq('id', f.user_id)
+                  .single();
+
+                const friendData = {
+                  id: prof?.id || f.user_id,
+                  name: prof?.full_name || 'Friend',
+                  username: prof?.email || '',
+                  avatar_url: prof?.avatar_url,
+                  isPendingRequest: true,
+                };
+
+                setActiveLiveAlert({
+                  id: `friend-${f.user_id}`,
+                  type: 'friend',
+                  title: `${prof?.full_name || 'A user'} wants to connect`,
+                  subtitle: prof?.email || 'Sent you a friend request',
+                  avatarUrl: prof?.avatar_url,
+                  name: prof?.full_name || 'Friend',
+                  rawData: { requesterId: f.user_id, friend: friendData },
+                });
+                break; // Show one at a time
+              }
+            }
+          }
+        }
+
+        // 2. Check incoming bill requests
+        const { data: rawPendingBills } = await supabase
+          .from('participants')
+          .select('bill_id, accepted, share')
+          .eq('friend_id', uid)
+          .or('accepted.eq.false,accepted.is.null');
+
+        if (rawPendingBills) {
+          if (!isInitializedBaselineRef.current) {
+            rawPendingBills.forEach((p: any) => knownBillRequestIdsRef.current.add(p.bill_id));
+          } else {
+            for (const p of rawPendingBills) {
+              if (!knownBillRequestIdsRef.current.has(p.bill_id)) {
+                knownBillRequestIdsRef.current.add(p.bill_id);
+
+                try {
+                  const billData = await api.getBill(p.bill_id);
+                  if (billData && billData.id && billData.creator_id !== uid) {
+                    const creatorParticipant = (billData.participants || []).find((part: any) => part.friend_id === billData.creator_id);
+                    const creatorName = creatorParticipant?.full_name || 'A friend';
+                    const myShare = p.share || (billData.participants || []).find((part: any) => part.friend_id === uid)?.share || billData.total;
+
+                    setActiveLiveAlert({
+                      id: `bill-${billData.id}`,
+                      type: 'bill',
+                      title: billData.title || 'New Bill Request',
+                      subtitle: `From ${creatorName} · Your share: LKR ${myShare}`,
+                      amount: myShare,
+                      avatarUrl: creatorParticipant?.avatar_url,
+                      name: creatorName,
+                      rawData: { bill: billData },
+                    });
+                    break;
+                  }
+                } catch (e) {
+                  console.warn('Error fetching new bill detail:', e);
+                }
+              }
+            }
+          }
+        }
+
+        isInitializedBaselineRef.current = true;
+      } catch (err) {
+        console.error('Error checking live incoming requests:', err);
+      }
+    };
+
+    // Initial baseline fetch
+    checkLiveIncoming();
+
+    // Real-time channel listener
+    const channel = supabase
+      .channel('app-live-alerts')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'friends' }, checkLiveIncoming)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'participants' }, checkLiveIncoming)
+      .subscribe();
+
+    // 3-second live polling loop when active in app
+    const interval = setInterval(checkLiveIncoming, 3000);
+
+    return () => {
+      supabase.removeChannel(channel);
+      clearInterval(interval);
+    };
+  }, [session]);
+
+  const handleLiveAccept = async () => {
+    if (!activeLiveAlert) return;
+    const uid = session?.user?.id;
+    if (!uid) return;
+
+    if (activeLiveAlert.type === 'friend') {
+      const requesterId = activeLiveAlert.rawData.requesterId;
+      try {
+        await supabase
+          .from('friends')
+          .update({ status: 'accepted' })
+          .eq('user_id', requesterId)
+          .eq('friend_id', uid);
+
+        await supabase
+          .from('friends')
+          .upsert({
+            user_id: uid,
+            friend_id: requesterId,
+            status: 'accepted',
+          }, { onConflict: 'user_id,friend_id' });
+      } catch (err) {
+        console.error('Error accepting friend live:', err);
+      }
+    } else if (activeLiveAlert.type === 'bill') {
+      const billId = activeLiveAlert.rawData.bill.id;
+      try {
+        await supabase
+          .from('participants')
+          .update({ accepted: true, paid: false })
+          .eq('bill_id', billId)
+          .eq('friend_id', uid);
+
+        await supabase
+          .from('bills')
+          .update({ status: 'Pending' })
+          .eq('id', billId);
+
+        api.acceptBill(billId, uid).catch(console.warn);
+      } catch (err) {
+        console.error('Error accepting bill live:', err);
+      }
+    }
+
+    setActiveLiveAlert(null);
+  };
+
+  const handleLiveReview = () => {
+    if (!activeLiveAlert) return;
+    if (activeLiveAlert.type === 'friend') {
+      setReviewingFriend(activeLiveAlert.rawData.friend);
+    } else if (activeLiveAlert.type === 'bill') {
+      setReviewingBill(activeLiveAlert.rawData.bill);
+    }
+    setActiveLiveAlert(null);
+  };
 
   if (isInitializing) {
     return <div className="min-h-screen bg-[#EDEDF1] dark:bg-zinc-950 flex items-center justify-center"><div className="text-black dark:text-zinc-100 font-['Sora']">Loading...</div></div>;
@@ -189,7 +380,63 @@ function App() {
         }} 
       />
       
-      {/* <IncomingBillModal /> */}
+      {/* Live In-App Notification Pop-up */}
+      <LiveNotificationPopup
+        alert={activeLiveAlert}
+        onAccept={handleLiveAccept}
+        onReview={handleLiveReview}
+        onDismiss={() => setActiveLiveAlert(null)}
+      />
+
+      {/* Review Modals triggered from Live Popup */}
+      <IncomingBillModal 
+        isOpen={!!reviewingBill}
+        onClose={() => setReviewingBill(null)}
+        bill={reviewingBill}
+        userId={session?.user?.id || ''}
+      />
+
+      <IncomingFriendRequestModal 
+        isOpen={!!reviewingFriend}
+        onClose={() => setReviewingFriend(null)}
+        onApprove={async () => {
+          if (reviewingFriend && session?.user?.id) {
+            try {
+              await supabase
+                .from('friends')
+                .update({ status: 'accepted' })
+                .eq('user_id', reviewingFriend.id)
+                .eq('friend_id', session.user.id);
+
+              await supabase
+                .from('friends')
+                .upsert({
+                  user_id: session.user.id,
+                  friend_id: reviewingFriend.id,
+                  status: 'accepted',
+                }, { onConflict: 'user_id,friend_id' });
+            } catch (e) {
+              console.error(e);
+            }
+            setReviewingFriend(null);
+          }
+        }}
+        onDecline={async () => {
+          if (reviewingFriend && session?.user?.id) {
+            try {
+              await supabase
+                .from('friends')
+                .delete()
+                .eq('user_id', reviewingFriend.id)
+                .eq('friend_id', session.user.id);
+            } catch (e) {
+              console.error(e);
+            }
+            setReviewingFriend(null);
+          }
+        }}
+        friend={reviewingFriend || undefined}
+      />
       </main>
     </div>
   );
