@@ -191,16 +191,16 @@ export function BillDetail({ onBack, billId }: BillDetailProps) {
         };
       });
 
-      // Direct Supabase update
-      const { error } = await supabase
-        .from('participants')
-        .update({ payment_sent: true, accepted: true, paid: false })
-        .eq('bill_id', bill.id)
-        .eq('friend_id', activeUid);
+      // Route through backend API (uses service role key, bypasses RLS)
+      try {
+        await api.sendPayment(bill.id, activeUid);
+      } catch (apiErr) {
+        console.error('API sendPayment failed:', apiErr);
+        // Revert optimistic update on failure
+        fetchBill();
+        return;
+      }
 
-      if (error) console.error('Supabase payment_sent error:', error);
-
-      api.sendPayment(bill.id, activeUid).catch(console.warn);
       setIsConfirmModalOpen(false);
       fetchBill();
     } catch (err) {
@@ -226,30 +226,12 @@ export function BillDetail({ onBack, billId }: BillDetailProps) {
         };
       });
 
-      // Direct Supabase update
-      await supabase
-        .from('participants')
-        .update({ paid: true, payment_sent: true, accepted: true })
-        .eq('bill_id', bill.id)
-        .eq('friend_id', friendId);
-
-      const { data: parts } = await supabase
-        .from('participants')
-        .select('paid')
-        .eq('bill_id', bill.id);
-
-      const allPaid = parts && parts.length > 0 && parts.every((p: any) => p.paid === true);
-      if (allPaid) {
-        await supabase
-          .from('bills')
-          .update({ status: 'Settled' })
-          .eq('id', bill.id);
-      }
-
-      api.confirmPayment(bill.id, friendId).catch(console.warn);
+      // Route through backend API (uses service role key, bypasses RLS)
+      await api.confirmPayment(bill.id, friendId);
       fetchBill();
     } catch (err) {
       console.error('Error confirming participant payment:', err);
+      fetchBill();
     }
   };
 
@@ -267,16 +249,12 @@ export function BillDetail({ onBack, billId }: BillDetailProps) {
         };
       });
 
-      await supabase
-        .from('participants')
-        .update({ payment_sent: false, paid: false })
-        .eq('bill_id', bill.id)
-        .eq('friend_id', friendId);
-
-      api.declinePayment(bill.id, friendId).catch(console.warn);
+      // Route through backend API (uses service role key, bypasses RLS)
+      await api.declinePayment(bill.id, friendId);
       fetchBill();
     } catch (err) {
       console.error('Error declining participant payment:', err);
+      fetchBill();
     }
   };
 

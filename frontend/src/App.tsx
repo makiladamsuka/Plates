@@ -323,26 +323,8 @@ function App() {
     } else if (activeLiveAlert.type === 'payment_received') {
       const { billId, friendId } = activeLiveAlert.rawData;
       try {
-        await supabase
-          .from('participants')
-          .update({ paid: true, payment_sent: true, accepted: true })
-          .eq('bill_id', billId)
-          .eq('friend_id', friendId);
-
-        const { data: parts } = await supabase
-          .from('participants')
-          .select('paid')
-          .eq('bill_id', billId);
-
-        const allPaid = parts && parts.length > 0 && parts.every((p: any) => p.paid === true);
-        if (allPaid) {
-          await supabase
-            .from('bills')
-            .update({ status: 'Settled' })
-            .eq('id', billId);
-        }
-
-        api.confirmPayment(billId, friendId).catch(console.warn);
+        // Route through backend API (uses service role key, bypasses RLS)
+        await api.confirmPayment(billId, friendId);
       } catch (err) {
         console.error('Error confirming payment receipt live:', err);
       }

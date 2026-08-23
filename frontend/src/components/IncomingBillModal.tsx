@@ -186,14 +186,8 @@ export function IncomingBillModal({
       const activeUid = await getEffectiveUserId();
       if (!activeUid) throw new Error('User not authenticated');
 
-      // Step 1: Mark payment as sent (awaiting creator confirmation)
-      await supabase
-        .from('participants')
-        .update({ payment_sent: true, accepted: true, paid: false })
-        .eq('bill_id', bill.id)
-        .eq('friend_id', activeUid);
-
-      api.sendPayment(bill.id, activeUid).catch(console.warn);
+      // Route through backend API (uses service role key, bypasses RLS)
+      await api.sendPayment(bill.id, activeUid);
 
       if (onSuccess) onSuccess();
       setIsConfirmTransferOpen(false);
@@ -209,27 +203,8 @@ export function IncomingBillModal({
   const handleConfirmParticipantPayment = async (friendId: string) => {
     setIsSubmitting(true);
     try {
-      await supabase
-        .from('participants')
-        .update({ paid: true, payment_sent: true, accepted: true })
-        .eq('bill_id', bill.id)
-        .eq('friend_id', friendId);
-
-      // Check if all participants are paid
-      const { data: parts } = await supabase
-        .from('participants')
-        .select('paid')
-        .eq('bill_id', bill.id);
-
-      const allPaid = parts && parts.length > 0 && parts.every((p: any) => p.paid === true);
-      if (allPaid) {
-        await supabase
-          .from('bills')
-          .update({ status: 'Settled' })
-          .eq('id', bill.id);
-      }
-
-      api.confirmPayment(bill.id, friendId).catch(console.warn);
+      // Route through backend API (uses service role key, bypasses RLS)
+      await api.confirmPayment(bill.id, friendId);
 
       if (onSuccess) onSuccess();
     } catch (err: any) {
@@ -243,13 +218,8 @@ export function IncomingBillModal({
   const handleDeclineParticipantPayment = async (friendId: string) => {
     setIsSubmitting(true);
     try {
-      await supabase
-        .from('participants')
-        .update({ payment_sent: false, paid: false })
-        .eq('bill_id', bill.id)
-        .eq('friend_id', friendId);
-
-      api.declinePayment(bill.id, friendId).catch(console.warn);
+      // Route through backend API (uses service role key, bypasses RLS)
+      await api.declinePayment(bill.id, friendId);
 
       if (onSuccess) onSuccess();
     } catch (err: any) {

@@ -228,26 +228,8 @@ export function Home({
     }));
 
     try {
-      await supabase
-        .from('participants')
-        .update({ paid: true, payment_sent: true, accepted: true })
-        .eq('bill_id', billId)
-        .eq('friend_id', friendId);
-
-      const { data: parts } = await supabase
-        .from('participants')
-        .select('paid')
-        .eq('bill_id', billId);
-
-      const allPaid = parts && parts.length > 0 && parts.every((p: any) => p.paid === true);
-      if (allPaid) {
-        await supabase
-          .from('bills')
-          .update({ status: 'Settled' })
-          .eq('id', billId);
-      }
-
-      api.confirmPayment(billId, friendId).catch(console.warn);
+      // Route through backend API (uses service role key, bypasses RLS)
+      await api.confirmPayment(billId, friendId);
       fetchBills(uid);
     } catch (err) {
       console.error('Error confirming payment receipt:', err);
@@ -270,13 +252,8 @@ export function Home({
     }));
 
     try {
-      await supabase
-        .from('participants')
-        .update({ payment_sent: false, paid: false })
-        .eq('bill_id', billId)
-        .eq('friend_id', friendId);
-
-      api.declinePayment(billId, friendId).catch(console.warn);
+      // Route through backend API (uses service role key, bypasses RLS)
+      await api.declinePayment(billId, friendId);
       fetchBills(uid);
     } catch (err) {
       console.error('Error declining payment receipt:', err);
