@@ -126,17 +126,40 @@ export function BillDetail({ onBack, billId }: BillDetailProps) {
   const isMyPaymentSent = myParticipant?.payment_sent === true && !myParticipant?.paid;
   const isFullySettled = bill.status === 'Settled';
 
+  const getEffectiveUid = async (): Promise<string> => {
+    if (userId) return userId;
+    const { data: { session } } = await supabase.auth.getSession();
+    return session?.user?.id || '';
+  };
+
   const handlePay = async () => {
     try {
-      try {
-        await api.sendPayment(bill.id, userId);
-      } catch (e) {
-        await supabase
-          .from('participants')
-          .update({ payment_sent: true, accepted: true, paid: false })
-          .eq('bill_id', bill.id)
-          .eq('friend_id', userId);
-      }
+      const activeUid = await getEffectiveUid();
+      if (!activeUid) return;
+
+      // Optimistic UI update
+      setBill((prev: any) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          participants: (prev.participants || []).map((p: any) =>
+            (p.friend_id === activeUid || p.friendId === activeUid)
+              ? { ...p, payment_sent: true, accepted: true, paid: false }
+              : p
+          )
+        };
+      });
+
+      // Direct Supabase update
+      const { error } = await supabase
+        .from('participants')
+        .update({ payment_sent: true, accepted: true, paid: false })
+        .eq('bill_id', bill.id)
+        .eq('friend_id', activeUid);
+
+      if (error) console.error('Supabase payment_sent error:', error);
+
+      api.sendPayment(bill.id, activeUid).catch(console.warn);
       setIsConfirmModalOpen(false);
       fetchBill();
     } catch (err) {
@@ -146,28 +169,43 @@ export function BillDetail({ onBack, billId }: BillDetailProps) {
 
   const handleConfirmParticipant = async (friendId: string) => {
     try {
-      try {
-        await api.confirmPayment(bill.id, friendId);
-      } catch (e) {
+      // Optimistic UI update
+      setBill((prev: any) => {
+        if (!prev) return prev;
+        const updatedParts = (prev.participants || []).map((p: any) =>
+          (p.friend_id === friendId || p.friendId === friendId)
+            ? { ...p, paid: true, payment_sent: true }
+            : p
+        );
+        const allPaid = updatedParts.every((p: any) => p.paid === true);
+        return {
+          ...prev,
+          status: allPaid ? 'Settled' : prev.status,
+          participants: updatedParts
+        };
+      });
+
+      // Direct Supabase update
+      await supabase
+        .from('participants')
+        .update({ paid: true, payment_sent: true, accepted: true })
+        .eq('bill_id', bill.id)
+        .eq('friend_id', friendId);
+
+      const { data: parts } = await supabase
+        .from('participants')
+        .select('paid')
+        .eq('bill_id', bill.id);
+
+      const allPaid = parts && parts.length > 0 && parts.every((p: any) => p.paid === true);
+      if (allPaid) {
         await supabase
-          .from('participants')
-          .update({ paid: true, payment_sent: true, accepted: true })
-          .eq('bill_id', bill.id)
-          .eq('friend_id', friendId);
-
-        const { data: parts } = await supabase
-          .from('participants')
-          .select('paid')
-          .eq('bill_id', bill.id);
-
-        const allPaid = parts && parts.length > 0 && parts.every((p: any) => p.paid === true);
-        if (allPaid) {
-          await supabase
-            .from('bills')
-            .update({ status: 'Settled' })
-            .eq('id', bill.id);
-        }
+          .from('bills')
+          .update({ status: 'Settled' })
+          .eq('id', bill.id);
       }
+
+      api.confirmPayment(bill.id, friendId).catch(console.warn);
       fetchBill();
     } catch (err) {
       console.error('Error confirming participant payment:', err);
@@ -176,15 +214,25 @@ export function BillDetail({ onBack, billId }: BillDetailProps) {
 
   const handleDeclineParticipant = async (friendId: string) => {
     try {
-      try {
-        await api.declinePayment(bill.id, friendId);
-      } catch (e) {
-        await supabase
-          .from('participants')
-          .update({ payment_sent: false, paid: false })
-          .eq('bill_id', bill.id)
-          .eq('friend_id', friendId);
-      }
+      setBill((prev: any) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          participants: (prev.participants || []).map((p: any) =>
+            (p.friend_id === friendId || p.friendId === friendId)
+              ? { ...p, payment_sent: false, paid: false }
+              : p
+          )
+        };
+      });
+
+      await supabase
+        .from('participants')
+        .update({ payment_sent: false, paid: false })
+        .eq('bill_id', bill.id)
+        .eq('friend_id', friendId);
+
+      api.declinePayment(bill.id, friendId).catch(console.warn);
       fetchBill();
     } catch (err) {
       console.error('Error declining participant payment:', err);
