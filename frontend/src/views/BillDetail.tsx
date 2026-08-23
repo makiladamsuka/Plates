@@ -3,7 +3,7 @@ import { ChevronLeft } from 'lucide-react';
 import { ConfirmTransferModal } from '../components/ConfirmTransferModal';
 import { api } from '../services/api';
 import { supabase } from '../lib/supabase';
-import { MOCK_BILLS, MOCK_FRIENDS } from '../data/mockData';
+import { MOCK_FRIENDS } from '../data/mockData';
 
 interface BillDetailProps {
   onBack: () => void;
@@ -50,30 +50,71 @@ export function BillDetail({ onBack, billId }: BillDetailProps) {
     }
     try {
       setLoading(true);
-      const data = await api.getBill(billId);
-      if (data && data.id) {
-        setBill(data);
-        if (data?.creator_id) {
-          const { data: creator } = await supabase
-            .from('profiles')
-            .select('full_name, email')
-            .eq('id', data.creator_id)
-            .single();
-          if (creator) {
-            setCreatorName(creator.full_name || creator.email || '');
+      try {
+        const data = await api.getBill(billId);
+        if (data && data.id) {
+          setBill(data);
+          if (data?.creator_id) {
+            const { data: creator } = await supabase
+              .from('profiles')
+              .select('full_name, email')
+              .eq('id', data.creator_id)
+              .maybeSingle();
+            if (creator) {
+              setCreatorName(creator.full_name || creator.email || '');
+            }
           }
+          setLoading(false);
+          return;
         }
-      } else {
-        // Fallback to mock data if API returns empty
-        const mock = MOCK_BILLS.find(b => b.id === billId);
-        if (mock) setBill(mock);
+      } catch (e) {
+        console.warn('API bill fetch failed, falling back to direct Supabase:', e);
       }
-    } catch (e) {
-      console.warn('API bill fetch failed, checking mock data:', e);
-      const mock = MOCK_BILLS.find(b => b.id === billId);
-      if (mock) {
-        setBill(mock);
+
+      // Direct Supabase query
+      const { data: rawBill } = await supabase
+        .from('bills')
+        .select('*, participants(*)')
+        .eq('id', billId)
+        .maybeSingle();
+
+      if (rawBill) {
+        const allFriendIds = new Set<string>();
+        if (rawBill.creator_id) allFriendIds.add(rawBill.creator_id);
+        (rawBill.participants || []).forEach((p: any) => {
+          if (p.friend_id) allFriendIds.add(p.friend_id);
+        });
+
+        let profilesMap: Record<string, any> = {};
+        if (allFriendIds.size > 0) {
+          const { data: profiles } = await supabase
+            .from('profiles')
+            .select('id, full_name, avatar_url, email')
+            .in('id', Array.from(allFriendIds));
+
+          (profiles || []).forEach((prof: any) => {
+            profilesMap[prof.id] = prof;
+          });
+        }
+
+        const enriched = {
+          ...rawBill,
+          participants: (rawBill.participants || []).map((p: any) => ({
+            ...p,
+            profile: profilesMap[p.friend_id] || null,
+            full_name: profilesMap[p.friend_id]?.full_name || null,
+            avatar_url: profilesMap[p.friend_id]?.avatar_url || null
+          }))
+        };
+
+        setBill(enriched);
+        const creatorProf = profilesMap[rawBill.creator_id];
+        if (creatorProf) {
+          setCreatorName(creatorProf.full_name || creatorProf.email || '');
+        }
       }
+    } catch (err) {
+      console.error('Error fetching bill:', err);
     } finally {
       setLoading(false);
     }

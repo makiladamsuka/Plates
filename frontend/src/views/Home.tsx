@@ -46,10 +46,58 @@ export function Home({
 
   const fetchBills = async (currentUid?: string) => {
     const uid = currentUid || await getActiveUserId();
-    if (uid) {
-      api.getBills(uid).then(setBills).catch(console.error);
-    } else {
-      api.getBills().then(setBills).catch(console.error);
+    try {
+      if (uid) {
+        const data = await api.getBills(uid);
+        if (data && Array.isArray(data) && data.length > 0) {
+          setBills(data);
+          return;
+        }
+      }
+    } catch (e) {
+      console.warn('API getBills failed, falling back to direct Supabase:', e);
+    }
+
+    try {
+      const { data: rawBills } = await supabase
+        .from('bills')
+        .select('*, participants(*)');
+
+      if (rawBills) {
+        const allFriendIds = new Set<string>();
+        rawBills.forEach((b: any) => {
+          if (b.creator_id) allFriendIds.add(b.creator_id);
+          (b.participants || []).forEach((p: any) => {
+            if (p.friend_id) allFriendIds.add(p.friend_id);
+          });
+        });
+
+        let profilesMap: Record<string, any> = {};
+        if (allFriendIds.size > 0) {
+          const { data: profiles } = await supabase
+            .from('profiles')
+            .select('id, full_name, avatar_url, email')
+            .in('id', Array.from(allFriendIds));
+
+          (profiles || []).forEach((prof: any) => {
+            profilesMap[prof.id] = prof;
+          });
+        }
+
+        const enriched = rawBills.map((b: any) => ({
+          ...b,
+          participants: (b.participants || []).map((p: any) => ({
+            ...p,
+            profile: profilesMap[p.friend_id] || null,
+            full_name: profilesMap[p.friend_id]?.full_name || null,
+            avatar_url: profilesMap[p.friend_id]?.avatar_url || null
+          }))
+        }));
+
+        setBills(enriched);
+      }
+    } catch (err) {
+      console.error('Error fetching bills via Supabase:', err);
     }
   };
 
