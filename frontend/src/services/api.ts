@@ -119,4 +119,32 @@ export const api = {
     if (!res.ok) throw new Error('Failed to pay bill');
     return res.json();
   },
+
+  deleteBill: async (id: string, userId: string) => {
+    const headers = await getAuthHeaders();
+    const res = await fetch(`${API_URL}/bills/${id}`, {
+      method: 'DELETE',
+      headers,
+      body: JSON.stringify({ userId }),
+    });
+    if (!res.ok) {
+      const errJson = await res.json().catch(() => ({}));
+      throw new Error(errJson.error || 'Failed to delete bill');
+    }
+    return res.json();
+  },
+
+  deleteFriend: async (userId: string, friendId: string) => {
+    const headers = await getAuthHeaders();
+    const res = await fetch(`${API_URL}/friends`, {
+      method: 'DELETE',
+      headers,
+      body: JSON.stringify({ userId, friendId }),
+    });
+    if (!res.ok) {
+      const errJson = await res.json().catch(() => ({}));
+      throw new Error(errJson.error || 'Failed to remove friend');
+    }
+    return res.json();
+  },
 };

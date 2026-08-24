@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
-import { ChevronLeft } from 'lucide-react';
+import { ChevronLeft, Trash2 } from 'lucide-react';
 import { ConfirmTransferModal } from '../components/ConfirmTransferModal';
+import { DeleteConfirmationModal } from '../components/DeleteConfirmationModal';
 import { api } from '../services/api';
 import { supabase } from '../lib/supabase';
 import { MOCK_FRIENDS } from '../data/mockData';
@@ -12,10 +13,10 @@ interface BillDetailProps {
 
 const getTagColor = (category: string) => {
   switch (category) {
-    case 'Restaurant': return 'bg-[#F6D6DA]';
-    case 'Grocery': return 'bg-[#D7ECD1]';
-    case 'Entertainment': return 'bg-[#CDE1FF]';
-    default: return 'bg-zinc-200';
+    case 'Restaurant': return 'bg-[#F6D6DA] dark:bg-red-900/40';
+    case 'Grocery': return 'bg-[#D7ECD1] dark:bg-green-900/40';
+    case 'Entertainment': return 'bg-[#CDE1FF] dark:bg-blue-900/40';
+    default: return 'bg-zinc-200 dark:bg-zinc-800';
   }
 };
 
@@ -42,6 +43,11 @@ export function BillDetail({ onBack, billId }: BillDetailProps) {
   const [creatorName, setCreatorName] = useState<string>('');
   const [loading, setLoading] = useState(true);
   const [userId, setUserId] = useState<string>('');
+
+  // Bill Deletion State
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteErrorMessage, setDeleteErrorMessage] = useState<string | null>(null);
 
   const fetchBill = async () => {
     if (!billId) {
@@ -288,36 +294,77 @@ export function BillDetail({ onBack, billId }: BillDetailProps) {
     }
   };
 
+  const isBlockedFromDeleting = !isCreator && !isFullySettled;
+
+  const handleDeleteBill = async () => {
+    setIsDeleting(true);
+    setDeleteErrorMessage(null);
+    try {
+      await api.deleteBill(bill.id, userId);
+
+      // Dual-write Supabase cleanup for immediate realtime sync
+      if (isCreator) {
+        await Promise.allSettled([
+          supabase.from('participants').delete().eq('bill_id', bill.id),
+          supabase.from('bills').delete().eq('id', bill.id)
+        ]);
+      } else {
+        await supabase.from('participants').delete().eq('bill_id', bill.id).eq('friend_id', userId);
+      }
+
+      setIsDeleteModalOpen(false);
+      onBack();
+    } catch (err: any) {
+      console.error('Error deleting bill:', err);
+      setDeleteErrorMessage(err.message || 'Failed to delete bill.');
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-[#EDEDF1] pb-40 font-['Sora'] relative overflow-hidden">
+    <div className="min-h-screen bg-[#EDEDF1] dark:bg-zinc-950 pb-40 font-['Sora'] relative overflow-hidden transition-colors">
       
       {/* Header Section */}
       <div className="pt-6 pb-2 relative">
-        <div className="flex justify-between items-start w-full px-6">
+        <div className="flex justify-between items-center w-full px-6 gap-2">
           {/* Back Button */}
-          <button onClick={onBack} className="absolute left-6 top-6 w-8 h-8 flex items-center justify-center cursor-pointer">
-            <ChevronLeft size={28} strokeWidth={2.5} className="text-[#1A1A1A]" />
+          <button onClick={onBack} className="w-8 h-8 flex items-center justify-center cursor-pointer text-[#1A1A1A] dark:text-zinc-100 shrink-0">
+            <ChevronLeft size={28} strokeWidth={2.5} />
           </button>
           
           {/* Title styled with display font */}
-          <h1 className="text-[#1A1A1A] text-[28px] font-bold font-display leading-tight break-words ml-[43px] max-w-[240px] truncate">{bill.title}</h1>
+          <h1 className="text-[#1A1A1A] dark:text-zinc-100 text-[24px] md:text-[28px] font-bold font-display leading-tight break-words flex-1 truncate">{bill.title}</h1>
           
-          {/* Status Pill */}
-          <div className={`rounded-[30px] px-4 py-1.5 flex items-center justify-center shrink-0 ${
-            isFullySettled ? 'bg-[#4C8C3C] text-white' : 'bg-[#F5C744] text-black'
-          }`}>
-            <span className="text-[13px] font-semibold">{isFullySettled ? 'Settled' : 'Pending'}</span>
+          {/* Status Pill & Delete Button */}
+          <div className="flex items-center gap-2 shrink-0">
+            <div className={`rounded-[30px] px-3.5 py-1 flex items-center justify-center shrink-0 ${
+              isFullySettled ? 'bg-[#4C8C3C] text-white' : 'bg-[#F5C744] text-black'
+            }`}>
+              <span className="text-[12px] font-semibold">{isFullySettled ? 'Settled' : 'Pending'}</span>
+            </div>
+
+            <button
+              onClick={() => {
+                setDeleteErrorMessage(null);
+                setIsDeleteModalOpen(true);
+              }}
+              title={isCreator ? "Delete Bill" : (isFullySettled ? "Remove Bill" : "Cannot delete unsettled bill")}
+              className="w-8 h-8 rounded-full bg-white dark:bg-zinc-900 border border-black/5 dark:border-white/10 flex items-center justify-center text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 active:scale-95 transition-all shadow-xs cursor-pointer"
+            >
+              <Trash2 size={16} strokeWidth={2.2} />
+            </button>
           </div>
         </div>
         
         {/* Tags and Meta */}
         <div className="mt-5 px-6 flex flex-col gap-2">
           <div className={`${getTagColor(bill.category)} rounded-[30px] px-4 py-1.5 w-fit flex items-center justify-center -ml-1`}>
-            <span className="text-black text-[15px] font-normal">{bill.category}</span>
+            <span className="text-black dark:text-zinc-100 text-[15px] font-normal">{bill.category}</span>
           </div>
-          <div className="text-black text-[15px] font-normal ml-1 mt-1">{formatTime(bill.created_at || bill.createdAt)}</div>
+          <div className="text-black/60 dark:text-zinc-400 text-[14px] font-normal ml-1 mt-1">{formatTime(bill.created_at || bill.createdAt)}</div>
           {creatorName && (
-            <div className="text-black/70 text-[15px] font-normal ml-1">Created by {creatorName}</div>
+            <div className="text-black/70 dark:text-zinc-300 text-[14px] font-normal ml-1">Created by {creatorName}</div>
           )}
         </div>
       </div>
@@ -335,26 +382,26 @@ export function BillDetail({ onBack, billId }: BillDetailProps) {
           const pFriendId = participant.friend_id || participant.friendId;
 
           return (
-            <div key={i} className="w-full min-h-[59px] py-2.5 bg-[#D9D9D9] rounded-[30px] px-4 flex items-center justify-between shadow-sm relative">
+            <div key={i} className="w-full min-h-[59px] py-2.5 bg-[#D9D9D9] dark:bg-zinc-900 rounded-[30px] px-4 flex items-center justify-between shadow-sm relative border border-transparent dark:border-white/5">
               <div className="flex items-center gap-3 min-w-0 pr-2">
                 {pAvatar ? (
                   <img src={pAvatar} alt="" className="w-9 h-9 rounded-full object-cover shrink-0" />
                 ) : (
-                  <div className="w-9 h-9 bg-zinc-400 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0">
+                  <div className="w-9 h-9 bg-zinc-400 dark:bg-zinc-700 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0">
                     {(pName || 'P')[0].toUpperCase()}
                   </div>
                 )}
                 <div className="flex flex-col min-w-0">
-                  <span className="text-black text-[14px] font-medium truncate">
+                  <span className="text-black dark:text-zinc-100 text-[14px] font-medium truncate">
                     {pName}
                   </span>
-                  {isPCreator && <span className="text-black/50 text-[10px]">Creator (Paid upfront)</span>}
-                  {isPPaymentSent && <span className="text-amber-800 text-[10px]">Sent payment · Awaiting confirmation</span>}
+                  {isPCreator && <span className="text-black/50 dark:text-zinc-500 text-[10px]">Creator (Paid upfront)</span>}
+                  {isPPaymentSent && <span className="text-amber-800 dark:text-amber-400 text-[10px]">Sent payment · Awaiting confirmation</span>}
                 </div>
               </div>
 
               <div className="flex items-center gap-2 shrink-0">
-                <span className="text-[#1A1A1A] text-[18px] font-semibold">LKR {Number(participant.share || 0).toFixed(0)}</span>
+                <span className="text-[#1A1A1A] dark:text-zinc-100 text-[18px] font-semibold">LKR {Number(participant.share || 0).toFixed(0)}</span>
                 
                 {isPPaid ? (
                   <span className="text-[10px] bg-[#4C8C3C] text-white px-2 py-0.5 rounded-full font-bold">Paid</span>
@@ -390,23 +437,23 @@ export function BillDetail({ onBack, billId }: BillDetailProps) {
 
       {/* Total Amount */}
       <div className="px-8 mt-10 flex justify-end">
-         <div className="text-[#1A1A1A] text-[28px] font-bold font-display">LKR {bill.total}</div>
+         <div className="text-[#1A1A1A] dark:text-zinc-100 text-[28px] font-bold font-display">LKR {bill.total}</div>
       </div>
 
       {/* Floating Action Bar - Only show if not paid and not settled */}
       {!isMySharePaid && !isFullySettled && (
         <div className="fixed bottom-[130px] left-0 w-full z-[55] flex justify-center px-4 pointer-events-none">
           {isMyPaymentSent ? (
-            <div className="w-full max-w-[365px] bg-[#1A1A1A] text-[#EDEDF1] rounded-[50px] p-4 text-center pointer-events-auto shadow-lg flex flex-col items-center gap-0.5">
+            <div className="w-full max-w-[365px] bg-[#1A1A1A] dark:bg-zinc-900 border border-transparent dark:border-white/10 text-[#EDEDF1] rounded-[50px] p-4 text-center pointer-events-auto shadow-lg flex flex-col items-center gap-0.5">
               <span className="text-base font-semibold text-[#F5C744]">✓ Payment Sent (LKR {myShare.toFixed(0)})</span>
               <span className="text-xs text-white/60">Waiting for {creatorName || 'creator'} to confirm receipt</span>
             </div>
           ) : (
             <button 
               onClick={() => setIsConfirmModalOpen(true)}
-              className="w-full max-w-[365px] h-[74px] bg-[#1A1A1A] rounded-[50px] flex items-center justify-center pointer-events-auto shadow-lg active:scale-95 transition-transform cursor-pointer"
+              className="w-full max-w-[365px] h-[74px] bg-[#1A1A1A] dark:bg-zinc-100 rounded-[50px] flex items-center justify-center pointer-events-auto shadow-lg active:scale-95 transition-transform cursor-pointer"
             >
-              <span className="text-[#EDEDF1] text-[20px] font-semibold">Pay LKR {myShare.toFixed(0)}</span>
+              <span className="text-[#EDEDF1] dark:text-zinc-950 text-[20px] font-semibold">Pay LKR {myShare.toFixed(0)}</span>
             </button>
           )}
         </div>
@@ -419,6 +466,42 @@ export function BillDetail({ onBack, billId }: BillDetailProps) {
         onConfirm={handlePay}
         amount={myShare}
         username={creatorName || "Creator"}
+      />
+
+      {/* Delete / Remove Bill Confirmation Modal */}
+      <DeleteConfirmationModal
+        isOpen={isDeleteModalOpen}
+        onClose={() => {
+          setIsDeleteModalOpen(false);
+          setDeleteErrorMessage(null);
+        }}
+        onConfirm={handleDeleteBill}
+        title={
+          deleteErrorMessage
+            ? 'Error Deleting Bill'
+            : isBlockedFromDeleting
+            ? 'Cannot Delete Bill'
+            : isCreator
+            ? 'Delete Bill'
+            : 'Remove Bill'
+        }
+        description={
+          deleteErrorMessage
+            ? deleteErrorMessage
+            : isBlockedFromDeleting
+            ? 'Only the bill creator can delete this bill while it is unsettled.'
+            : isCreator
+            ? 'Are you sure you want to permanently delete this bill? This will remove it for all participants.'
+            : 'Are you sure you want to remove this settled bill from your history?'
+        }
+        confirmText={isCreator ? 'Delete Bill' : 'Remove from List'}
+        isBlocked={isBlockedFromDeleting || !!deleteErrorMessage}
+        blockedReason={
+          deleteErrorMessage ||
+          'This bill is currently unsettled. Participants cannot delete unsettled bills. You can only remove it once all shares are settled.'
+        }
+        isLoading={isDeleting}
+        itemType="bill"
       />
 
     </div>

@@ -423,6 +423,76 @@ app.post('/api/bills/:id/pay', async (req, res) => {
   }
 });
 
+// Delete a bill (Creator can delete anytime; Participants can only remove settled bills)
+app.delete('/api/bills/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const effectiveUserId = (req as any).user?.id || req.body?.userId || req.query?.userId;
+
+    if (!effectiveUserId) {
+      return res.status(401).json({ error: 'User ID required' });
+    }
+
+    // 1. Fetch the bill and its participants
+    const { data: bill, error: fetchErr } = await supabase
+      .from('bills')
+      .select('*, participants(*)')
+      .eq('id', id)
+      .single();
+
+    if (fetchErr || !bill) {
+      return res.status(404).json({ error: 'Bill not found' });
+    }
+
+    const isCreator = bill.creator_id === effectiveUserId;
+    const isParticipant = (bill.participants || []).some((p: any) => p.friend_id === effectiveUserId);
+
+    if (!isCreator && !isParticipant) {
+      return res.status(403).json({ error: 'You are not authorized to modify this bill' });
+    }
+
+    if (isCreator) {
+      // Bill owner / creator can delete without any problem
+      const { error: partErr } = await supabase
+        .from('participants')
+        .delete()
+        .eq('bill_id', id);
+      if (partErr) throw partErr;
+
+      const { error: billErr } = await supabase
+        .from('bills')
+        .delete()
+        .eq('id', id);
+      if (billErr) throw billErr;
+
+      return res.json({ message: 'Bill deleted successfully', isCreator: true });
+    } else {
+      // Non-creator participant: cannot delete unsettled bills
+      const isSettled = bill.status === 'Settled';
+      const myPart = (bill.participants || []).find((p: any) => p.friend_id === effectiveUserId);
+      const isMySharePaid = myPart?.paid === true;
+
+      if (!isSettled && !isMySharePaid) {
+        return res.status(403).json({
+          error: 'Only the bill creator can delete an unsettled bill. You can only remove bills once they are settled.'
+        });
+      }
+
+      // Remove this participant's record from the settled bill
+      const { error: partErr } = await supabase
+        .from('participants')
+        .delete()
+        .eq('bill_id', id)
+        .eq('friend_id', effectiveUserId);
+      if (partErr) throw partErr;
+
+      return res.json({ message: 'Settled bill removed from your list', isCreator: false });
+    }
+  } catch (err: any) {
+    handleError(res, err);
+  }
+});
+
 // =============== FRIENDS ROUTES ===============
 
 // Search profiles by name or email with input sanitization
@@ -503,18 +573,76 @@ app.post('/api/friends', async (req, res) => {
   }
 });
 
-// Remove a friend
+// Remove a friend (Only allowed if all shared bills are settled)
 app.delete('/api/friends', async (req, res) => {
   try {
-    const { userId, friendId } = req.body;
-    const { error } = await supabase
+    const effectiveUserId = (req as any).user?.id || req.body?.userId;
+    const { friendId } = req.body;
+
+    if (!effectiveUserId || !friendId) {
+      return res.status(400).json({ error: 'User ID and Friend ID are required' });
+    }
+
+    // 1. Fetch all bills involving both users
+    const { data: bills, error: billsErr } = await supabase
+      .from('bills')
+      .select('id, title, status, creator_id, participants(*)');
+
+    if (billsErr) throw billsErr;
+
+    const sharedBills = (bills || []).filter((b: any) => {
+      const parts = b.participants || [];
+      const isUserInvolved = b.creator_id === effectiveUserId || parts.some((p: any) => p.friend_id === effectiveUserId);
+      const isFriendInvolved = b.creator_id === friendId || parts.some((p: any) => p.friend_id === friendId);
+      return isUserInvolved && isFriendInvolved;
+    });
+
+    // Check for any unsettled shared bill or unpaid balance between them
+    const unsettledBills = sharedBills.filter((b: any) => {
+      if (b.status === 'Settled') return false;
+
+      const isUserCreator = b.creator_id === effectiveUserId;
+      const isFriendCreator = b.creator_id === friendId;
+      const friendPart = (b.participants || []).find((p: any) => p.friend_id === friendId);
+      const userPart = (b.participants || []).find((p: any) => p.friend_id === effectiveUserId);
+
+      // If user is creator and friend hasn't paid
+      if (isUserCreator && friendPart && !friendPart.paid) return true;
+      // If friend is creator and user hasn't paid
+      if (isFriendCreator && userPart && !userPart.paid) return true;
+      // If general bill is not settled
+      if (b.status !== 'Settled') {
+        if ((friendPart && !friendPart.paid) || (userPart && !userPart.paid)) {
+          return true;
+        }
+      }
+      return false;
+    });
+
+    if (unsettledBills.length > 0) {
+      return res.status(400).json({
+        error: `Cannot delete friend: You have ${unsettledBills.length} unsettled bill(s) with this friend. Please settle all bills before deleting.`,
+        unsettledBills: unsettledBills.map((b: any) => ({ id: b.id, title: b.title, status: b.status }))
+      });
+    }
+
+    // 2. Perform friend deletion from both directions if all bills are settled
+    const { error: delErr1 } = await supabase
       .from('friends')
       .delete()
-      .eq('user_id', userId)
+      .eq('user_id', effectiveUserId)
       .eq('friend_id', friendId);
-    
-    if (error) throw error;
-    res.json({ message: 'Friend removed' });
+
+    if (delErr1) throw delErr1;
+
+    // Delete reciprocal link
+    await supabase
+      .from('friends')
+      .delete()
+      .eq('user_id', friendId)
+      .eq('friend_id', effectiveUserId);
+
+    res.json({ message: 'Friend removed successfully' });
   } catch (err: any) {
     handleError(res, err);
   }

@@ -117,7 +117,7 @@ export function NewBillModal({ isOpen, onClose, onSuccess }: NewBillModalProps) 
         category: tag || 'Other',
         total: parsedAmount,
         creatorId: userId,
-        participants: splits.map(s => ({ friendId: s.id, share: s.share }))
+        participants: splits.map(s => ({ friendId: s.id === 'me' ? userId : s.id, share: s.share }))
       });
       if (onSuccess) onSuccess();
       handleClose();
