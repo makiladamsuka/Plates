@@ -110,7 +110,9 @@ export function FriendsList({
     enabled: !!session?.user?.id
   });
 
-<<<<<<< Updated upstream
+  const acceptedFriends = data?.accepted || [];
+  const pendingRequests = data?.pending || [];
+
   const handleInitiateDeleteFriend = async (friend: any, e: React.MouseEvent) => {
     e.stopPropagation();
     let uid = session?.user?.id;
@@ -180,7 +182,7 @@ export function FriendsList({
       ]);
       setIsDeleteModalOpen(false);
       setSelectedDeleteFriend(null);
-      fetchFriendsAndRequests();
+      queryClient.invalidateQueries({ queryKey: ['friends', session?.user?.id] });
     } catch (err: any) {
       setDeleteBlockedReason(err.message || 'Failed to remove friend.');
     } finally {
@@ -188,15 +190,8 @@ export function FriendsList({
     }
   };
 
-  const handleApprove = async (requesterId: string) => {
-    try {
-=======
-  const acceptedFriends = data?.accepted || [];
-  const pendingRequests = data?.pending || [];
-
   const acceptMutation = useMutation({
     mutationFn: async (requesterId: string) => {
->>>>>>> Stashed changes
       // Step A: Mark incoming request as accepted
       await supabase
         .from('friends')
