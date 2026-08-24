@@ -22,10 +22,11 @@ export function Login() {
     try {
       setIsLoading(true);
       setError(null);
+      const redirectUrl = `${window.location.origin}/auth/callback`;
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: 'https://plates.live/auth/callback',
+          redirectTo: redirectUrl,
         }
       });
       if (error) throw error;
