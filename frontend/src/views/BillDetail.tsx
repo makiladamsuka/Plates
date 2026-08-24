@@ -9,6 +9,7 @@ import { MOCK_FRIENDS } from '../data/mockData';
 interface BillDetailProps {
   onBack: () => void;
   billId: string | null;
+  session?: any;
 }
 
 const getTagColor = (category: string) => {
@@ -37,12 +38,12 @@ const formatTime = (ts: any) => {
   return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 };
 
-export function BillDetail({ onBack, billId }: BillDetailProps) {
+export function BillDetail({ onBack, billId, session }: BillDetailProps) {
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
   const [bill, setBill] = useState<any>(null);
   const [creatorName, setCreatorName] = useState<string>('');
   const [loading, setLoading] = useState(true);
-  const [userId, setUserId] = useState<string>('');
+  const [userId, setUserId] = useState<string>(() => session?.user?.id || '');
 
   // Bill Deletion State
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);

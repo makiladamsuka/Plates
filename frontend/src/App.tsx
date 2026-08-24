@@ -445,6 +445,7 @@ function App() {
         ) : (
           <BillDetail 
             billId={selectedBillId}
+            session={activeSession}
             onBack={() => {
               setCurrentView('list');
               setSelectedBillId(null);
