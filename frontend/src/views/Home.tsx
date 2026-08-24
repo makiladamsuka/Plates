@@ -522,14 +522,30 @@ export function Home({
                       </span>
                     </div>
                     <div className="flex -space-x-1.5">
-                      {(bill.participants || []).slice(0, 3).map((p: any, i: number) => (
-                        <div
-                          key={i}
-                          className="w-6 h-6 rounded-full border border-[#EDEDF1] dark:border-zinc-900 bg-black/20 dark:bg-white/20 flex items-center justify-center text-[9px] font-bold text-black dark:text-white shrink-0"
-                        >
-                          {(p.friend_id === userId || p.friendId === userId) ? 'Y' : 'P'}
-                        </div>
-                      ))}
+                      {(bill.participants || []).slice(0, 3).map((p: any, i: number) => {
+                        const isMe = p.friend_id === userId || p.friendId === userId || p.friendId === 'me';
+                        const pAvatar = p.avatar_url || p.profile?.avatar_url || (isMe ? session?.user?.user_metadata?.avatar_url : null);
+                        const pName = isMe ? (session?.user?.user_metadata?.full_name || 'You') : (p.full_name || p.profile?.full_name || p.name || 'Friend');
+                        const initial = (pName || 'F').trim()[0]?.toUpperCase() || 'U';
+
+                        return pAvatar ? (
+                          <img
+                            key={i}
+                            src={pAvatar}
+                            alt={pName}
+                            title={pName}
+                            className="w-6 h-6 rounded-full border border-[#EDEDF1] dark:border-zinc-900 object-cover shrink-0"
+                          />
+                        ) : (
+                          <div
+                            key={i}
+                            title={pName}
+                            className="w-6 h-6 rounded-full border border-[#EDEDF1] dark:border-zinc-900 bg-zinc-400 dark:bg-zinc-700 flex items-center justify-center text-[10px] font-bold text-white shrink-0"
+                          >
+                            {initial}
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
                 </div>

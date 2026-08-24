@@ -267,7 +267,7 @@ export function BillsList({ onBillClick }: BillsListProps) {
                   </div>
                 </div>
 
-                {/* Bottom Row: Category Tag, Date & Amount */}
+                {/* Bottom Row: Category Tag, Date & Amount + Avatars */}
                 <div className="flex items-center justify-between mt-0.5">
                   <div className="flex items-center gap-2.5">
                     <span className={`${getTagColor(bill.category)} text-black dark:text-zinc-100 px-3 py-1 rounded-full font-medium text-xs`}>
@@ -275,7 +275,36 @@ export function BillsList({ onBillClick }: BillsListProps) {
                     </span>
                     <span className="text-black/60 dark:text-zinc-400 font-normal text-xs">{formatTime(bill.created_at || bill.createdAt)}</span>
                   </div>
-                  <span className="text-[#1A1A1A] dark:text-zinc-100 text-2xl font-semibold">LKR {bill.total}</span>
+                  
+                  <div className="flex items-center gap-3">
+                    <div className="flex -space-x-1.5">
+                      {(bill.participants || []).slice(0, 3).map((p: any, i: number) => {
+                        const isMe = p.friend_id === userId || p.friendId === userId || p.friendId === 'me';
+                        const pAvatar = p.avatar_url || p.profile?.avatar_url;
+                        const pName = isMe ? 'You' : (p.full_name || p.profile?.full_name || p.name || 'Friend');
+                        const initial = (pName || 'F').trim()[0]?.toUpperCase() || 'U';
+
+                        return pAvatar ? (
+                          <img
+                            key={i}
+                            src={pAvatar}
+                            alt={pName}
+                            title={pName}
+                            className="w-6 h-6 rounded-full border border-[#EDEDF1] dark:border-zinc-900 object-cover shrink-0"
+                          />
+                        ) : (
+                          <div
+                            key={i}
+                            title={pName}
+                            className="w-6 h-6 rounded-full border border-[#EDEDF1] dark:border-zinc-900 bg-zinc-400 dark:bg-zinc-700 flex items-center justify-center text-[10px] font-bold text-white shrink-0"
+                          >
+                            {initial}
+                          </div>
+                        );
+                      })}
+                    </div>
+                    <span className="text-[#1A1A1A] dark:text-zinc-100 text-2xl font-semibold">LKR {bill.total}</span>
+                  </div>
                 </div>
               </div>
             );
