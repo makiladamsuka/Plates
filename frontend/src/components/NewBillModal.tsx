@@ -22,10 +22,25 @@ export function NewBillModal({ isOpen, onClose, onSuccess }: NewBillModalProps) 
   const [customSplits, setCustomSplits] = useState<Record<string, string>>({});
   const [isCreating, setIsCreating] = useState(false);
   const [userId, setUserId] = useState<string>('');
+  const [currentUserProfile, setCurrentUserProfile] = useState<any>(null);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) setUserId(session.user.id);
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      if (session) {
+        setUserId(session.user.id);
+        try {
+          const { data: prof } = await supabase
+            .from('profiles')
+            .select('id, full_name, email, avatar_url')
+            .eq('id', session.user.id)
+            .maybeSingle();
+
+          setCurrentUserProfile(prof || session.user.user_metadata || null);
+        } catch (e) {
+          console.warn('Error fetching user profile in NewBillModal:', e);
+          setCurrentUserProfile(session.user.user_metadata || null);
+        }
+      }
     });
   }, []);
 
@@ -80,7 +95,22 @@ export function NewBillModal({ isOpen, onClose, onSuccess }: NewBillModalProps) 
     onClose();
   };
 
-  const allParticipants = [{ id: userId, name: 'You', username: '@you', color: '#E5E7EB' }, ...selectedFriends.map(f => ({ id: f.id, name: f.full_name || f.name, username: f.email || '', color: '#D9D9D9' }))];
+  const allParticipants = [
+    { 
+      id: userId || 'me', 
+      name: 'You', 
+      username: currentUserProfile?.email || '@you', 
+      avatar_url: currentUserProfile?.avatar_url || currentUserProfile?.picture || null,
+      color: '#E5E7EB' 
+    }, 
+    ...selectedFriends.map(f => ({ 
+      id: f.id, 
+      name: f.full_name || f.name, 
+      username: f.email || '', 
+      avatar_url: f.avatar_url || null,
+      color: '#D9D9D9' 
+    }))
+  ];
 
   // Calculate dynamic splits
   const calculateSplits = () => {
@@ -414,35 +444,49 @@ export function NewBillModal({ isOpen, onClose, onSuccess }: NewBillModalProps) 
               </button>
 
               <div className="w-full space-y-4 mb-6 mt-4">
-                {splits.map(participant => (
-                  <div key={participant.id} className="flex items-center justify-between w-full">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full overflow-hidden shrink-0 bg-[#D9D9D9]"></div>
-                      <div className="flex flex-col">
-                        <span className="text-[#1A1A1A] text-sm font-semibold leading-tight">{participant.name}</span>
-                        <span className="text-black/60 text-[10px] font-normal">{participant.username}</span>
+                {splits.map(participant => {
+                  const initial = (participant.name || 'U').trim()[0]?.toUpperCase() || 'U';
+
+                  return (
+                    <div key={participant.id} className="flex items-center justify-between w-full">
+                      <div className="flex items-center gap-3">
+                        {participant.avatar_url ? (
+                          <img 
+                            src={participant.avatar_url} 
+                            alt={participant.name} 
+                            className="w-10 h-10 rounded-full object-cover shrink-0" 
+                          />
+                        ) : (
+                          <div className="w-10 h-10 rounded-full bg-zinc-300 dark:bg-zinc-700 shrink-0 flex items-center justify-center font-bold text-xs text-zinc-800 dark:text-zinc-200">
+                            {initial}
+                          </div>
+                        )}
+                        <div className="flex flex-col">
+                          <span className="text-[#1A1A1A] text-sm font-semibold leading-tight">{participant.name}</span>
+                          <span className="text-black/60 text-[10px] font-normal">{participant.username}</span>
+                        </div>
                       </div>
+                      {isEditingSplits ? (
+                        <div className="flex items-center">
+                          <span className="text-[#1A1A1A] text-base font-medium mr-1">LKR</span>
+                          <input 
+                            type="number" 
+                            value={customSplits[participant.id] !== undefined ? customSplits[participant.id] : participant.share.toFixed(2)}
+                            onChange={(e) => {
+                              setCustomSplits(prev => ({...prev, [participant.id]: e.target.value}));
+                            }}
+                            className={`w-24 text-right bg-transparent border-b ${participant.isCustom ? 'border-black font-semibold' : 'border-black/20'} outline-none text-[#1A1A1A] text-base no-spinners`}
+                            onFocus={(e) => e.target.select()}
+                          />
+                        </div>
+                      ) : (
+                        <span className="text-[#1A1A1A] text-base font-semibold">
+                          LKR {participant.share.toFixed(2)}
+                        </span>
+                      )}
                     </div>
-                    {isEditingSplits ? (
-                      <div className="flex items-center">
-                        <span className="text-[#1A1A1A] text-base font-medium mr-1">LKR</span>
-                        <input 
-                          type="number" 
-                          value={customSplits[participant.id] !== undefined ? customSplits[participant.id] : participant.share.toFixed(2)}
-                          onChange={(e) => {
-                            setCustomSplits(prev => ({...prev, [participant.id]: e.target.value}));
-                          }}
-                          className={`w-24 text-right bg-transparent border-b ${participant.isCustom ? 'border-black font-semibold' : 'border-black/20'} outline-none text-[#1A1A1A] text-base no-spinners`}
-                          onFocus={(e) => e.target.select()}
-                        />
-                      </div>
-                    ) : (
-                      <span className="text-[#1A1A1A] text-base font-semibold">
-                        LKR {participant.share.toFixed(2)}
-                      </span>
-                    )}
-                  </div>
-                ))}
+                  );
+                })}
               </div>
 
               {/* Total Amount */}
