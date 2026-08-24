@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { ChevronRight } from 'lucide-react';
 import type { Friend } from '../data/mockData';
 
 interface IncomingFriendRequestModalProps {
@@ -57,8 +58,8 @@ export function IncomingFriendRequestModal({
     const padding = 12;
     const maxX = trackRect.width - thumbWidth - (padding * 2);
     
-    // If slid past 85%, approve request
-    if (slideProgress > maxX * 0.85) {
+    // If slid past 55%, approve request
+    if (slideProgress > maxX * 0.55) {
       setSlideProgress(maxX);
       setTimeout(() => {
         onApprove();
@@ -138,11 +139,8 @@ export function IncomingFriendRequestModal({
                 onPointerUp={handlePointerUp}
                 onPointerCancel={handlePointerUp}
               >
-                {/* Double Arrow Icon */}
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-black ml-0.5">
-                  <polyline points="13 17 18 12 13 7" />
-                  <polyline points="6 17 11 12 6 7" />
-                </svg>
+                {/* Sleek Single Arrow Icon */}
+                <ChevronRight size={28} strokeWidth={2.5} className="text-black ml-1" />
               </div>
             </div>
           </div>

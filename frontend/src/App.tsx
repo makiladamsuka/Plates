@@ -135,15 +135,8 @@ function App() {
                 knownFriendRequestIdsRef.current.add(f.user_id);
                 playNotificationChime();
 
-                setActiveLiveAlert({
-                  id: `friend-${f.user_id}`,
-                  type: 'friend',
-                  title: `${prof?.full_name || 'A user'} wants to connect`,
-                  subtitle: prof?.email || 'Sent you a friend request',
-                  avatarUrl: prof?.avatar_url,
-                  name: prof?.full_name || 'Friend',
-                  rawData: { requesterId: f.user_id, friend: friendData },
-                });
+                // Instantly pop up the bottom sheet instead of the top toast
+                setReviewingFriend(friendData);
                 break; // Show one popup at a time
               }
             }
