@@ -161,9 +161,6 @@ function App() {
                       .eq('id', billData.creator_id)
                       .maybeSingle();
 
-                    const creatorName = creatorProf?.full_name || creatorProf?.email || 'A friend';
-                    const myShare = p.share || (billData.participants || []).find((part: any) => part.friend_id === uid)?.share || billData.total;
-
                     knownBillRequestIdsRef.current.add(p.bill_id);
                     playNotificationChime();
 
@@ -191,14 +188,6 @@ function App() {
                 const key = `${b.id}-${p.friend_id}`;
                 if (!knownPaymentConfirmationIdsRef.current.has(key)) {
                   knownPaymentConfirmationIdsRef.current.add(key);
-
-                  const { data: senderProf } = await supabase
-                    .from('profiles')
-                    .select('full_name, avatar_url, email')
-                    .eq('id', p.friend_id)
-                    .maybeSingle();
-
-                  const senderName = senderProf?.full_name || senderProf?.email || 'A friend';
 
                   playNotificationChime();
                   setReviewingBill(b);
