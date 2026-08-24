@@ -74,7 +74,7 @@ export function ConfirmTransferModal({ isOpen, onClose, onConfirm, amount, usern
         />
         
         {/* Modal Container */}
-        <div className="w-full bg-[#1A1A1A] rounded-t-[35px] p-6 relative flex flex-col items-center pointer-events-auto animate-in slide-in-from-bottom-32 duration-300 shadow-2xl h-[422px]">
+        <div className="w-full bg-[#1A1A1A] rounded-t-[35px] p-6 pb-5 relative flex flex-col items-center pointer-events-auto animate-in slide-in-from-bottom-32 duration-300 shadow-2xl">
           
           {/* Header Content */}
           <div className="mt-4 text-center">

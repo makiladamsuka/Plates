@@ -26,7 +26,11 @@ export function Login() {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
+<<<<<<< Updated upstream
           redirectTo: redirectUrl,
+=======
+          redirectTo: `${window.location.origin}/auth/callback`,
+>>>>>>> Stashed changes
         }
       });
       if (error) throw error;

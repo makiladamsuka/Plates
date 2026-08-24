@@ -86,17 +86,23 @@ export function SearchFriendModal({ isOpen, onClose, onAddFriend }: SearchFriend
                   </div>
                 </div>
 
-                {/* Add Friend / Requested button */}
+                {/* Add Friend / Undo button */}
                 <button 
-                  onClick={() => !isSent && handleSendRequest(user.id, user)}
-                  className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 transition-all ${
+                  onClick={() => {
+                    if (isSent) {
+                      setSentRequests(prev => prev.filter(id => id !== user.id));
+                    } else {
+                      handleSendRequest(user.id, user);
+                    }
+                  }}
+                  className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 transition-all active:scale-95 ${
                     isSent 
-                      ? 'bg-[#4C8C3C] text-white' 
-                      : 'bg-[#1A1A1A] text-[#EDEDF1] active:scale-95'
+                      ? 'bg-zinc-300 text-zinc-600 hover:bg-[#F6D6DA] hover:text-red-500' 
+                      : 'bg-[#1A1A1A] text-[#EDEDF1]'
                   }`}
                 >
                   {isSent ? (
-                    <Check size={16} strokeWidth={2.5} />
+                    <X size={16} strokeWidth={2.5} />
                   ) : (
                     <UserPlus size={16} strokeWidth={2} />
                   )}
