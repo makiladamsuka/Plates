@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
+import { Trash2 } from 'lucide-react';
 import { NewBillModal } from '../components/NewBillModal';
+import { DeleteConfirmationModal } from '../components/DeleteConfirmationModal';
 import { api } from '../services/api';
 import { supabase } from '../lib/supabase';
 
@@ -39,10 +41,18 @@ export function BillsList({ onBillClick }: BillsListProps) {
   const [bills, setBills] = useState<any[]>([]);
   const [isNewBillModalOpen, setIsNewBillModalOpen] = useState(false);
   const [sortKey, setSortKey] = useState<SortKey>('all');
+  const [userId, setUserId] = useState<string>('');
+
+  // Delete Bill Modal State
+  const [selectedDeleteBill, setSelectedDeleteBill] = useState<any>(null);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isDeletingBill, setIsDeletingBill] = useState(false);
+  const [deleteBlockedReason, setDeleteBlockedReason] = useState<string | null>(null);
 
   const fetchBills = async () => {
     const { data: { session } } = await supabase.auth.getSession();
     const uid = session?.user?.id;
+    if (uid) setUserId(uid);
     try {
       if (uid) {
         const data = await api.getBills(uid);
@@ -95,6 +105,46 @@ export function BillsList({ onBillClick }: BillsListProps) {
       }
     } catch (err) {
       console.error('Error fetching bills via Supabase:', err);
+    }
+  };
+
+  const handleInitiateDeleteBill = (bill: any, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setSelectedDeleteBill(bill);
+    setIsDeleteModalOpen(true);
+    setDeleteBlockedReason(null);
+
+    const isCreator = bill.creator_id === userId;
+    const isSettled = bill.status === 'Settled';
+
+    if (!isCreator && !isSettled) {
+      setDeleteBlockedReason(
+        'Only the bill creator can delete this unsettled bill. You can only remove it once all shares are settled.'
+      );
+    }
+  };
+
+  const handleConfirmDeleteBill = async () => {
+    if (!selectedDeleteBill || !userId) return;
+    setIsDeletingBill(true);
+    try {
+      await api.deleteBill(selectedDeleteBill.id, userId);
+      const isCreator = selectedDeleteBill.creator_id === userId;
+      if (isCreator) {
+        await Promise.allSettled([
+          supabase.from('participants').delete().eq('bill_id', selectedDeleteBill.id),
+          supabase.from('bills').delete().eq('id', selectedDeleteBill.id)
+        ]);
+      } else {
+        await supabase.from('participants').delete().eq('bill_id', selectedDeleteBill.id).eq('friend_id', userId);
+      }
+      setIsDeleteModalOpen(false);
+      setSelectedDeleteBill(null);
+      fetchBills();
+    } catch (err: any) {
+      setDeleteBlockedReason(err.message || 'Failed to delete bill.');
+    } finally {
+      setIsDeletingBill(false);
     }
   };
 
@@ -178,6 +228,7 @@ export function BillsList({ onBillClick }: BillsListProps) {
         <div className="px-5 md:px-0 mt-2 flex flex-col md:grid md:grid-cols-2 lg:grid-cols-3 gap-4">
           {sortedBills.map(bill => {
             const displayStatus = bill.status === 'Settled' ? 'Settled' : 'Pending';
+            const isCreator = bill.creator_id === userId;
 
             return (
               <div 
@@ -185,13 +236,24 @@ export function BillsList({ onBillClick }: BillsListProps) {
                 onClick={() => onBillClick?.(bill.id)}
                 className="w-full bg-[#D9D9D9] dark:bg-zinc-900 rounded-[30px] px-6 py-4.5 flex flex-col gap-3 shadow-sm cursor-pointer hover:bg-zinc-300/80 dark:hover:bg-zinc-800 transition-colors border border-transparent dark:border-white/5"
               >
-                {/* Top Row: Title + Status Pill */}
+                {/* Top Row: Title + Status Pill + Quick Delete */}
                 <div className="flex justify-between items-center gap-3">
                   <h2 className="text-[#1A1A1A] dark:text-zinc-100 text-xl font-semibold leading-tight truncate">{bill.title}</h2>
-                  <div className={`rounded-full px-3.5 py-1 flex items-center justify-center shrink-0 ${
-                    displayStatus === 'Settled' ? 'bg-[#4C8C3C] text-white' : 'bg-[#F5C744] text-black'
-                  }`}>
-                    <span className="text-[12px] font-semibold">{displayStatus}</span>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <div className={`rounded-full px-3.5 py-1 flex items-center justify-center shrink-0 ${
+                      displayStatus === 'Settled' ? 'bg-[#4C8C3C] text-white' : 'bg-[#F5C744] text-black'
+                    }`}>
+                      <span className="text-[12px] font-semibold">{displayStatus}</span>
+                    </div>
+
+                    {/* Quick Delete Button on Card */}
+                    <button
+                      onClick={(e) => handleInitiateDeleteBill(bill, e)}
+                      title={isCreator ? "Delete Bill" : (displayStatus === 'Settled' ? "Remove Bill" : "Unsettled bill")}
+                      className="w-7 h-7 rounded-full bg-[#EDEDF1] dark:bg-zinc-800 flex items-center justify-center text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40 active:scale-95 transition-all shadow-xs cursor-pointer"
+                    >
+                      <Trash2 size={13} strokeWidth={2.2} />
+                    </button>
                   </div>
                 </div>
 
@@ -239,6 +301,37 @@ export function BillsList({ onBillClick }: BillsListProps) {
           fetchBills();
         }}
       />
+
+      {/* Delete Bill Confirmation / Blocked Modal */}
+      <DeleteConfirmationModal
+        isOpen={isDeleteModalOpen}
+        onClose={() => {
+          setIsDeleteModalOpen(false);
+          setSelectedDeleteBill(null);
+          setDeleteBlockedReason(null);
+        }}
+        onConfirm={handleConfirmDeleteBill}
+        title={
+          deleteBlockedReason
+            ? 'Cannot Delete Bill'
+            : selectedDeleteBill?.creator_id === userId
+            ? 'Delete Bill'
+            : 'Remove Bill'
+        }
+        description={
+          deleteBlockedReason
+            ? deleteBlockedReason
+            : selectedDeleteBill?.creator_id === userId
+            ? `Are you sure you want to permanently delete "${selectedDeleteBill?.title}"? This will remove it for all participants.`
+            : `Are you sure you want to remove "${selectedDeleteBill?.title}" from your history?`
+        }
+        confirmText={selectedDeleteBill?.creator_id === userId ? 'Delete Bill' : 'Remove from List'}
+        isBlocked={!!deleteBlockedReason}
+        blockedReason={deleteBlockedReason || undefined}
+        isLoading={isDeletingBill}
+        itemType="bill"
+      />
+
     </div>
   );
 }

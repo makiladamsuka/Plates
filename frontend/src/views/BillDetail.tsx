@@ -324,120 +324,148 @@ export function BillDetail({ onBack, billId }: BillDetailProps) {
 
   return (
     <div className="min-h-screen bg-[#EDEDF1] dark:bg-zinc-950 pb-40 font-['Sora'] relative overflow-hidden transition-colors">
-      
-      {/* Header Section */}
-      <div className="pt-6 pb-2 relative">
-        <div className="flex justify-between items-center w-full px-6 gap-2">
-          {/* Back Button */}
-          <button onClick={onBack} className="w-8 h-8 flex items-center justify-center cursor-pointer text-[#1A1A1A] dark:text-zinc-100 shrink-0">
-            <ChevronLeft size={28} strokeWidth={2.5} />
-          </button>
-          
-          {/* Title styled with display font */}
-          <h1 className="text-[#1A1A1A] dark:text-zinc-100 text-[24px] md:text-[28px] font-bold font-display leading-tight break-words flex-1 truncate">{bill.title}</h1>
-          
-          {/* Status Pill & Delete Button */}
-          <div className="flex items-center gap-2 shrink-0">
-            <div className={`rounded-[30px] px-3.5 py-1 flex items-center justify-center shrink-0 ${
-              isFullySettled ? 'bg-[#4C8C3C] text-white' : 'bg-[#F5C744] text-black'
-            }`}>
-              <span className="text-[12px] font-semibold">{isFullySettled ? 'Settled' : 'Pending'}</span>
-            </div>
-
-            <button
-              onClick={() => {
-                setDeleteErrorMessage(null);
-                setIsDeleteModalOpen(true);
-              }}
-              title={isCreator ? "Delete Bill" : (isFullySettled ? "Remove Bill" : "Cannot delete unsettled bill")}
-              className="w-8 h-8 rounded-full bg-white dark:bg-zinc-900 border border-black/5 dark:border-white/10 flex items-center justify-center text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 active:scale-95 transition-all shadow-xs cursor-pointer"
-            >
-              <Trash2 size={16} strokeWidth={2.2} />
-            </button>
-          </div>
-        </div>
+      <div className="max-w-[480px] md:max-w-4xl mx-auto md:px-10 md:pt-6">
         
-        {/* Tags and Meta */}
-        <div className="mt-5 px-6 flex flex-col gap-2">
-          <div className={`${getTagColor(bill.category)} rounded-[30px] px-4 py-1.5 w-fit flex items-center justify-center -ml-1`}>
-            <span className="text-black dark:text-zinc-100 text-[15px] font-normal">{bill.category}</span>
+        {/* Header Section */}
+        <div className="pt-6 pb-2 relative">
+          <div className="flex justify-between items-center w-full px-6 md:px-0 gap-2">
+            {/* Back Button */}
+            <button onClick={onBack} className="w-8 h-8 flex items-center justify-center cursor-pointer text-[#1A1A1A] dark:text-zinc-100 shrink-0">
+              <ChevronLeft size={28} strokeWidth={2.5} />
+            </button>
+            
+            {/* Title styled with display font */}
+            <h1 className="text-[#1A1A1A] dark:text-zinc-100 text-[24px] md:text-[28px] font-bold font-display leading-tight break-words flex-1 truncate mx-2">{bill.title}</h1>
+            
+            {/* Status Pill & Delete Button */}
+            <div className="flex items-center gap-2 shrink-0">
+              <div className={`rounded-[30px] px-3.5 py-1.5 flex items-center justify-center shrink-0 ${
+                isFullySettled ? 'bg-[#4C8C3C] text-white' : 'bg-[#F5C744] text-black'
+              }`}>
+                <span className="text-[12px] font-semibold">{isFullySettled ? 'Settled' : 'Pending'}</span>
+              </div>
+
+              {/* Delete / Remove Action Button */}
+              <button
+                onClick={() => {
+                  setDeleteErrorMessage(null);
+                  setIsDeleteModalOpen(true);
+                }}
+                title={isCreator ? "Delete Bill" : (isFullySettled ? "Remove Bill" : "Cannot delete unsettled bill")}
+                className="h-9 px-3 rounded-[30px] bg-red-500/10 hover:bg-red-600 text-red-600 hover:text-white dark:bg-red-950/40 dark:hover:bg-red-600 dark:text-red-400 dark:hover:text-white border border-red-500/30 flex items-center gap-1.5 text-xs font-semibold active:scale-95 transition-all shadow-xs cursor-pointer"
+              >
+                <Trash2 size={15} strokeWidth={2.2} />
+                <span>{isCreator ? "Delete" : "Remove"}</span>
+              </button>
+            </div>
           </div>
-          <div className="text-black/60 dark:text-zinc-400 text-[14px] font-normal ml-1 mt-1">{formatTime(bill.created_at || bill.createdAt)}</div>
-          {creatorName && (
-            <div className="text-black/70 dark:text-zinc-300 text-[14px] font-normal ml-1">Created by {creatorName}</div>
-          )}
+          
+          {/* Tags and Meta */}
+          <div className="mt-5 px-6 md:px-0 flex flex-col gap-2">
+            <div className={`${getTagColor(bill.category)} rounded-[30px] px-4 py-1.5 w-fit flex items-center justify-center -ml-1`}>
+              <span className="text-black dark:text-zinc-100 text-[15px] font-normal">{bill.category}</span>
+            </div>
+            <div className="text-black/60 dark:text-zinc-400 text-[14px] font-normal ml-1 mt-1">{formatTime(bill.created_at || bill.createdAt)}</div>
+            {creatorName && (
+              <div className="text-black/70 dark:text-zinc-300 text-[14px] font-normal ml-1">Created by {creatorName}</div>
+            )}
+          </div>
         </div>
-      </div>
 
-      {/* Friends List Section */}
-      <div className="px-6 mt-6 flex flex-col gap-3 relative">
-        {(bill.participants || []).map((participant: any, i: number) => {
-          const isPMe = participant.friendId === 'me' || participant.friend_id === userId || participant.friendId === userId;
-          const mockFriend = MOCK_FRIENDS.find(f => f.id === (participant.friendId || participant.friend_id));
-          const pName = isPMe ? 'You' : (participant.full_name || participant.profile?.full_name || mockFriend?.name || `Friend ${(participant.friendId || participant.friend_id || '').substring(0, 4)}`);
-          const pAvatar = participant.avatar_url || participant.profile?.avatar_url;
-          const isPCreator = bill.creator_id === (participant.friend_id || participant.friendId);
-          const isPPaid = isPCreator || participant.paid;
-          const isPPaymentSent = participant.payment_sent === true && !participant.paid;
-          const pFriendId = participant.friend_id || participant.friendId;
+        {/* Friends List Section */}
+        <div className="px-6 md:px-0 mt-6 flex flex-col gap-3 relative">
+          {(bill.participants || []).map((participant: any, i: number) => {
+            const isPMe = participant.friendId === 'me' || participant.friend_id === userId || participant.friendId === userId;
+            const mockFriend = MOCK_FRIENDS.find(f => f.id === (participant.friendId || participant.friend_id));
+            const pName = isPMe ? 'You' : (participant.full_name || participant.profile?.full_name || mockFriend?.name || `Friend ${(participant.friendId || participant.friend_id || '').substring(0, 4)}`);
+            const pAvatar = participant.avatar_url || participant.profile?.avatar_url;
+            const isPCreator = bill.creator_id === (participant.friend_id || participant.friendId);
+            const isPPaid = isPCreator || participant.paid;
+            const isPPaymentSent = participant.payment_sent === true && !participant.paid;
+            const pFriendId = participant.friend_id || participant.friendId;
 
-          return (
-            <div key={i} className="w-full min-h-[59px] py-2.5 bg-[#D9D9D9] dark:bg-zinc-900 rounded-[30px] px-4 flex items-center justify-between shadow-sm relative border border-transparent dark:border-white/5">
-              <div className="flex items-center gap-3 min-w-0 pr-2">
-                {pAvatar ? (
-                  <img src={pAvatar} alt="" className="w-9 h-9 rounded-full object-cover shrink-0" />
-                ) : (
-                  <div className="w-9 h-9 bg-zinc-400 dark:bg-zinc-700 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0">
-                    {(pName || 'P')[0].toUpperCase()}
+            return (
+              <div key={i} className="w-full min-h-[59px] py-2.5 bg-[#D9D9D9] dark:bg-zinc-900 rounded-[30px] px-4 flex items-center justify-between shadow-sm relative border border-transparent dark:border-white/5">
+                <div className="flex items-center gap-3 min-w-0 pr-2">
+                  {pAvatar ? (
+                    <img src={pAvatar} alt="" className="w-9 h-9 rounded-full object-cover shrink-0" />
+                  ) : (
+                    <div className="w-9 h-9 bg-zinc-400 dark:bg-zinc-700 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0">
+                      {(pName || 'P')[0].toUpperCase()}
+                    </div>
+                  )}
+                  <div className="flex flex-col min-w-0">
+                    <span className="text-black dark:text-zinc-100 text-[14px] font-medium truncate">
+                      {pName}
+                    </span>
+                    {isPCreator && <span className="text-black/50 dark:text-zinc-500 text-[10px]">Creator (Paid upfront)</span>}
+                    {isPPaymentSent && <span className="text-amber-800 dark:text-amber-400 text-[10px]">Sent payment · Awaiting confirmation</span>}
                   </div>
-                )}
-                <div className="flex flex-col min-w-0">
-                  <span className="text-black dark:text-zinc-100 text-[14px] font-medium truncate">
-                    {pName}
-                  </span>
-                  {isPCreator && <span className="text-black/50 dark:text-zinc-500 text-[10px]">Creator (Paid upfront)</span>}
-                  {isPPaymentSent && <span className="text-amber-800 dark:text-amber-400 text-[10px]">Sent payment · Awaiting confirmation</span>}
+                </div>
+
+                <div className="flex items-center gap-2 shrink-0">
+                  <span className="text-[#1A1A1A] dark:text-zinc-100 text-[18px] font-semibold">LKR {Number(participant.share || 0).toFixed(0)}</span>
+                  
+                  {isPPaid ? (
+                    <span className="text-[10px] bg-[#4C8C3C] text-white px-2 py-0.5 rounded-full font-bold">Paid</span>
+                  ) : isPPaymentSent ? (
+                    isCreator ? (
+                      <div className="flex items-center gap-1">
+                        <button
+                          onClick={() => handleConfirmParticipant(pFriendId)}
+                          title="Confirm received payment"
+                          className="bg-[#4C8C3C] hover:bg-[#437d35] active:scale-95 text-white text-[10px] font-bold px-2.5 py-1 rounded-full cursor-pointer transition-transform shadow-xs"
+                        >
+                          Confirm
+                        </button>
+                        <button
+                          onClick={() => handleDeclineParticipant(pFriendId)}
+                          title="Not received"
+                          className="bg-zinc-700 hover:bg-zinc-800 text-white text-[10px] font-bold px-2 py-1 rounded-full cursor-pointer transition-transform"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    ) : (
+                      <span className="text-[10px] bg-yellow-600 text-white px-2 py-0.5 rounded-full font-bold">Sent</span>
+                    )
+                  ) : (
+                    <span className="text-[10px] bg-[#F5C744] text-black px-2 py-0.5 rounded-full font-bold">Pending</span>
+                  )}
                 </div>
               </div>
+            );
+          })}
+        </div>
 
-              <div className="flex items-center gap-2 shrink-0">
-                <span className="text-[#1A1A1A] dark:text-zinc-100 text-[18px] font-semibold">LKR {Number(participant.share || 0).toFixed(0)}</span>
-                
-                {isPPaid ? (
-                  <span className="text-[10px] bg-[#4C8C3C] text-white px-2 py-0.5 rounded-full font-bold">Paid</span>
-                ) : isPPaymentSent ? (
-                  isCreator ? (
-                    <div className="flex items-center gap-1">
-                      <button
-                        onClick={() => handleConfirmParticipant(pFriendId)}
-                        title="Confirm received payment"
-                        className="bg-[#4C8C3C] hover:bg-[#437d35] active:scale-95 text-white text-[10px] font-bold px-2.5 py-1 rounded-full cursor-pointer transition-transform shadow-xs"
-                      >
-                        Confirm
-                      </button>
-                      <button
-                        onClick={() => handleDeclineParticipant(pFriendId)}
-                        title="Not received"
-                        className="bg-zinc-700 hover:bg-zinc-800 text-white text-[10px] font-bold px-2 py-1 rounded-full cursor-pointer transition-transform"
-                      >
-                        ✕
-                      </button>
-                    </div>
-                  ) : (
-                    <span className="text-[10px] bg-yellow-600 text-white px-2 py-0.5 rounded-full font-bold">Sent</span>
-                  )
-                ) : (
-                  <span className="text-[10px] bg-[#F5C744] text-black px-2 py-0.5 rounded-full font-bold">Pending</span>
-                )}
-              </div>
-            </div>
-          );
-        })}
-      </div>
+        {/* Total Amount */}
+        <div className="px-8 md:px-0 mt-10 flex justify-end">
+           <div className="text-[#1A1A1A] dark:text-zinc-100 text-[28px] font-bold font-display">LKR {bill.total}</div>
+        </div>
 
-      {/* Total Amount */}
-      <div className="px-8 mt-10 flex justify-end">
-         <div className="text-[#1A1A1A] dark:text-zinc-100 text-[28px] font-bold font-display">LKR {bill.total}</div>
+        {/* Prominent Danger Zone: Delete Bill Button at Bottom */}
+        <div className="px-6 md:px-0 mt-12 mb-6 flex flex-col items-center">
+          <button
+            onClick={() => {
+              setDeleteErrorMessage(null);
+              setIsDeleteModalOpen(true);
+            }}
+            className={`w-full max-w-sm py-3.5 px-6 rounded-[25px] font-semibold text-sm flex items-center justify-center gap-2 cursor-pointer active:scale-95 transition-all shadow-sm ${
+              isCreator
+                ? 'bg-red-50 dark:bg-red-950/30 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800/50 hover:bg-red-600 hover:text-white dark:hover:bg-red-600 dark:hover:text-white'
+                : isFullySettled
+                ? 'bg-red-50 dark:bg-red-950/30 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800/50 hover:bg-red-600 hover:text-white dark:hover:bg-red-600 dark:hover:text-white'
+                : 'bg-zinc-200 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 hover:bg-red-50 hover:text-red-600'
+            }`}
+          >
+            <Trash2 size={16} />
+            <span>{isCreator ? 'Delete Bill' : isFullySettled ? 'Remove Settled Bill' : 'Delete Bill (Unsettled)'}</span>
+          </button>
+          {!isCreator && !isFullySettled && (
+            <span className="text-zinc-400 text-xs mt-2">Only the bill creator can delete this unsettled bill</span>
+          )}
+        </div>
+
       </div>
 
       {/* Floating Action Bar - Only show if not paid and not settled */}
