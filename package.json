@@ -8,7 +8,10 @@
     "dev:frontend": "npm --prefix frontend run dev",
     "dev:backend": "npm --prefix backend run dev",
     "build": "npm --prefix frontend install --include=dev && npm --prefix frontend run build && npm install && npm --prefix backend install",
-    "start": "npx tsx backend/src/server.ts"
+    "start": "npx tsx backend/src/server.ts",
+    "ci:lint": "npm --prefix frontend run lint",
+    "ci:typecheck": "npm --prefix frontend run build && npm --prefix backend run typecheck",
+    "ci:test": "npm run ci:lint && npm run ci:typecheck"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.112.3",
