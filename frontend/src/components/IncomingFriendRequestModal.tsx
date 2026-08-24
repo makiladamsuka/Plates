@@ -58,12 +58,12 @@ export function IncomingFriendRequestModal({
     const padding = 12;
     const maxX = trackRect.width - thumbWidth - (padding * 2);
     
-    // If slid past 55%, approve request
-    if (slideProgress > maxX * 0.55) {
+    // If slid past 25%, auto-slide the rest of the way and approve
+    if (slideProgress > maxX * 0.25) {
       setSlideProgress(maxX);
       setTimeout(() => {
         onApprove();
-      }, 50);
+      }, 250);
     } else {
       // Snap back to start
       setSlideProgress(0);

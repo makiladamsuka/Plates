@@ -39,7 +39,7 @@ function App() {
   const knownFriendRequestIdsRef = useRef<Set<string>>(new Set());
   const knownBillRequestIdsRef = useRef<Set<string>>(new Set());
   const knownPaymentConfirmationIdsRef = useRef<Set<string>>(new Set());
-  const isInitializedBaselineRef = useRef<boolean>(false);
+  const isShowingModalRef = useRef<boolean>(false);
 
   // Settings view state
   const [settingsView, setSettingsView] = useState<'main' | 'account'>('main');
@@ -102,6 +102,7 @@ function App() {
     if (!uid) return;
 
     const checkLiveIncoming = async () => {
+      if (isShowingModalRef.current) return;
       try {
         // 1. Check incoming friend requests
         const { data: rawPendingFriends, error: friendErr } = await supabase
@@ -111,34 +112,30 @@ function App() {
           .eq('status', 'pending');
 
         if (!friendErr && rawPendingFriends) {
-          if (!isInitializedBaselineRef.current) {
-            // First load: record baseline IDs quietly without popups
-            rawPendingFriends.forEach((f: any) => knownFriendRequestIdsRef.current.add(f.user_id));
-          } else {
-            // Live check: find newly arrived requests
-            for (const f of rawPendingFriends) {
-              if (!knownFriendRequestIdsRef.current.has(f.user_id)) {
-                const { data: prof } = await supabase
-                  .from('profiles')
-                  .select('id, full_name, avatar_url, email')
-                  .eq('id', f.user_id)
-                  .maybeSingle();
+          // Live check: find newly arrived requests
+          for (const f of rawPendingFriends) {
+            if (!knownFriendRequestIdsRef.current.has(f.user_id)) {
+              const { data: prof } = await supabase
+                .from('profiles')
+                .select('id, full_name, avatar_url, email')
+                .eq('id', f.user_id)
+                .maybeSingle();
 
-                const friendData = {
-                  id: prof?.id || f.user_id,
-                  name: prof?.full_name || 'Friend',
-                  username: prof?.email || '',
-                  avatar_url: prof?.avatar_url,
-                  isPendingRequest: true,
-                };
+              const friendData = {
+                id: prof?.id || f.user_id,
+                name: prof?.full_name || 'Friend',
+                username: prof?.email || '',
+                avatar_url: prof?.avatar_url,
+                isPendingRequest: true,
+              };
 
-                knownFriendRequestIdsRef.current.add(f.user_id);
-                playNotificationChime();
+              knownFriendRequestIdsRef.current.add(f.user_id);
+              playNotificationChime();
 
-                // Instantly pop up the bottom sheet instead of the top toast
-                setReviewingFriend(friendData);
-                break; // Show one popup at a time
-              }
+              // Instantly pop up the bottom sheet instead of the top toast
+              isShowingModalRef.current = true;
+              setReviewingFriend(friendData);
+              break; // Show one popup at a time
             }
           }
         }
@@ -151,12 +148,9 @@ function App() {
           .or('accepted.eq.false,accepted.is.null');
 
         if (!billErr && rawPendingBills) {
-          if (!isInitializedBaselineRef.current) {
-            rawPendingBills.forEach((p: any) => knownBillRequestIdsRef.current.add(p.bill_id));
-          } else {
-            for (const p of rawPendingBills) {
-              if (!knownBillRequestIdsRef.current.has(p.bill_id)) {
-                try {
+          for (const p of rawPendingBills) {
+            if (!knownBillRequestIdsRef.current.has(p.bill_id)) {
+              try {
                   const { data: billData } = await supabase
                     .from('bills')
                     .select('*, participants(*)')
@@ -176,6 +170,7 @@ function App() {
                     knownBillRequestIdsRef.current.add(p.bill_id);
                     playNotificationChime();
 
+                    isShowingModalRef.current = true;
                     setActiveLiveAlert({
                       id: `bill-${billData.id}`,
                       type: 'bill',
@@ -208,9 +203,7 @@ function App() {
             for (const p of (b.participants || [])) {
               if (p.friend_id !== uid && p.payment_sent === true && !p.paid) {
                 const key = `${b.id}-${p.friend_id}`;
-                if (!isInitializedBaselineRef.current) {
-                  knownPaymentConfirmationIdsRef.current.add(key);
-                } else if (!knownPaymentConfirmationIdsRef.current.has(key)) {
+                if (!knownPaymentConfirmationIdsRef.current.has(key)) {
                   knownPaymentConfirmationIdsRef.current.add(key);
 
                   const { data: senderProf } = await supabase
@@ -222,6 +215,7 @@ function App() {
                   const senderName = senderProf?.full_name || senderProf?.email || 'A friend';
 
                   playNotificationChime();
+                  isShowingModalRef.current = true;
                   setActiveLiveAlert({
                     id: `payment-${key}`,
                     type: 'payment_received',
@@ -239,7 +233,6 @@ function App() {
           }
         }
 
-        isInitializedBaselineRef.current = true;
       } catch (err) {
         console.error('Error checking live incoming requests:', err);
       }
@@ -471,13 +464,19 @@ function App() {
         alert={activeLiveAlert}
         onAccept={handleLiveAccept}
         onReview={handleLiveReview}
-        onDismiss={() => setActiveLiveAlert(null)}
+        onDismiss={() => {
+          setActiveLiveAlert(null);
+          isShowingModalRef.current = false;
+        }}
       />
 
       {/* Review Modals triggered from Live Popup */}
       <IncomingBillModal 
         isOpen={!!reviewingBill}
-        onClose={() => setReviewingBill(null)}
+        onClose={() => {
+          setReviewingBill(null);
+          isShowingModalRef.current = false;
+        }}
         bill={reviewingBill}
         userId={session?.user?.id || ''}
       />
@@ -519,7 +518,12 @@ function App() {
               console.error(e);
             }
             setReviewingFriend(null);
+            isShowingModalRef.current = false;
           }
+        }}
+        onClose={() => {
+          setReviewingFriend(null);
+          isShowingModalRef.current = false;
         }}
         friend={reviewingFriend || undefined}
       />
