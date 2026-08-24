@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Search, ChevronLeft, UserPlus, Check } from 'lucide-react';
+import { Search, ChevronLeft, UserPlus, X } from 'lucide-react';
 import { MOCK_FRIENDS } from '../data/mockData';
 import type { Friend } from '../data/mockData';
 
