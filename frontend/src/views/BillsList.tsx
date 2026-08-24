@@ -35,13 +35,14 @@ type SortKey = 'all' | 'highest' | 'lowest' | 'oldest';
 
 interface BillsListProps {
   onBillClick?: (id: string) => void;
+  session?: any;
 }
 
-export function BillsList({ onBillClick }: BillsListProps) {
+export function BillsList({ onBillClick, session }: BillsListProps) {
   const [bills, setBills] = useState<any[]>([]);
   const [isNewBillModalOpen, setIsNewBillModalOpen] = useState(false);
   const [sortKey, setSortKey] = useState<SortKey>('all');
-  const [userId, setUserId] = useState<string>('');
+  const [userId, setUserId] = useState<string>(() => session?.user?.id || '');
 
   // Delete Bill Modal State
   const [selectedDeleteBill, setSelectedDeleteBill] = useState<any>(null);
@@ -334,6 +335,7 @@ export function BillsList({ onBillClick }: BillsListProps) {
       {/* New Bill Modal */}
       <NewBillModal 
         isOpen={isNewBillModalOpen} 
+        session={session}
         onClose={() => setIsNewBillModalOpen(false)} 
         onSuccess={() => {
           setIsNewBillModalOpen(false);

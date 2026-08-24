@@ -730,6 +730,7 @@ export function Home({
       {/* New Bill Modal */}
       <NewBillModal 
         isOpen={isNewBillModalOpen}
+        session={session}
         onClose={() => setIsNewBillModalOpen(false)}
         onSuccess={fetchBills}
       />

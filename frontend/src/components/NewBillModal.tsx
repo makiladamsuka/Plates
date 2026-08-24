@@ -7,9 +7,10 @@ interface NewBillModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess?: () => void;
+  session?: any;
 }
 
-export function NewBillModal({ isOpen, onClose, onSuccess }: NewBillModalProps) {
+export function NewBillModal({ isOpen, onClose, onSuccess, session: propSession }: NewBillModalProps) {
   const [step, setStep] = useState(1);
   const [amount, setAmount] = useState('');
   const [billName, setBillName] = useState('');
@@ -21,28 +22,34 @@ export function NewBillModal({ isOpen, onClose, onSuccess }: NewBillModalProps) 
   const [isEditingSplits, setIsEditingSplits] = useState(false);
   const [customSplits, setCustomSplits] = useState<Record<string, string>>({});
   const [isCreating, setIsCreating] = useState(false);
-  const [userId, setUserId] = useState<string>('');
-  const [currentUserProfile, setCurrentUserProfile] = useState<any>(null);
+  const [userId, setUserId] = useState<string>(() => propSession?.user?.id || '');
+  const [currentUserProfile, setCurrentUserProfile] = useState<any>(() => propSession?.user?.user_metadata || null);
 
   useEffect(() => {
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      if (session) {
-        setUserId(session.user.id);
+    const initUser = async () => {
+      let s = propSession;
+      if (!s) {
+        const { data } = await supabase.auth.getSession();
+        s = data.session;
+      }
+      if (s?.user) {
+        setUserId(s.user.id);
         try {
           const { data: prof } = await supabase
             .from('profiles')
             .select('id, full_name, email, avatar_url')
-            .eq('id', session.user.id)
+            .eq('id', s.user.id)
             .maybeSingle();
 
-          setCurrentUserProfile(prof || session.user.user_metadata || null);
+          setCurrentUserProfile(prof || s.user.user_metadata || null);
         } catch (e) {
           console.warn('Error fetching user profile in NewBillModal:', e);
-          setCurrentUserProfile(session.user.user_metadata || null);
+          setCurrentUserProfile(s.user.user_metadata || null);
         }
       }
-    });
-  }, []);
+    };
+    initUser();
+  }, [propSession, isOpen]);
 
   // Fetch accepted friends when modal opens or userId is available
   useEffect(() => {

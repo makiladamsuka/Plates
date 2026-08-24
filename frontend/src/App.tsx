@@ -437,6 +437,7 @@ function App() {
       {currentTab === 'bills' && (
         currentView === 'list' ? (
           <BillsList 
+            session={activeSession}
             onBillClick={(id) => {
               setSelectedBillId(id);
               setCurrentView('detail');
