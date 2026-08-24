@@ -64,8 +64,16 @@ export function Home({
         .select('*, participants(*)');
 
       if (rawBills) {
+        // Filter strictly to bills where current user is creator or participant
+        const myBills = rawBills.filter((b: any) => {
+          if (!uid) return true;
+          const isCreator = b.creator_id === uid;
+          const isParticipant = (b.participants || []).some((p: any) => p.friend_id === uid || p.friendId === uid);
+          return isCreator || isParticipant;
+        });
+
         const allFriendIds = new Set<string>();
-        rawBills.forEach((b: any) => {
+        myBills.forEach((b: any) => {
           if (b.creator_id) allFriendIds.add(b.creator_id);
           (b.participants || []).forEach((p: any) => {
             if (p.friend_id) allFriendIds.add(p.friend_id);
@@ -84,7 +92,7 @@ export function Home({
           });
         }
 
-        const enriched = rawBills.map((b: any) => ({
+        const enriched = myBills.map((b: any) => ({
           ...b,
           participants: (b.participants || []).map((p: any) => ({
             ...p,
