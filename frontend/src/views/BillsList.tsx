@@ -246,14 +246,16 @@ export function BillsList({ onBillClick }: BillsListProps) {
                       <span className="text-[12px] font-semibold">{displayStatus}</span>
                     </div>
 
-                    {/* Quick Delete Button on Card */}
-                    <button
-                      onClick={(e) => handleInitiateDeleteBill(bill, e)}
-                      title={isCreator ? "Delete Bill" : (displayStatus === 'Settled' ? "Remove Bill" : "Unsettled bill")}
-                      className="w-7 h-7 rounded-full bg-[#EDEDF1] dark:bg-zinc-800 flex items-center justify-center text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40 active:scale-95 transition-all shadow-xs cursor-pointer"
-                    >
-                      <Trash2 size={13} strokeWidth={2.2} />
-                    </button>
+                    {/* Quick Delete Button on Card - Only show if creator or settled */}
+                    {(isCreator || displayStatus === 'Settled') && (
+                      <button
+                        onClick={(e) => handleInitiateDeleteBill(bill, e)}
+                        title={isCreator ? "Delete Bill" : "Remove Bill"}
+                        className="w-7 h-7 rounded-full bg-[#EDEDF1] dark:bg-zinc-800 flex items-center justify-center text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40 active:scale-95 transition-all shadow-xs cursor-pointer"
+                      >
+                        <Trash2 size={13} strokeWidth={2.2} />
+                      </button>
+                    )}
                   </div>
                 </div>
 

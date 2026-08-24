@@ -345,18 +345,20 @@ export function BillDetail({ onBack, billId }: BillDetailProps) {
                 <span className="text-[12px] font-semibold">{isFullySettled ? 'Settled' : 'Pending'}</span>
               </div>
 
-              {/* Delete / Remove Action Button */}
-              <button
-                onClick={() => {
-                  setDeleteErrorMessage(null);
-                  setIsDeleteModalOpen(true);
-                }}
-                title={isCreator ? "Delete Bill" : (isFullySettled ? "Remove Bill" : "Cannot delete unsettled bill")}
-                className="h-9 px-3 rounded-[30px] bg-red-500/10 hover:bg-red-600 text-red-600 hover:text-white dark:bg-red-950/40 dark:hover:bg-red-600 dark:text-red-400 dark:hover:text-white border border-red-500/30 flex items-center gap-1.5 text-xs font-semibold active:scale-95 transition-all shadow-xs cursor-pointer"
-              >
-                <Trash2 size={15} strokeWidth={2.2} />
-                <span>{isCreator ? "Delete" : "Remove"}</span>
-              </button>
+              {/* Delete / Remove Action Button - Only show if creator or fully settled */}
+              {(isCreator || isFullySettled) && (
+                <button
+                  onClick={() => {
+                    setDeleteErrorMessage(null);
+                    setIsDeleteModalOpen(true);
+                  }}
+                  title={isCreator ? "Delete Bill" : "Remove Bill"}
+                  className="h-9 px-3 rounded-[30px] bg-red-500/10 hover:bg-red-600 text-red-600 hover:text-white dark:bg-red-950/40 dark:hover:bg-red-600 dark:text-red-400 dark:hover:text-white border border-red-500/30 flex items-center gap-1.5 text-xs font-semibold active:scale-95 transition-all shadow-xs cursor-pointer"
+                >
+                  <Trash2 size={15} strokeWidth={2.2} />
+                  <span>{isCreator ? "Delete" : "Remove"}</span>
+                </button>
+              )}
             </div>
           </div>
           
@@ -443,28 +445,21 @@ export function BillDetail({ onBack, billId }: BillDetailProps) {
            <div className="text-[#1A1A1A] dark:text-zinc-100 text-[28px] font-bold font-display">LKR {bill.total}</div>
         </div>
 
-        {/* Prominent Danger Zone: Delete Bill Button at Bottom */}
-        <div className="px-6 md:px-0 mt-12 mb-6 flex flex-col items-center">
-          <button
-            onClick={() => {
-              setDeleteErrorMessage(null);
-              setIsDeleteModalOpen(true);
-            }}
-            className={`w-full max-w-sm py-3.5 px-6 rounded-[25px] font-semibold text-sm flex items-center justify-center gap-2 cursor-pointer active:scale-95 transition-all shadow-sm ${
-              isCreator
-                ? 'bg-red-50 dark:bg-red-950/30 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800/50 hover:bg-red-600 hover:text-white dark:hover:bg-red-600 dark:hover:text-white'
-                : isFullySettled
-                ? 'bg-red-50 dark:bg-red-950/30 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800/50 hover:bg-red-600 hover:text-white dark:hover:bg-red-600 dark:hover:text-white'
-                : 'bg-zinc-200 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 hover:bg-red-50 hover:text-red-600'
-            }`}
-          >
-            <Trash2 size={16} />
-            <span>{isCreator ? 'Delete Bill' : isFullySettled ? 'Remove Settled Bill' : 'Delete Bill (Unsettled)'}</span>
-          </button>
-          {!isCreator && !isFullySettled && (
-            <span className="text-zinc-400 text-xs mt-2">Only the bill creator can delete this unsettled bill</span>
-          )}
-        </div>
+        {/* Delete / Remove Bill Button at Bottom - Only show if creator or fully settled */}
+        {(isCreator || isFullySettled) && (
+          <div className="px-6 md:px-0 mt-12 mb-6 flex flex-col items-center">
+            <button
+              onClick={() => {
+                setDeleteErrorMessage(null);
+                setIsDeleteModalOpen(true);
+              }}
+              className="w-full max-w-sm py-3.5 px-6 rounded-[25px] font-semibold text-sm flex items-center justify-center gap-2 cursor-pointer active:scale-95 transition-all shadow-sm bg-red-50 dark:bg-red-950/30 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800/50 hover:bg-red-600 hover:text-white dark:hover:bg-red-600 dark:hover:text-white"
+            >
+              <Trash2 size={16} />
+              <span>{isCreator ? 'Delete Bill' : 'Remove Settled Bill'}</span>
+            </button>
+          </div>
+        )}
 
       </div>
 

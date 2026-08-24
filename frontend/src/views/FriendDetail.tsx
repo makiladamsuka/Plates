@@ -140,18 +140,20 @@ export function FriendDetail({ session, friendId, onBack, onBillClick }: FriendD
               <ChevronLeft size={32} strokeWidth={2.5} />
             </button>
 
-            {/* Delete Friend Action Button in Header */}
-            <button
-              onClick={() => {
-                setDeleteErrorMessage(null);
-                setIsDeleteModalOpen(true);
-              }}
-              title="Remove Friend"
-              className="h-9 px-3.5 rounded-[30px] bg-red-500/10 hover:bg-red-600 text-red-600 hover:text-white dark:bg-red-950/40 dark:hover:bg-red-600 dark:text-red-400 dark:hover:text-white border border-red-500/30 flex items-center gap-1.5 text-xs font-semibold active:scale-95 transition-all shadow-xs cursor-pointer"
-            >
-              <Trash2 size={15} strokeWidth={2.2} />
-              <span>Remove Friend</span>
-            </button>
+            {/* Delete Friend Action Button in Header - Only show if all bills settled */}
+            {!hasUnsettledBills && (
+              <button
+                onClick={() => {
+                  setDeleteErrorMessage(null);
+                  setIsDeleteModalOpen(true);
+                }}
+                title="Remove Friend"
+                className="h-9 px-3.5 rounded-[30px] bg-red-500/10 hover:bg-red-600 text-red-600 hover:text-white dark:bg-red-950/40 dark:hover:bg-red-600 dark:text-red-400 dark:hover:text-white border border-red-500/30 flex items-center gap-1.5 text-xs font-semibold active:scale-95 transition-all shadow-xs cursor-pointer"
+              >
+                <Trash2 size={15} strokeWidth={2.2} />
+                <span>Remove Friend</span>
+              </button>
+            )}
           </div>
 
           <div className="flex justify-between items-start">
@@ -233,26 +235,21 @@ export function FriendDetail({ session, friendId, onBack, onBillClick }: FriendD
           )}
         </div>
 
-        {/* Prominent Danger Zone: Remove Friend Button at Bottom */}
-        <div className="px-6 md:px-0 mt-12 mb-6 flex flex-col items-center">
-          <button
-            onClick={() => {
-              setDeleteErrorMessage(null);
-              setIsDeleteModalOpen(true);
-            }}
-            className={`w-full max-w-sm py-3.5 px-6 rounded-[25px] font-semibold text-sm flex items-center justify-center gap-2 cursor-pointer active:scale-95 transition-all shadow-sm ${
-              hasUnsettledBills
-                ? 'bg-zinc-200 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 hover:bg-red-50 hover:text-red-600'
-                : 'bg-red-50 dark:bg-red-950/30 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800/50 hover:bg-red-600 hover:text-white dark:hover:bg-red-600 dark:hover:text-white'
-            }`}
-          >
-            <Trash2 size={16} />
-            <span>Remove Friend</span>
-          </button>
-          {hasUnsettledBills && (
-            <span className="text-zinc-400 text-xs mt-2 text-center">Cannot remove friend with unsettled bills</span>
-          )}
-        </div>
+        {/* Remove Friend Button at Bottom - Only show if all bills settled */}
+        {!hasUnsettledBills && (
+          <div className="px-6 md:px-0 mt-12 mb-6 flex flex-col items-center">
+            <button
+              onClick={() => {
+                setDeleteErrorMessage(null);
+                setIsDeleteModalOpen(true);
+              }}
+              className="w-full max-w-sm py-3.5 px-6 rounded-[25px] font-semibold text-sm flex items-center justify-center gap-2 cursor-pointer active:scale-95 transition-all shadow-sm bg-red-50 dark:bg-red-950/30 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800/50 hover:bg-red-600 hover:text-white dark:hover:bg-red-600 dark:hover:text-white"
+            >
+              <Trash2 size={16} />
+              <span>Remove Friend</span>
+            </button>
+          </div>
+        )}
 
       </div>
 
