@@ -52,12 +52,12 @@ export function ConfirmTransferModal({ isOpen, onClose, onConfirm, amount, usern
     const thumbWidth = 50;
     const maxX = trackRect.width - thumbWidth - 12;
     
-    // If slid past 25%, auto-slide the rest of the way and confirm
+    // If slid past 25%, confirm it!
     if (slideProgress > maxX * 0.25) {
       setSlideProgress(maxX);
       setTimeout(() => {
         onConfirm();
-      }, 250);
+      }, 50);
     } else {
       // Snap back to start
       setSlideProgress(12);

@@ -39,7 +39,7 @@ function App() {
   const knownFriendRequestIdsRef = useRef<Set<string>>(new Set());
   const knownBillRequestIdsRef = useRef<Set<string>>(new Set());
   const knownPaymentConfirmationIdsRef = useRef<Set<string>>(new Set());
-  const isShowingModalRef = useRef<boolean>(false);
+  const isInitializedBaselineRef = useRef<boolean>(false);
 
   // Settings view state
   const [settingsView, setSettingsView] = useState<'main' | 'account'>('main');
@@ -102,7 +102,6 @@ function App() {
     if (!uid) return;
 
     const checkLiveIncoming = async () => {
-      if (isShowingModalRef.current) return;
       try {
         // 1. Check incoming friend requests
         const { data: rawPendingFriends, error: friendErr } = await supabase
@@ -112,32 +111,30 @@ function App() {
           .eq('status', 'pending');
 
         if (!friendErr && rawPendingFriends) {
-          // Live check: find newly arrived requests
-          for (const f of rawPendingFriends) {
-            if (!knownFriendRequestIdsRef.current.has(f.user_id)) {
-              const { data: prof } = await supabase
-                .from('profiles')
-                .select('id, full_name, avatar_url, email')
-                .eq('id', f.user_id)
-                .maybeSingle();
+            for (const f of rawPendingFriends) {
+              if (!knownFriendRequestIdsRef.current.has(f.user_id)) {
+                const { data: prof } = await supabase
+                  .from('profiles')
+                  .select('id, full_name, avatar_url, email')
+                  .eq('id', f.user_id)
+                  .maybeSingle();
 
-              const friendData = {
-                id: prof?.id || f.user_id,
-                name: prof?.full_name || 'Friend',
-                username: prof?.email || '',
-                avatar_url: prof?.avatar_url,
-                isPendingRequest: true,
-              };
+                const friendData = {
+                  id: prof?.id || f.user_id,
+                  name: prof?.full_name || 'Friend',
+                  username: prof?.email || '',
+                  avatar_url: prof?.avatar_url,
+                  isPendingRequest: true,
+                };
 
-              knownFriendRequestIdsRef.current.add(f.user_id);
-              playNotificationChime();
+                knownFriendRequestIdsRef.current.add(f.user_id);
+                playNotificationChime();
 
-              // Instantly pop up the bottom sheet instead of the top toast
-              isShowingModalRef.current = true;
-              setReviewingFriend(friendData);
-              break; // Show one popup at a time
+                // Instantly pop up the bottom sheet instead of the top toast
+                setReviewingFriend(friendData);
+                break; // Show one popup at a time
+              }
             }
-          }
         }
 
         // 2. Check incoming bill requests
@@ -148,9 +145,9 @@ function App() {
           .or('accepted.eq.false,accepted.is.null');
 
         if (!billErr && rawPendingBills) {
-          for (const p of rawPendingBills) {
-            if (!knownBillRequestIdsRef.current.has(p.bill_id)) {
-              try {
+            for (const p of rawPendingBills) {
+              if (!knownBillRequestIdsRef.current.has(p.bill_id)) {
+                try {
                   const { data: billData } = await supabase
                     .from('bills')
                     .select('*, participants(*)')
@@ -170,17 +167,7 @@ function App() {
                     knownBillRequestIdsRef.current.add(p.bill_id);
                     playNotificationChime();
 
-                    isShowingModalRef.current = true;
-                    setActiveLiveAlert({
-                      id: `bill-${billData.id}`,
-                      type: 'bill',
-                      title: billData.title || 'New Bill Request',
-                      subtitle: `From ${creatorName} · Your share: LKR ${myShare}`,
-                      amount: myShare,
-                      avatarUrl: creatorProf?.avatar_url,
-                      name: creatorName,
-                      rawData: { bill: billData },
-                    });
+                    setReviewingBill(billData);
                     break;
                   }
                 } catch (e) {
@@ -188,7 +175,6 @@ function App() {
                 }
               }
             }
-          }
         }
 
         // 3. Check incoming payments sent to creator's bills
@@ -215,17 +201,7 @@ function App() {
                   const senderName = senderProf?.full_name || senderProf?.email || 'A friend';
 
                   playNotificationChime();
-                  isShowingModalRef.current = true;
-                  setActiveLiveAlert({
-                    id: `payment-${key}`,
-                    type: 'payment_received',
-                    title: `${senderName} sent payment`,
-                    subtitle: `LKR ${p.share} for "${b.title}" · Confirm receipt?`,
-                    amount: p.share,
-                    avatarUrl: senderProf?.avatar_url,
-                    name: senderName,
-                    rawData: { billId: b.id, friendId: p.friend_id, bill: b },
-                  });
+                  setReviewingBill(b);
                   break;
                 }
               }
@@ -233,6 +209,7 @@ function App() {
           }
         }
 
+        isInitializedBaselineRef.current = true;
       } catch (err) {
         console.error('Error checking live incoming requests:', err);
       }
@@ -464,19 +441,13 @@ function App() {
         alert={activeLiveAlert}
         onAccept={handleLiveAccept}
         onReview={handleLiveReview}
-        onDismiss={() => {
-          setActiveLiveAlert(null);
-          isShowingModalRef.current = false;
-        }}
+        onDismiss={() => setActiveLiveAlert(null)}
       />
 
       {/* Review Modals triggered from Live Popup */}
       <IncomingBillModal 
         isOpen={!!reviewingBill}
-        onClose={() => {
-          setReviewingBill(null);
-          isShowingModalRef.current = false;
-        }}
+        onClose={() => setReviewingBill(null)}
         bill={reviewingBill}
         userId={session?.user?.id || ''}
       />
@@ -518,12 +489,7 @@ function App() {
               console.error(e);
             }
             setReviewingFriend(null);
-            isShowingModalRef.current = false;
           }
-        }}
-        onClose={() => {
-          setReviewingFriend(null);
-          isShowingModalRef.current = false;
         }}
         friend={reviewingFriend || undefined}
       />
