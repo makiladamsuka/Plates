@@ -56,7 +56,7 @@ export function ConfirmTransferModal({ isOpen, onClose, onConfirm, amount, usern
       setSlideProgress(maxX);
       setTimeout(() => {
         onConfirm();
-      }, 300);
+      }, 50);
     } else {
       // Snap back to start
       setSlideProgress(12);

@@ -1,10 +1,6 @@
 import { useState, useEffect } from 'react';
-<<<<<<< Updated upstream
-import { ArrowUpRight, ArrowDownLeft, Check, X, Trash2 } from 'lucide-react';
-=======
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { ArrowUpRight, ArrowDownLeft, Check, X } from 'lucide-react';
->>>>>>> Stashed changes
+import { ArrowUpRight, ArrowDownLeft, Check, X, Trash2 } from 'lucide-react';
 import { IncomingFriendRequestModal } from '../components/IncomingFriendRequestModal';
 import { DeleteConfirmationModal } from '../components/DeleteConfirmationModal';
 import { supabase } from '../lib/supabase';
@@ -23,19 +19,11 @@ export function FriendsList({
 }: FriendsListProps) {
   const [activeTab, setActiveTab] = useState<'all' | 'pending'>('all');
   const [incomingFriend, setIncomingFriend] = useState<any>(null);
-<<<<<<< Updated upstream
-  const [acceptedFriends, setAcceptedFriends] = useState<any[]>([]);
-  const [pendingRequests, setPendingRequests] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-
   // Deletion Modal State
   const [selectedDeleteFriend, setSelectedDeleteFriend] = useState<any>(null);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isDeletingFriend, setIsDeletingFriend] = useState(false);
   const [deleteBlockedReason, setDeleteBlockedReason] = useState<string | null>(null);
-
-=======
->>>>>>> Stashed changes
   useEffect(() => {
     // Real-time listener for friends changes
     const channel = supabase
@@ -107,7 +95,9 @@ export function FriendsList({
       
       return { accepted, pending };
     },
-    enabled: !!session?.user?.id
+    enabled: !!session?.user?.id,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 10 * 60 * 1000 // 10 minutes
   });
 
   const acceptedFriends = data?.accepted || [];

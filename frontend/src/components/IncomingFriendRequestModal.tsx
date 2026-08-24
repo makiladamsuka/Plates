@@ -62,7 +62,7 @@ export function IncomingFriendRequestModal({
       setSlideProgress(maxX);
       setTimeout(() => {
         onApprove();
-      }, 300);
+      }, 50);
     } else {
       // Snap back to start
       setSlideProgress(0);
