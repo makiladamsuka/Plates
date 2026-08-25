@@ -150,7 +150,7 @@ export function BillDetail({ onBack, billId, session }: BillDetailProps) {
     }
   }, [billId]);
 
-  if (loading) return <div className="min-h-screen bg-[#EDEDF1] flex items-center justify-center font-['Sora']">Loading...</div>;
+  if (loading) return <div className="min-h-screen bg-[#EDEDF1] dark:bg-zinc-950 flex items-center justify-center font-['Sora'] text-black dark:text-zinc-100 transition-colors">Loading...</div>;
 
   if (!bill) {
     return (
