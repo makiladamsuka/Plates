@@ -232,19 +232,7 @@ function App() {
     if (activeLiveAlert.type === 'friend') {
       const requesterId = activeLiveAlert.rawData.requesterId;
       try {
-        await supabase
-          .from('friends')
-          .update({ status: 'accepted' })
-          .eq('user_id', requesterId)
-          .eq('friend_id', uid);
-
-        await supabase
-          .from('friends')
-          .upsert({
-            user_id: uid,
-            friend_id: requesterId,
-            status: 'accepted',
-          }, { onConflict: 'user_id,friend_id' });
+        await api.acceptFriend(requesterId, uid);
       } catch (err) {
         console.error('Error accepting friend live:', err);
       }
@@ -441,19 +429,7 @@ function App() {
         onApprove={async () => {
           if (reviewingFriend && session?.user?.id) {
             try {
-              await supabase
-                .from('friends')
-                .update({ status: 'accepted' })
-                .eq('user_id', reviewingFriend.id)
-                .eq('friend_id', session.user.id);
-
-              await supabase
-                .from('friends')
-                .upsert({
-                  user_id: session.user.id,
-                  friend_id: reviewingFriend.id,
-                  status: 'accepted',
-                }, { onConflict: 'user_id,friend_id' });
+              await api.acceptFriend(reviewingFriend.id, session.user.id);
             } catch (e) {
               console.error(e);
             }

@@ -182,21 +182,7 @@ export function FriendsList({
 
   const acceptMutation = useMutation({
     mutationFn: async (requesterId: string) => {
-      // Step A: Mark incoming request as accepted
-      await supabase
-        .from('friends')
-        .update({ status: 'accepted' })
-        .eq('user_id', requesterId)
-        .eq('friend_id', session.user.id);
-
-      // Step B: Insert reciprocal relationship so current user sees requester in their friends list
-      await supabase
-        .from('friends')
-        .upsert({
-          user_id: session.user.id,
-          friend_id: requesterId,
-          status: 'accepted'
-        }, { onConflict: 'user_id,friend_id' });
+      await api.acceptFriend(requesterId, session.user.id);
     },
     onMutate: async (requesterId) => {
       // Cancel any outgoing refetches (so they don't overwrite our optimistic update)

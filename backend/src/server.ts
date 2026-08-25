@@ -576,6 +576,40 @@ app.post('/api/friends', async (req, res) => {
     handleError(res, err);
   }
 });
+// Accept a friend request
+app.post('/api/friends/accept', async (req, res) => {
+  try {
+    const { requesterId, friendId } = req.body;
+    
+    if (!requesterId || !friendId) {
+      return res.status(400).json({ error: 'requesterId and friendId are required' });
+    }
+
+    // Mark original request as accepted
+    const { error: e1 } = await supabase
+      .from('friends')
+      .update({ status: 'accepted' })
+      .eq('user_id', requesterId)
+      .eq('friend_id', friendId);
+
+    if (e1) throw e1;
+
+    // Create reciprocal relationship
+    const { error: e2 } = await supabase
+      .from('friends')
+      .upsert({
+        user_id: friendId,
+        friend_id: requesterId,
+        status: 'accepted'
+      }, { onConflict: 'user_id,friend_id' });
+
+    if (e2) throw e2;
+
+    res.json({ message: 'Friend request accepted successfully' });
+  } catch (err: any) {
+    handleError(res, err);
+  }
+});
 
 // Remove a friend (Only allowed if all shared bills are settled)
 app.delete('/api/friends', async (req, res) => {

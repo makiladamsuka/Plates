@@ -134,6 +134,20 @@ export const api = {
     return res.json();
   },
 
+  acceptFriend: async (requesterId: string, friendId: string) => {
+    const headers = await getAuthHeaders();
+    const res = await fetch(`${API_URL}/friends/accept`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ requesterId, friendId }),
+    });
+    if (!res.ok) {
+      const errJson = await res.json().catch(() => ({}));
+      throw new Error(errJson.error || 'Failed to accept friend request');
+    }
+    return res.json();
+  },
+
   deleteFriend: async (userId: string, friendId: string) => {
     const headers = await getAuthHeaders();
     const res = await fetch(`${API_URL}/friends`, {

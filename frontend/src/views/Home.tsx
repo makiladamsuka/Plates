@@ -155,21 +155,7 @@ export function Home({
     if (!uid) return;
 
     try {
-      // 1. Mark incoming request as accepted
-      await supabase
-        .from('friends')
-        .update({ status: 'accepted' })
-        .eq('user_id', requesterId)
-        .eq('friend_id', uid);
-
-      // 2. Insert reciprocal friendship
-      await supabase
-        .from('friends')
-        .upsert({
-          user_id: uid,
-          friend_id: requesterId,
-          status: 'accepted'
-        }, { onConflict: 'user_id,friend_id' });
+      await api.acceptFriend(requesterId, uid);
 
       setSelectedIncomingFriend(null);
       fetchPendingFriends(uid);
