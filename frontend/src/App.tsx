@@ -155,12 +155,6 @@ function App() {
                     .maybeSingle();
 
                   if (billData && billData.id && billData.creator_id !== uid) {
-                    const { data: creatorProf } = await supabase
-                      .from('profiles')
-                      .select('full_name, avatar_url, email')
-                      .eq('id', billData.creator_id)
-                      .maybeSingle();
-
                     knownBillRequestIdsRef.current.add(p.bill_id);
                     playNotificationChime();
 
