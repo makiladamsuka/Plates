@@ -456,7 +456,7 @@ export function NewBillModal({ isOpen, onClose, onSuccess, session: propSession 
 
                   return (
                     <div key={participant.id} className="flex items-center justify-between w-full">
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-3 min-w-0">
                         {participant.avatar_url ? (
                           <img 
                             src={participant.avatar_url} 
@@ -468,9 +468,9 @@ export function NewBillModal({ isOpen, onClose, onSuccess, session: propSession 
                             {initial}
                           </div>
                         )}
-                        <div className="flex flex-col">
-                          <span className="text-[#1A1A1A] text-sm font-semibold leading-tight">{participant.name}</span>
-                          <span className="text-black/60 text-[10px] font-normal">{participant.username}</span>
+                        <div className="flex flex-col min-w-0">
+                          <span className="text-[#1A1A1A] text-sm font-semibold leading-tight truncate">{participant.name}</span>
+                          <span className="text-black/60 text-[10px] font-normal truncate">{participant.username?.split('@')[0]}</span>
                         </div>
                       </div>
                       {isEditingSplits ? (
@@ -481,12 +481,12 @@ export function NewBillModal({ isOpen, onClose, onSuccess, session: propSession 
                             onChange={(e) => {
                               setCustomSplits(prev => ({...prev, [participant.id]: e.target.value}));
                             }}
-                            className={`w-24 text-right bg-transparent border-b ${participant.isCustom ? 'border-black font-semibold' : 'border-black/20'} outline-none text-[#1A1A1A] text-base no-spinners`}
+                            className={`w-32 text-right bg-transparent border-b ${participant.isCustom ? 'border-black font-semibold' : 'border-black/20'} outline-none text-[#1A1A1A] text-base no-spinners`}
                             onFocus={(e) => e.target.select()}
                           />
                         </div>
                       ) : (
-                        <span className="text-[#1A1A1A] text-base font-semibold">
+                        <span className="text-[#1A1A1A] text-base font-semibold whitespace-nowrap ml-2 shrink-0">
                           LKR {participant.share.toFixed(2)}
                         </span>
                       )}
