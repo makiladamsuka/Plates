@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { LogOut, ChevronRight, User as UserIcon, Moon, ChevronLeft, Edit3, Image as ImageIcon, Trash2 } from 'lucide-react';
+import { ChangeDPModal } from '../components/ChangeDPModal';
+import { ChangeNameModal } from '../components/ChangeNameModal';
 
 interface SettingsProps {
   session: any;
@@ -11,15 +13,39 @@ interface SettingsProps {
 
 export function Settings({ session, initialView = 'main', isDarkTheme = false, onThemeChange }: SettingsProps) {
   const [view, setView] = useState<'main' | 'account'>(initialView);
+  const [isChangeDPOpen, setIsChangeDPOpen] = useState(false);
+  const [isChangeNameOpen, setIsChangeNameOpen] = useState(false);
+
+  const user = session?.user;
+  const [fullName, setFullName] = useState<string>(() => user?.user_metadata?.full_name || user?.email || 'User');
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(() => user?.user_metadata?.avatar_url || null);
 
   // Sync internal state when initialView prop changes
   useEffect(() => {
     setView(initialView);
   }, [initialView]);
 
-  const user = session?.user;
-  const fullName = user?.user_metadata?.full_name || user?.email || 'User';
-  const avatarUrl = user?.user_metadata?.avatar_url;
+  // Fetch latest profile info from profiles table
+  useEffect(() => {
+    if (!user?.id) return;
+    const fetchProfile = async () => {
+      try {
+        const { data } = await supabase
+          .from('profiles')
+          .select('full_name, avatar_url')
+          .eq('id', user.id)
+          .maybeSingle();
+
+        if (data) {
+          if (data.full_name) setFullName(data.full_name);
+          if (data.avatar_url !== undefined) setAvatarUrl(data.avatar_url);
+        }
+      } catch (e) {
+        console.warn('Error fetching settings profile:', e);
+      }
+    };
+    fetchProfile();
+  }, [user?.id]);
 
   const handleLogout = async () => {
     try {
@@ -31,9 +57,11 @@ export function Settings({ session, initialView = 'main', isDarkTheme = false, o
     window.location.href = '/';
   };
 
+  const initial = (fullName || 'U').trim()[0]?.toUpperCase() || 'U';
+
   if (view === 'account') {
     return (
-      <div className="min-h-screen bg-[#EDEDF1] dark:bg-zinc-950 pb-32 pt-0 md:pt-6 transition-colors">
+      <div className="min-h-screen bg-[#EDEDF1] dark:bg-zinc-950 pb-32 pt-0 md:pt-6 transition-colors font-['Sora']">
         
         {/* Top Header Container */}
         <div className="px-6 pt-10 pb-4 h-[88px] flex items-center gap-2 max-w-[480px] md:max-w-2xl mx-auto md:px-0 md:hidden">
@@ -44,21 +72,33 @@ export function Settings({ session, initialView = 'main', isDarkTheme = false, o
         </div>
 
         <div className="max-w-[480px] md:max-w-2xl mx-auto px-5 md:px-10 flex flex-col gap-3 mt-2 md:pt-10">
-          <div className="bg-white dark:bg-zinc-900 rounded-[35px] p-8 flex flex-col items-center shadow-sm">
-            {avatarUrl ? (
-              <img src={avatarUrl} alt="Profile" className="w-24 h-24 rounded-full mb-4 object-cover" />
-            ) : (
-              <div className="w-24 h-24 bg-gray-200 dark:bg-zinc-800 rounded-full mb-4 flex items-center justify-center">
-                <span className="text-gray-500 dark:text-zinc-400 text-3xl">{fullName.charAt(0)}</span>
-              </div>
-            )}
+          <div className="bg-white dark:bg-zinc-900 rounded-[35px] p-8 flex flex-col items-center shadow-sm relative">
+            <div className="relative mb-4">
+              {avatarUrl ? (
+                <img src={avatarUrl} alt="Profile" className="w-24 h-24 rounded-full object-cover shadow-sm border border-black/10 dark:border-white/10" />
+              ) : (
+                <div className="w-24 h-24 bg-gradient-to-br from-amber-400 to-orange-500 rounded-full flex items-center justify-center shadow-sm">
+                  <span className="text-white text-3xl font-bold">{initial}</span>
+                </div>
+              )}
+              <button
+                onClick={() => setIsChangeDPOpen(true)}
+                title="Change Photo"
+                className="absolute bottom-0 right-0 bg-[#1A1A1A] dark:bg-zinc-100 text-white dark:text-zinc-900 p-2 rounded-full shadow-md hover:scale-105 active:scale-95 transition-transform cursor-pointer"
+              >
+                <ImageIcon size={14} />
+              </button>
+            </div>
             
             <h2 className="text-zinc-900 dark:text-zinc-100 text-2xl font-bold font-display mb-1 text-center">{fullName}</h2>
             <p className="text-gray-500 dark:text-zinc-400 text-sm">{user?.email}</p>
           </div>
 
         <div className="bg-white dark:bg-zinc-900 rounded-[35px] p-4 mb-6 flex flex-col gap-2">
-          <button className="w-full flex items-center justify-between p-4 hover:bg-gray-50 dark:hover:bg-zinc-800 rounded-[24px] transition-colors">
+          <button 
+            onClick={() => setIsChangeNameOpen(true)}
+            className="w-full flex items-center justify-between p-4 hover:bg-gray-50 dark:hover:bg-zinc-800 rounded-[24px] transition-colors cursor-pointer"
+          >
             <div className="flex items-center gap-4">
               <div className="w-10 h-10 rounded-full bg-gray-100 dark:bg-zinc-800 flex items-center justify-center">
                 <Edit3 size={18} className="text-gray-700 dark:text-zinc-300" />
@@ -68,7 +108,10 @@ export function Settings({ session, initialView = 'main', isDarkTheme = false, o
             <ChevronRight size={18} className="text-gray-400 dark:text-zinc-600" />
           </button>
           
-          <button className="w-full flex items-center justify-between p-4 hover:bg-gray-50 dark:hover:bg-zinc-800 rounded-[24px] transition-colors">
+          <button 
+            onClick={() => setIsChangeDPOpen(true)}
+            className="w-full flex items-center justify-between p-4 hover:bg-gray-50 dark:hover:bg-zinc-800 rounded-[24px] transition-colors cursor-pointer"
+          >
             <div className="flex items-center gap-4">
               <div className="w-10 h-10 rounded-full bg-gray-100 dark:bg-zinc-800 flex items-center justify-center">
                 <ImageIcon size={18} className="text-gray-700 dark:text-zinc-300" />
@@ -78,7 +121,10 @@ export function Settings({ session, initialView = 'main', isDarkTheme = false, o
             <ChevronRight size={18} className="text-gray-400 dark:text-zinc-600" />
           </button>
           
-          <button className="w-full flex items-center justify-between p-4 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-[24px] transition-colors group">
+          <button 
+            onClick={() => alert('To delete your account, please contact support at support@plates.live')}
+            className="w-full flex items-center justify-between p-4 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-[24px] transition-colors group cursor-pointer"
+          >
             <div className="flex items-center gap-4">
               <div className="w-10 h-10 rounded-full bg-red-50 dark:bg-red-900/30 group-hover:bg-red-100 dark:group-hover:bg-red-900/50 transition-colors flex items-center justify-center">
                 <Trash2 size={18} className="text-red-500 dark:text-red-400" />
@@ -91,12 +137,30 @@ export function Settings({ session, initialView = 'main', isDarkTheme = false, o
 
         <button 
           onClick={handleLogout}
-          className="w-full flex items-center justify-center gap-3 bg-white dark:bg-zinc-900 text-red-600 dark:text-red-500 hover:bg-gray-50 dark:hover:bg-zinc-800 transition-colors py-4 rounded-[35px]"
+          className="w-full flex items-center justify-center gap-3 bg-white dark:bg-zinc-900 text-red-600 dark:text-red-500 hover:bg-gray-50 dark:hover:bg-zinc-800 transition-colors py-4 rounded-[35px] cursor-pointer"
         >
           <LogOut size={18} />
           <span className="text-base font-semibold">Log Out</span>
         </button>
         </div>
+
+        {/* Change DP Modal */}
+        <ChangeDPModal
+          isOpen={isChangeDPOpen}
+          onClose={() => setIsChangeDPOpen(false)}
+          session={session}
+          currentAvatarUrl={avatarUrl}
+          onAvatarUpdated={(newUrl) => setAvatarUrl(newUrl)}
+        />
+
+        {/* Change Name Modal */}
+        <ChangeNameModal
+          isOpen={isChangeNameOpen}
+          onClose={() => setIsChangeNameOpen(false)}
+          session={session}
+          currentName={fullName}
+          onNameUpdated={(newName) => setFullName(newName)}
+        />
       </div>
     );
   }
