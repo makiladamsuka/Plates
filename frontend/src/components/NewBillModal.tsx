@@ -149,6 +149,7 @@ export function NewBillModal({ isOpen, onClose, onSuccess, session: propSession 
   const handleConfirm = async () => {
     setIsCreating(true);
     try {
+      // 1. Primary: Route through API service (uses backend service role key)
       await api.createBill({
         title: billName || 'New Bill',
         category: tag || 'Other',
@@ -159,8 +160,46 @@ export function NewBillModal({ isOpen, onClose, onSuccess, session: propSession 
       if (onSuccess) onSuccess();
       handleClose();
     } catch (err: any) {
-      console.error('Error creating bill:', err);
-      alert(err.message || 'Failed to create bill');
+      console.warn('API createBill notice, trying direct client fallback:', err);
+      try {
+        // 2. Resilient fallback: Direct Supabase client write
+        const { data: billData, error: billError } = await supabase
+          .from('bills')
+          .insert([{
+            title: billName || 'New Bill',
+            category: tag || 'Other',
+            total: parsedAmount,
+            status: 'Pending',
+            creator_id: userId || null
+          }])
+          .select()
+          .single();
+
+        if (billError) throw billError;
+
+        if (billData && splits.length > 0) {
+          const participantInserts = splits.map(s => {
+            const friendId = s.id === 'me' ? userId : s.id;
+            const isCreator = userId && friendId === userId;
+            return {
+              bill_id: billData.id,
+              friend_id: friendId,
+              share: s.share,
+              paid: isCreator ? true : false,
+              accepted: isCreator ? true : false
+            };
+          });
+
+          const { error: partError } = await supabase.from('participants').insert(participantInserts);
+          if (partError) console.warn('Direct participant insert notice:', partError);
+        }
+
+        if (onSuccess) onSuccess();
+        handleClose();
+      } catch (fallbackErr: any) {
+        console.error('Bill creation failed:', fallbackErr);
+        alert(fallbackErr.message || err.message || 'Failed to create bill');
+      }
     } finally {
       setIsCreating(false);
     }

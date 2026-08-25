@@ -10,5 +10,10 @@ if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
   console.warn('⚠️ [Backend] Warning: SUPABASE_SERVICE_ROLE_KEY is missing. Using anon key — RLS may block writes. Get the service role key from Supabase Dashboard → Settings → API.');
 }
 
-export const supabase = createClient(supabaseUrl, supabaseKey);
+export const supabase = createClient(supabaseUrl, supabaseKey, {
+  auth: {
+    persistSession: false,
+    autoRefreshToken: false,
+  },
+});
 
