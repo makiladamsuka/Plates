@@ -316,7 +316,7 @@ function App() {
       />
 
       {/* Main Content Area */}
-      <main className="flex-1 w-full max-w-[480px] md:max-w-full mx-auto md:mx-0 relative">
+      <main className="flex-1 w-full max-w-[480px] md:max-w-full mx-auto md:mx-0 relative md:px-8 lg:px-16 xl:px-24">
         {/* Views */}
         {currentTab === 'home' && (
         <Home 
