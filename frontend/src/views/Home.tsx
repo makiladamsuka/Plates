@@ -133,7 +133,7 @@ export function Home({
           .select('id, full_name, avatar_url, email')
           .in('id', requesterIds);
 
-        const pending = (profs || []).map((p: any) => ({
+        const pending = (profs || []).filter((p: any) => p && p.id).map((p: any) => ({
           id: p.id,
           name: p.full_name || 'Friend',
           username: p.email || '',

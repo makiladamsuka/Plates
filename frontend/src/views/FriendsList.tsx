@@ -58,7 +58,7 @@ export function FriendsList({
           .select('id, full_name, avatar_url, email')
           .in('id', friendIds);
         
-        accepted = (profs || []).map((p: any) => ({
+        accepted = (profs || []).filter((p: any) => p && p.id).map((p: any) => ({
           id: p.id,
           name: p.full_name || 'Friend',
           username: p.email || '',
@@ -83,7 +83,7 @@ export function FriendsList({
           .select('id, full_name, avatar_url, email')
           .in('id', requesterIds);
 
-        pending = (profs || []).map((p: any) => ({
+        pending = (profs || []).filter((p: any) => p && p.id).map((p: any) => ({
           id: p.id,
           name: p.full_name || 'User',
           username: p.email || '',

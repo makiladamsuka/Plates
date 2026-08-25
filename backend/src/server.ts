@@ -8,6 +8,7 @@ import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import { supabase } from './utils/supabase.js';
 import { authenticate } from './middleware/auth.js';
+import { createClient } from '@supabase/supabase-js';
 
 dotenv.config();
 
@@ -695,8 +696,16 @@ app.delete('/api/account', async (req, res) => {
       return res.status(400).json({ error: 'User ID is required' });
     }
 
+    const authHeader = req.headers.authorization;
+    const token = authHeader?.replace('Bearer ', '');
+    const supabaseUrl = process.env.SUPABASE_URL || 'https://rvxyaepqrvtmprfjhtld.supabase.co';
+    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY || 'sb_publishable_9h1vRM946kBiK5gBKZTUBQ_8DeObQYA';
+    const dbClient = token
+      ? createClient(supabaseUrl, supabaseKey, { global: { headers: { Authorization: `Bearer ${token}` } } })
+      : supabase;
+
     // 1. Fetch all bills involving this user
-    const { data: bills, error: billsErr } = await supabase
+    const { data: bills, error: billsErr } = await dbClient
       .from('bills')
       .select('id, title, status, creator_id, participants(*)');
 
@@ -736,21 +745,21 @@ app.delete('/api/account', async (req, res) => {
 
     // 3. Clean up database records
     // A. Delete user's participant entries in other bills
-    await supabase.from('participants').delete().eq('friend_id', effectiveUserId);
+    await dbClient.from('participants').delete().eq('friend_id', effectiveUserId);
 
     // B. Delete bills created by this user (and their participants)
     const userCreatedBillIds = (bills || []).filter((b: any) => b.creator_id === effectiveUserId).map((b: any) => b.id);
     if (userCreatedBillIds.length > 0) {
-      await supabase.from('participants').delete().in('bill_id', userCreatedBillIds);
-      await supabase.from('bills').delete().eq('creator_id', effectiveUserId);
+      await dbClient.from('participants').delete().in('bill_id', userCreatedBillIds);
+      await dbClient.from('bills').delete().eq('creator_id', effectiveUserId);
     }
 
     // C. Delete all friend relationships (both directions)
-    await supabase.from('friends').delete().eq('user_id', effectiveUserId);
-    await supabase.from('friends').delete().eq('friend_id', effectiveUserId);
+    await dbClient.from('friends').delete().eq('user_id', effectiveUserId);
+    await dbClient.from('friends').delete().eq('friend_id', effectiveUserId);
 
     // D. Delete profile from profiles table
-    await supabase.from('profiles').delete().eq('id', effectiveUserId);
+    await dbClient.from('profiles').delete().eq('id', effectiveUserId);
 
     // E. Attempt Supabase Auth admin delete if available
     try {
