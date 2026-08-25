@@ -475,7 +475,6 @@ export function NewBillModal({ isOpen, onClose, onSuccess, session: propSession 
                       </div>
                       {isEditingSplits ? (
                         <div className="flex items-center">
-                          <span className="text-[#1A1A1A] text-base font-medium mr-1">LKR</span>
                           <input 
                             type="number" 
                             value={customSplits[participant.id] !== undefined ? customSplits[participant.id] : participant.share.toFixed(2)}
