@@ -1,5 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
+import { syncUserProfile } from '../lib/profileSync';
+
+const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || '201004734198-3r780q0v3irrd2cbijaj2onq06dqkpq6.apps.googleusercontent.com';
 
 // List of background / hero images located in public/welcome-heroes/
 // You can add more image paths here as you paste new photos (.jpeg, .jpg, .png) into public/welcome-heroes/
@@ -18,25 +21,83 @@ export function Login() {
     return HERO_IMAGES[randomIndex];
   });
 
+  const handleIdTokenResponse = useCallback(async (response: any) => {
+    if (!response?.credential) return;
+    try {
+      setIsLoading(true);
+      setError(null);
+      const { data, error } = await supabase.auth.signInWithIdToken({
+        provider: 'google',
+        token: response.credential,
+      });
+      if (error) throw error;
+      if (data?.session?.user) {
+        await syncUserProfile(data.session.user);
+        window.location.href = '/';
+      }
+    } catch (err: any) {
+      setError(err.message || 'Failed to authenticate with Google.');
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    const initGsi = () => {
+      if (typeof window !== 'undefined' && (window as any).google?.accounts?.id) {
+        try {
+          (window as any).google.accounts.id.initialize({
+            client_id: GOOGLE_CLIENT_ID,
+            callback: handleIdTokenResponse,
+            auto_select: false,
+            cancel_on_tap_outside: true,
+          });
+        } catch (err) {
+          console.warn('Google Identity initialization notice:', err);
+        }
+      }
+    };
+
+    initGsi();
+    const timer = setTimeout(initGsi, 500);
+    return () => clearTimeout(timer);
+  }, [handleIdTokenResponse]);
+
+  const fallbackOAuth = async () => {
+    const redirectUrl = `${window.location.origin}/auth/callback`;
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: redirectUrl,
+        queryParams: {
+          prompt: 'select_account',
+          access_type: 'offline',
+        },
+      },
+    });
+    if (error) throw error;
+  };
+
   const handleGoogleLogin = async () => {
     try {
       setIsLoading(true);
       setError(null);
-      const redirectUrl = `${window.location.origin}/auth/callback`;
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: redirectUrl,
-          queryParams: {
-            prompt: 'select_account',
-            access_type: 'offline',
-          },
-        },
-      });
-      if (error) throw error;
+
+      if ((window as any).google?.accounts?.id) {
+        (window as any).google.accounts.id.prompt((notification: any) => {
+          if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
+            fallbackOAuth().catch((err: any) => {
+              setError(err.message || 'An error occurred during login.');
+              setIsLoading(false);
+            });
+          }
+        });
+        return;
+      }
+
+      await fallbackOAuth();
     } catch (err: any) {
       setError(err.message || 'An error occurred during login.');
-    } finally {
       setIsLoading(false);
     }
   };
