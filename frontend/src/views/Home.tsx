@@ -527,7 +527,7 @@ export function Home({
                         {displayStatus}
                       </span>
                       <span className="text-[#1A1A1A] dark:text-zinc-100 text-base font-extrabold tracking-tight whitespace-nowrap">
-                        LKR {bill.total}
+                        LKR&nbsp;{bill.total}
                       </span>
                     </div>
                     <div className="flex -space-x-1.5">

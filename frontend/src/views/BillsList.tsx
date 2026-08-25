@@ -304,7 +304,7 @@ export function BillsList({ onBillClick, session }: BillsListProps) {
                         );
                       })}
                     </div>
-                    <span className="text-[#1A1A1A] dark:text-zinc-100 text-2xl font-semibold whitespace-nowrap">LKR {bill.total}</span>
+                    <span className="text-[#1A1A1A] dark:text-zinc-100 text-2xl font-semibold whitespace-nowrap">LKR&nbsp;{bill.total}</span>
                   </div>
                 </div>
               </div>
