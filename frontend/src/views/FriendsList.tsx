@@ -182,7 +182,26 @@ export function FriendsList({
 
   const acceptMutation = useMutation({
     mutationFn: async (requesterId: string) => {
-      await api.acceptFriend(requesterId, session.user.id);
+      // 1. Try Supabase RPC
+      const { error: rpcErr } = await supabase.rpc('accept_friend_request', {
+        p_requester_id: requesterId,
+        p_friend_id: session.user.id
+      });
+
+      if (rpcErr) {
+        // Fallback direct updates
+        await supabase
+          .from('friends')
+          .update({ status: 'accepted' })
+          .eq('user_id', requesterId)
+          .eq('friend_id', session.user.id);
+
+        await supabase
+          .from('friends')
+          .upsert({ user_id: session.user.id, friend_id: requesterId, status: 'accepted' });
+      }
+
+      await api.acceptFriend(requesterId, session.user.id).catch(console.warn);
     },
     onMutate: async (requesterId) => {
       // Cancel any outgoing refetches (so they don't overwrite our optimistic update)

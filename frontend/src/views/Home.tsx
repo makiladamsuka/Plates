@@ -154,14 +154,38 @@ export function Home({
     const uid = await getActiveUserId();
     if (!uid) return;
 
-    try {
-      await api.acceptFriend(requesterId, uid);
+    // Optimistic UI update: remove request immediately so it disappears with zero delay
+    setPendingFriendRequests(prev => prev.filter(r => r.id !== requesterId));
+    setSelectedIncomingFriend(null);
 
-      setSelectedIncomingFriend(null);
+    try {
+      // 1. Try Supabase RPC first
+      const { error: rpcErr } = await supabase.rpc('accept_friend_request', {
+        p_requester_id: requesterId,
+        p_friend_id: uid
+      });
+
+      if (rpcErr) {
+        // Fallback: direct table updates
+        await supabase
+          .from('friends')
+          .update({ status: 'accepted' })
+          .eq('user_id', requesterId)
+          .eq('friend_id', uid);
+
+        await supabase
+          .from('friends')
+          .upsert({ user_id: uid, friend_id: requesterId, status: 'accepted' });
+      }
+
+      // Background API sync
+      api.acceptFriend(requesterId, uid).catch(console.warn);
+
       fetchPendingFriends(uid);
       onApproveFriend?.(requesterId);
     } catch (err) {
       console.error('Error approving friend request:', err);
+      fetchPendingFriends(uid);
     }
   };
 

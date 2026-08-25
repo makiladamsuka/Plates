@@ -101,25 +101,29 @@ export function Settings({ session, initialView = 'main', isDarkTheme = false, o
     setIsDeleting(true);
     try {
       const userId = user.id;
+      // 1. Try Supabase RPC function first
+      const { error: rpcErr } = await supabase.rpc('delete_user_account', { p_user_id: userId });
 
-      // 1. Direct client-authenticated cleanup (where auth.uid() == userId satisfies Supabase RLS)
-      // A. Delete friend records in both directions
-      await supabase.from('friends').delete().eq('user_id', userId);
-      await supabase.from('friends').delete().eq('friend_id', userId);
+      if (rpcErr) {
+        // Fallback: direct client-authenticated cleanup (where auth.uid() == userId satisfies Supabase RLS)
+        // A. Delete friend records in both directions
+        await supabase.from('friends').delete().eq('user_id', userId);
+        await supabase.from('friends').delete().eq('friend_id', userId);
 
-      // B. Delete participant entries where user is a participant
-      await supabase.from('participants').delete().eq('friend_id', userId);
+        // B. Delete participant entries where user is a participant
+        await supabase.from('participants').delete().eq('friend_id', userId);
 
-      // C. Delete bills created by user and their participant records
-      const { data: userBills } = await supabase.from('bills').select('id').eq('creator_id', userId);
-      if (userBills && userBills.length > 0) {
-        const billIds = userBills.map(b => b.id);
-        await supabase.from('participants').delete().in('bill_id', billIds);
-        await supabase.from('bills').delete().eq('creator_id', userId);
+        // C. Delete bills created by user and their participant records
+        const { data: userBills } = await supabase.from('bills').select('id').eq('creator_id', userId);
+        if (userBills && userBills.length > 0) {
+          const billIds = userBills.map(b => b.id);
+          await supabase.from('participants').delete().in('bill_id', billIds);
+          await supabase.from('bills').delete().eq('creator_id', userId);
+        }
+
+        // D. Delete profile from public.profiles
+        await supabase.from('profiles').delete().eq('id', userId);
       }
-
-      // D. Delete profile from public.profiles
-      await supabase.from('profiles').delete().eq('id', userId);
 
       // 2. Call backend for server-side auth deletion and secondary cleanup
       try {

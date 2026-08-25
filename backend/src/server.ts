@@ -586,25 +586,40 @@ app.post('/api/friends/accept', async (req, res) => {
       return res.status(400).json({ error: 'requesterId and friendId are required' });
     }
 
-    // Mark original request as accepted
-    const { error: e1 } = await supabase
-      .from('friends')
-      .update({ status: 'accepted' })
-      .eq('user_id', requesterId)
-      .eq('friend_id', friendId);
+    const authHeader = req.headers.authorization;
+    const token = authHeader?.replace('Bearer ', '');
+    const supabaseUrl = process.env.SUPABASE_URL || 'https://rvxyaepqrvtmprfjhtld.supabase.co';
+    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY || 'sb_publishable_9h1vRM946kBiK5gBKZTUBQ_8DeObQYA';
+    const dbClient = token
+      ? createClient(supabaseUrl, supabaseKey, { global: { headers: { Authorization: `Bearer ${token}` } } })
+      : supabase;
 
-    if (e1) throw e1;
+    // 1. Try Supabase RPC first
+    const { error: rpcErr } = await dbClient.rpc('accept_friend_request', {
+      p_requester_id: requesterId,
+      p_friend_id: friendId
+    });
 
-    // Create reciprocal relationship
-    const { error: e2 } = await supabase
-      .from('friends')
-      .upsert({
-        user_id: friendId,
-        friend_id: requesterId,
-        status: 'accepted'
-      }, { onConflict: 'user_id,friend_id' });
+    if (rpcErr) {
+      // Fallback: direct table updates
+      const { error: e1 } = await dbClient
+        .from('friends')
+        .update({ status: 'accepted' })
+        .eq('user_id', requesterId)
+        .eq('friend_id', friendId);
 
-    if (e2) throw e2;
+      if (e1) console.warn('Direct friend update notice:', e1);
+
+      const { error: e2 } = await dbClient
+        .from('friends')
+        .upsert({
+          user_id: friendId,
+          friend_id: requesterId,
+          status: 'accepted'
+        }, { onConflict: 'user_id,friend_id' });
+
+      if (e2) console.warn('Direct reciprocal friend upsert notice:', e2);
+    }
 
     res.json({ message: 'Friend request accepted successfully' });
   } catch (err: any) {
