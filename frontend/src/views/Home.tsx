@@ -473,8 +473,7 @@ export function Home({
           </div>
 
           <div
-            className="-mx-5 md:mx-0 flex gap-3.5 overflow-x-auto no-scrollbar pb-4 pt-1 snap-x snap-mandatory md:snap-none md:grid md:grid-cols-2 lg:grid-cols-3 md:gap-4 md:auto-rows-fr"
-            style={{ paddingLeft: '20px' }}
+            className="-mx-5 md:mx-0 px-5 md:px-0 flex gap-3.5 overflow-x-auto no-scrollbar pb-4 pt-1 snap-x snap-mandatory md:snap-none md:grid md:grid-cols-2 md:gap-4 md:auto-rows-fr"
           >
             {[...bills]
               .sort((a, b) => {
@@ -527,7 +526,7 @@ export function Home({
                       >
                         {displayStatus}
                       </span>
-                      <span className="text-[#1A1A1A] dark:text-zinc-100 text-base font-extrabold tracking-tight">
+                      <span className="text-[#1A1A1A] dark:text-zinc-100 text-base font-extrabold tracking-tight whitespace-nowrap">
                         LKR {bill.total}
                       </span>
                     </div>
