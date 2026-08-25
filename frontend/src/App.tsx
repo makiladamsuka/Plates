@@ -63,6 +63,44 @@ function App() {
     }
   }, [isDarkTheme]);
 
+  // Sync internal navigation state with browser history for hardware back button support
+  useEffect(() => {
+    if (!session) return; // Don't track history while logged out
+    
+    const stateObj = { 
+      currentTab, 
+      currentView, 
+      selectedBillId, 
+      friendsView, 
+      selectedFriendId, 
+      settingsView 
+    };
+    
+    const currentHistoryState = window.history.state;
+    
+    if (!currentHistoryState) {
+      window.history.replaceState(stateObj, '');
+    } else if (JSON.stringify(currentHistoryState) !== JSON.stringify(stateObj)) {
+      window.history.pushState(stateObj, '');
+    }
+  }, [currentTab, currentView, selectedBillId, friendsView, selectedFriendId, settingsView, session]);
+
+  // Handle system back button (popstate)
+  useEffect(() => {
+    const handlePopState = (event: PopStateEvent) => {
+      if (event.state) {
+        setCurrentTab(event.state.currentTab);
+        setCurrentView(event.state.currentView);
+        setSelectedBillId(event.state.selectedBillId);
+        setFriendsView(event.state.friendsView);
+        setSelectedFriendId(event.state.selectedFriendId);
+        setSettingsView(event.state.settingsView);
+      }
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
