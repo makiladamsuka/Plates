@@ -161,4 +161,18 @@ export const api = {
     }
     return res.json();
   },
+
+  deleteAccount: async (userId: string) => {
+    const headers = await getAuthHeaders();
+    const res = await fetch(`${API_URL}/account`, {
+      method: 'DELETE',
+      headers,
+      body: JSON.stringify({ userId }),
+    });
+    if (!res.ok) {
+      const errJson = await res.json().catch(() => ({}));
+      throw new Error(errJson.error || 'Failed to delete account');
+    }
+    return res.json();
+  },
 };

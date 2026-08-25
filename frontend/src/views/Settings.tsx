@@ -3,6 +3,8 @@ import { supabase } from '../lib/supabase';
 import { LogOut, ChevronRight, User as UserIcon, Moon, ChevronLeft, Edit3, Image as ImageIcon, Trash2 } from 'lucide-react';
 import { ChangeDPModal } from '../components/ChangeDPModal';
 import { ChangeNameModal } from '../components/ChangeNameModal';
+import { DeleteConfirmationModal } from '../components/DeleteConfirmationModal';
+import { api } from '../services/api';
 
 interface SettingsProps {
   session: any;
@@ -15,6 +17,9 @@ export function Settings({ session, initialView = 'main', isDarkTheme = false, o
   const [view, setView] = useState<'main' | 'account'>(initialView);
   const [isChangeDPOpen, setIsChangeDPOpen] = useState(false);
   const [isChangeNameOpen, setIsChangeNameOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [unsettledBillsCount, setUnsettledBillsCount] = useState(0);
 
   const user = session?.user;
   const [fullName, setFullName] = useState<string>(() => user?.user_metadata?.full_name || user?.email || 'User');
@@ -55,6 +60,59 @@ export function Settings({ session, initialView = 'main', isDarkTheme = false, o
     }
     window.history.replaceState({}, document.title, '/');
     window.location.href = '/';
+  };
+
+  const handleOpenDeleteModal = async () => {
+    if (!user?.id) return;
+    try {
+      // Check for any unsettled bills or unpaid shares
+      const { data: bills } = await supabase
+        .from('bills')
+        .select('id, status, creator_id, participants(*)');
+
+      const userBills = (bills || []).filter((b: any) => {
+        const parts = b.participants || [];
+        return b.creator_id === user.id || parts.some((p: any) => p.friend_id === user.id);
+      });
+
+      const unsettled = userBills.filter((b: any) => {
+        if (b.status === 'Settled') return false;
+        const isCreator = b.creator_id === user.id;
+        const parts = b.participants || [];
+        if (isCreator) {
+          return parts.some((p: any) => !p.paid);
+        } else {
+          const userPart = parts.find((p: any) => p.friend_id === user.id);
+          return userPart && !userPart.paid;
+        }
+      });
+
+      setUnsettledBillsCount(unsettled.length);
+    } catch (err) {
+      console.warn('Error checking balance before account deletion:', err);
+      setUnsettledBillsCount(0);
+    } finally {
+      setIsDeleteModalOpen(true);
+    }
+  };
+
+  const handleConfirmDeleteAccount = async () => {
+    if (!user?.id) return;
+    setIsDeleting(true);
+    try {
+      await api.deleteAccount(user.id);
+      try {
+        await supabase.auth.signOut();
+      } catch (e) {
+        console.warn('Signout after delete:', e);
+      }
+      window.history.replaceState({}, document.title, '/');
+      window.location.href = '/';
+    } catch (err: any) {
+      console.error('Failed to delete account:', err);
+      alert(err.message || 'Failed to delete account. Please try again.');
+      setIsDeleting(false);
+    }
   };
 
   const initial = (fullName || 'U').trim()[0]?.toUpperCase() || 'U';
@@ -122,7 +180,7 @@ export function Settings({ session, initialView = 'main', isDarkTheme = false, o
           </button>
           
           <button 
-            onClick={() => alert('To delete your account, please contact support at support@plates.live')}
+            onClick={handleOpenDeleteModal}
             className="w-full flex items-center justify-between p-4 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-[24px] transition-colors group cursor-pointer"
           >
             <div className="flex items-center gap-4">
@@ -160,6 +218,24 @@ export function Settings({ session, initialView = 'main', isDarkTheme = false, o
           session={session}
           currentName={fullName}
           onNameUpdated={(newName) => setFullName(newName)}
+        />
+
+        {/* Delete Account Modal */}
+        <DeleteConfirmationModal
+          isOpen={isDeleteModalOpen}
+          onClose={() => setIsDeleteModalOpen(false)}
+          onConfirm={handleConfirmDeleteAccount}
+          title="Delete Account"
+          description={
+            unsettledBillsCount > 0
+              ? "You cannot delete your account while you have active, unsettled bills or balances with friends. Please settle all bills first."
+              : "Are you sure you want to permanently delete your Plates account? All your profile data, friendships, and bill records will be permanently removed."
+          }
+          confirmText="Delete Account"
+          isBlocked={unsettledBillsCount > 0}
+          blockedReason={`You have ${unsettledBillsCount} unsettled bill(s). All payments and debts with every friend must be 0 before deleting your account.`}
+          isLoading={isDeleting}
+          itemType="friend"
         />
       </div>
     );

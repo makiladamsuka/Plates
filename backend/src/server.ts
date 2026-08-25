@@ -686,6 +686,87 @@ app.delete('/api/friends', async (req, res) => {
   }
 });
 
+// Delete user account (Only allowed if all debts and payments with all friends are 0 / settled)
+app.delete('/api/account', async (req, res) => {
+  try {
+    const effectiveUserId = (req as any).user?.id || req.body?.userId;
+
+    if (!effectiveUserId) {
+      return res.status(400).json({ error: 'User ID is required' });
+    }
+
+    // 1. Fetch all bills involving this user
+    const { data: bills, error: billsErr } = await supabase
+      .from('bills')
+      .select('id, title, status, creator_id, participants(*)');
+
+    if (billsErr) throw billsErr;
+
+    const userBills = (bills || []).filter((b: any) => {
+      const parts = b.participants || [];
+      return b.creator_id === effectiveUserId || parts.some((p: any) => p.friend_id === effectiveUserId);
+    });
+
+    // 2. Check for any unsettled bill or unpaid participant share
+    const unsettledBills = userBills.filter((b: any) => {
+      if (b.status === 'Settled') return false;
+
+      const isCreator = b.creator_id === effectiveUserId;
+      const parts = b.participants || [];
+
+      if (isCreator) {
+        // If user is creator, all participants must be paid for the bill to be settled
+        const hasUnpaidParticipants = parts.some((p: any) => !p.paid);
+        if (hasUnpaidParticipants) return true;
+      } else {
+        // If user is a participant, user's own share must be paid
+        const userPart = parts.find((p: any) => p.friend_id === effectiveUserId);
+        if (userPart && !userPart.paid) return true;
+      }
+
+      return false;
+    });
+
+    if (unsettledBills.length > 0) {
+      return res.status(400).json({
+        error: `Cannot delete account: You have ${unsettledBills.length} unsettled bill(s). Please settle all payments and debts with all friends first.`,
+        unsettledCount: unsettledBills.length,
+      });
+    }
+
+    // 3. Clean up database records
+    // A. Delete user's participant entries in other bills
+    await supabase.from('participants').delete().eq('friend_id', effectiveUserId);
+
+    // B. Delete bills created by this user (and their participants)
+    const userCreatedBillIds = (bills || []).filter((b: any) => b.creator_id === effectiveUserId).map((b: any) => b.id);
+    if (userCreatedBillIds.length > 0) {
+      await supabase.from('participants').delete().in('bill_id', userCreatedBillIds);
+      await supabase.from('bills').delete().eq('creator_id', effectiveUserId);
+    }
+
+    // C. Delete all friend relationships (both directions)
+    await supabase.from('friends').delete().eq('user_id', effectiveUserId);
+    await supabase.from('friends').delete().eq('friend_id', effectiveUserId);
+
+    // D. Delete profile from profiles table
+    await supabase.from('profiles').delete().eq('id', effectiveUserId);
+
+    // E. Attempt Supabase Auth admin delete if available
+    try {
+      if (supabase.auth.admin && typeof supabase.auth.admin.deleteUser === 'function') {
+        await supabase.auth.admin.deleteUser(effectiveUserId);
+      }
+    } catch (authErr) {
+      console.warn('Auth admin delete notice:', authErr);
+    }
+
+    res.json({ success: true, message: 'Account and associated records deleted successfully' });
+  } catch (err: any) {
+    handleError(res, err);
+  }
+});
+
 // Serve static frontend files in production
 const possibleDistPaths = [
   path.join(__dirname, '../../frontend/dist'),
