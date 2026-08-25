@@ -472,7 +472,10 @@ export function Home({
             <span className="text-xs font-medium text-black/40 dark:text-zinc-500 md:hidden">Swipe →</span>
           </div>
 
-          <div className="flex flex-col gap-3.5 pb-4 pt-1">
+          <div
+            className="-mx-5 md:mx-0 flex gap-3.5 overflow-x-auto no-scrollbar pb-4 pt-1 snap-x snap-mandatory md:snap-none md:grid md:grid-cols-2 lg:grid-cols-3 md:gap-4 md:auto-rows-fr"
+            style={{ paddingLeft: '20px' }}
+          >
             {[...bills]
               .sort((a, b) => {
                 const aIsPending = a.status !== 'Settled';
@@ -494,70 +497,71 @@ export function Home({
 
               return (
                 <div
-                  key={`list-${bill.id}`}
+                  key={`carousel-${bill.id}`}
                   onClick={() => onBillClick?.(bill.id)}
-                  className="w-full bg-[#D9D9D9] dark:bg-zinc-900 rounded-[24px] p-4 sm:p-5 flex items-center justify-between shadow-sm cursor-pointer active:scale-[0.98] hover:bg-zinc-300/80 dark:hover:bg-zinc-800 transition-all border border-transparent dark:border-white/5"
+                  className="w-[200px] md:w-full h-[205px] shrink-0 bg-[#D9D9D9] dark:bg-zinc-900 rounded-[28px] flex flex-col justify-between shadow-sm snap-start cursor-pointer active:scale-[0.98] hover:bg-zinc-300/80 dark:hover:bg-zinc-800 transition-all border border-transparent dark:border-white/5"
+                  style={{ padding: '16px' }}
                 >
-                  <div className="flex flex-col gap-2 min-w-0 pr-4">
-                    <h3 className="text-[#1A1A1A] dark:text-zinc-100 text-lg md:text-xl font-bold leading-snug truncate">
-                      {bill.title}
-                    </h3>
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="text-black/50 dark:text-zinc-400 text-xs font-normal">
-                        {new Date(bill.createdAt || bill.created_at || Date.now()).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                      </span>
-                      <span
-                        className="text-[11px] font-semibold px-2 py-0.5 rounded-full"
-                        style={{ backgroundColor: tagStyle.bg, color: tagStyle.text }}
-                      >
-                        {bill.category}
-                      </span>
-                    </div>
+                  <h3 className="text-[#1A1A1A] dark:text-zinc-100 text-lg md:text-xl font-bold leading-snug line-clamp-2">
+                    {bill.title}
+                  </h3>
+
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-black/50 dark:text-zinc-400 text-xs font-normal">
+                      {new Date(bill.createdAt || bill.created_at || Date.now()).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                    </span>
+                    <span
+                      className="text-[11px] font-semibold px-2 py-0.5 rounded-full"
+                      style={{ backgroundColor: tagStyle.bg, color: tagStyle.text }}
+                    >
+                      {bill.category}
+                    </span>
                   </div>
 
-                  <div className="flex flex-col items-end gap-2 shrink-0">
-                    <span className="text-[#1A1A1A] dark:text-zinc-100 text-lg font-extrabold tracking-tight">
-                      LKR {bill.total}
-                    </span>
-                    <div className="flex items-center gap-2 mt-1">
+                  <div className="flex justify-between items-end border-t border-black/10 dark:border-white/10 pt-2.5">
+                    <div className="flex flex-col gap-1">
                       <span
-                        className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full ${
+                        className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full w-fit ${
                           displayStatus === 'Settled' ? 'bg-[#4C8C3C] text-white' : 'bg-[#F5C744] text-black'
                         }`}
                       >
                         {displayStatus}
                       </span>
-                      <div className="flex -space-x-1.5">
-                        {(bill.participants || []).slice(0, 3).map((p: any, i: number) => {
-                          const isMe = p.friend_id === userId || p.friendId === userId || p.friendId === 'me';
-                          const pAvatar = p.avatar_url || p.profile?.avatar_url || (isMe ? session?.user?.user_metadata?.avatar_url : null);
-                          const pName = isMe ? (session?.user?.user_metadata?.full_name || 'You') : (p.full_name || p.profile?.full_name || p.name || 'Friend');
-                          const initial = (pName || 'F').trim()[0]?.toUpperCase() || 'U';
+                      <span className="text-[#1A1A1A] dark:text-zinc-100 text-base font-extrabold tracking-tight">
+                        LKR {bill.total}
+                      </span>
+                    </div>
+                    <div className="flex -space-x-1.5">
+                      {(bill.participants || []).slice(0, 3).map((p: any, i: number) => {
+                        const isMe = p.friend_id === userId || p.friendId === userId || p.friendId === 'me';
+                        const pAvatar = p.avatar_url || p.profile?.avatar_url || (isMe ? session?.user?.user_metadata?.avatar_url : null);
+                        const pName = isMe ? (session?.user?.user_metadata?.full_name || 'You') : (p.full_name || p.profile?.full_name || p.name || 'Friend');
+                        const initial = (pName || 'F').trim()[0]?.toUpperCase() || 'U';
 
-                          return pAvatar ? (
-                            <img
-                              key={i}
-                              src={pAvatar}
-                              alt={pName}
-                              title={pName}
-                              className="w-6 h-6 rounded-full border border-[#D9D9D9] dark:border-zinc-900 object-cover shrink-0"
-                            />
-                          ) : (
-                            <div
-                              key={i}
-                              title={pName}
-                              className="w-6 h-6 rounded-full border border-[#D9D9D9] dark:border-zinc-900 bg-zinc-400 dark:bg-zinc-700 flex items-center justify-center text-[10px] font-bold text-white shrink-0"
-                            >
-                              {initial}
-                            </div>
-                          );
-                        })}
-                      </div>
+                        return pAvatar ? (
+                          <img
+                            key={i}
+                            src={pAvatar}
+                            alt={pName}
+                            title={pName}
+                            className="w-6 h-6 rounded-full border border-[#EDEDF1] dark:border-zinc-900 object-cover shrink-0"
+                          />
+                        ) : (
+                          <div
+                            key={i}
+                            title={pName}
+                            className="w-6 h-6 rounded-full border border-[#EDEDF1] dark:border-zinc-900 bg-zinc-400 dark:bg-zinc-700 flex items-center justify-center text-[10px] font-bold text-white shrink-0"
+                          >
+                            {initial}
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
                 </div>
               );
             })}
+            <div className="shrink-0 md:hidden" style={{ width: '20px' }} />
           </div>
         </div>
         
