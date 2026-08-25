@@ -234,7 +234,7 @@ export function BillsList({ onBillClick, session }: BillsListProps) {
       <div className="max-w-[480px] md:max-w-6xl mx-auto md:px-10">
         
         {/* Bills Cards */}
-        <div className="px-5 md:px-0 mt-2 flex flex-col md:grid md:grid-cols-2 gap-4">
+        <div className="px-5 md:px-0 mt-2 flex flex-col md:grid md:grid-cols-2 lg:grid-cols-3 gap-4">
           {sortedBills.map(bill => {
             const displayStatus = bill.status === 'Settled' ? 'Settled' : 'Pending';
             const isCreator = bill.creator_id === userId;
