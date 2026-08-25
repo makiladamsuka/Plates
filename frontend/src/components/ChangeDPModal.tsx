@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { X, Upload, RefreshCw, Trash2, Camera, Check } from 'lucide-react';
+import { X, Upload, Trash2, Camera, Check } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
 interface ChangeDPModalProps {
@@ -116,14 +116,13 @@ export function ChangeDPModal({
     }
   };
 
-  const handleUseGooglePhoto = async () => {
-    if (!googlePhoto) return;
-    await saveAvatar(googlePhoto);
+  const handleRemovePhoto = async () => {
+    // Revert to Google OAuth picture or null if none
+    const defaultPhoto = googlePhoto || null;
+    await saveAvatar(defaultPhoto);
   };
 
-  const handleRemovePhoto = async () => {
-    await saveAvatar(null);
-  };
+  const isCustomPhoto = previewUrl && previewUrl !== googlePhoto;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200 font-['Sora']">
@@ -192,25 +191,14 @@ export function ChangeDPModal({
             <span>{isProcessing ? 'Updating...' : 'Upload from Device'}</span>
           </button>
 
-          {googlePhoto && (
-            <button
-              onClick={handleUseGooglePhoto}
-              disabled={isProcessing}
-              className="w-full py-3 px-4 bg-zinc-100 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 hover:bg-zinc-200 dark:hover:bg-zinc-700 rounded-[24px] font-medium text-xs flex items-center justify-center gap-2 active:scale-[0.98] transition-all cursor-pointer disabled:opacity-50"
-            >
-              <RefreshCw size={14} />
-              <span>Use Google Profile Photo</span>
-            </button>
-          )}
-
-          {previewUrl && (
+          {(isCustomPhoto || (previewUrl && !googlePhoto)) && (
             <button
               onClick={handleRemovePhoto}
               disabled={isProcessing}
               className="w-full py-3 px-4 bg-red-50 dark:bg-red-950/30 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/40 rounded-[24px] font-medium text-xs flex items-center justify-center gap-2 active:scale-[0.98] transition-all cursor-pointer disabled:opacity-50"
             >
               <Trash2 size={14} />
-              <span>Remove Photo (Use Initials)</span>
+              <span>Remove Photo</span>
             </button>
           )}
         </div>
