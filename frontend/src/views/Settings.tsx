@@ -27,6 +27,7 @@ export function Settings({ session, initialView = 'main', isDarkTheme = false, o
     } catch (e) {
       console.warn('Error during signOut:', e);
     }
+    window.history.replaceState({}, document.title, '/');
     window.location.href = '/';
   };
 

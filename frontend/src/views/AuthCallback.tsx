@@ -10,7 +10,6 @@ export function AuthCallback() {
     let isMounted = true;
 
     const processAuth = async () => {
-      // 1. Check for error parameters returned from OAuth provider
       const searchParams = new URLSearchParams(window.location.search);
       const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ''));
       
@@ -20,13 +19,27 @@ export function AuthCallback() {
         return;
       }
 
-      // 2. Check for PKCE authorization code in query params
       const code = searchParams.get('code');
+      const hasAccessToken = hashParams.has('access_token');
+
+      // If no OAuth code or token in URL (e.g. after logout or direct load), instantly redirect to home
+      if (!code && !hasAccessToken) {
+        if (isMounted) {
+          window.history.replaceState({}, document.title, '/');
+          navigate('/', { replace: true });
+        }
+        return;
+      }
+
+      // Check for PKCE authorization code in query params
       if (code) {
         try {
           const { data, error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
           if (!exchangeError && data.session) {
-            if (isMounted) navigate('/', { replace: true });
+            if (isMounted) {
+              window.history.replaceState({}, document.title, '/');
+              navigate('/', { replace: true });
+            }
             return;
           }
         } catch (e) {
@@ -34,32 +47,50 @@ export function AuthCallback() {
         }
       }
 
-      // 3. Check for existing or newly resolved session
+      // Check for session
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
-        if (isMounted) navigate('/', { replace: true });
+        if (isMounted) {
+          window.history.replaceState({}, document.title, '/');
+          navigate('/', { replace: true });
+        }
         return;
       }
     };
 
     processAuth();
 
-    // 4. Also listen for onAuthStateChange
+    // Listen for auth state change
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if ((event === 'SIGNED_IN' || event === 'INITIAL_SESSION') && session) {
-        if (isMounted) navigate('/', { replace: true });
+        if (isMounted) {
+          window.history.replaceState({}, document.title, '/');
+          navigate('/', { replace: true });
+        }
       }
     });
 
-    // 5. Safety timeout: after 6 seconds, attempt final getSession before notifying user
+    // Safety timeout: after 4 seconds, if no session, send to login cleanly
     const timeout = setTimeout(async () => {
+      const searchParams = new URLSearchParams(window.location.search);
+      const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ''));
+      const hasAuthParams = searchParams.has('code') || hashParams.has('access_token');
+
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
-        if (isMounted) navigate('/', { replace: true });
+        if (isMounted) {
+          window.history.replaceState({}, document.title, '/');
+          navigate('/', { replace: true });
+        }
       } else if (isMounted) {
-        setError('Authentication timed out. Please try logging in again.');
+        if (hasAuthParams) {
+          setError('Authentication timed out. Please try logging in again.');
+        } else {
+          window.history.replaceState({}, document.title, '/');
+          navigate('/', { replace: true });
+        }
       }
-    }, 6000);
+    }, 4000);
 
     return () => {
       isMounted = false;
