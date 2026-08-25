@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
+import { syncUserProfile } from '../lib/profileSync';
 
 export function AuthCallback() {
   const navigate = useNavigate();
@@ -36,6 +37,9 @@ export function AuthCallback() {
         try {
           const { data, error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
           if (!exchangeError && data.session) {
+            if (data.session.user) {
+              await syncUserProfile(data.session.user);
+            }
             if (isMounted) {
               window.history.replaceState({}, document.title, '/');
               navigate('/', { replace: true });
@@ -50,6 +54,9 @@ export function AuthCallback() {
       // Check for session
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
+        if (session.user) {
+          await syncUserProfile(session.user);
+        }
         if (isMounted) {
           window.history.replaceState({}, document.title, '/');
           navigate('/', { replace: true });
@@ -61,8 +68,11 @@ export function AuthCallback() {
     processAuth();
 
     // Listen for auth state change
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if ((event === 'SIGNED_IN' || event === 'INITIAL_SESSION') && session) {
+        if (session.user) {
+          await syncUserProfile(session.user);
+        }
         if (isMounted) {
           window.history.replaceState({}, document.title, '/');
           navigate('/', { replace: true });

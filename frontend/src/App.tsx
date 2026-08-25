@@ -17,6 +17,8 @@ import { IncomingFriendRequestModal } from './components/IncomingFriendRequestMo
 import { supabase } from './lib/supabase';
 import { api } from './services/api';
 
+import { syncUserProfile } from './lib/profileSync';
+
 function App() {
   const [currentTab, setCurrentTab] = useState('home');
   const [currentView, setCurrentView] = useState('list'); // 'list' or 'detail' within Bills tab
@@ -64,6 +66,9 @@ function App() {
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
+      if (session?.user) {
+        syncUserProfile(session.user);
+      }
       setIsInitializing(false);
     });
 
@@ -71,6 +76,9 @@ function App() {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event, session) => {
       setSession(session);
+      if (session?.user) {
+        syncUserProfile(session.user);
+      }
       if (event === 'SIGNED_OUT' || !session) {
         setCurrentTab('home');
         setCurrentView('list');
