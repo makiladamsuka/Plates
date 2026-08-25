@@ -15,8 +15,8 @@ export default defineConfig({
         name: 'Plates',
         short_name: 'Plates',
         description: 'Eat together. Settle later.',
-        theme_color: '#FDF6E6',
-        background_color: '#FDF6E6',
+        theme_color: '#EDEDF1',
+        background_color: '#EDEDF1',
         display: 'standalone',
         icons: [
           {
