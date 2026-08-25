@@ -1,12 +1,24 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '../lib/supabase';
 import { syncUserProfile } from '../lib/profileSync';
 
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || '201004734198-3r780q0v3irrd2cbijaj2onq06dqkpq6.apps.googleusercontent.com';
 
+// Helper to generate raw and SHA-256 hashed nonce per Supabase documentation
+async function generateNonce(): Promise<{ raw: string; hashed: string }> {
+  const nonce = btoa(String.fromCharCode(...crypto.getRandomValues(new Uint8Array(32))));
+  const encoder = new TextEncoder();
+  const encodedNonce = encoder.encode(nonce);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', encodedNonce);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  const hashedNonce = hashArray.map((b) => b.toString(16).padStart(2, '0')).join('');
+  return { raw: nonce, hashed: hashedNonce };
+}
+
 export function Login() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const rawNonceRef = useRef<string>('');
 
   const handleIdTokenResponse = useCallback(async (response: any) => {
     if (!response?.credential) return;
@@ -16,6 +28,7 @@ export function Login() {
       const { data, error } = await supabase.auth.signInWithIdToken({
         provider: 'google',
         token: response.credential,
+        nonce: rawNonceRef.current || undefined,
       });
       if (error) throw error;
       if (data?.session?.user) {
@@ -30,12 +43,17 @@ export function Login() {
   }, []);
 
   useEffect(() => {
-    const initGsi = () => {
+    const initGsi = async () => {
       if (typeof window !== 'undefined' && (window as any).google?.accounts?.id) {
         try {
+          const { raw, hashed } = await generateNonce();
+          rawNonceRef.current = raw;
+
           (window as any).google.accounts.id.initialize({
             client_id: GOOGLE_CLIENT_ID,
             callback: handleIdTokenResponse,
+            nonce: hashed,
+            use_fedcm_for_prompt: true,
             auto_select: false,
             cancel_on_tap_outside: true,
           });
