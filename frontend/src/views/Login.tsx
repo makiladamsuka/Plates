@@ -15,6 +15,9 @@ async function generateNonce(): Promise<{ raw: string; hashed: string }> {
   return { raw: nonce, hashed: hashedNonce };
 }
 
+// Global guard to ensure GSI is only initialized once per page load
+let gsiInitializedGlobal = false;
+
 export function Login() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -44,8 +47,10 @@ export function Login() {
 
   useEffect(() => {
     const initGsi = async () => {
+      if (gsiInitializedGlobal) return;
       if (typeof window !== 'undefined' && (window as any).google?.accounts?.id) {
         try {
+          gsiInitializedGlobal = true;
           const { raw, hashed } = await generateNonce();
           rawNonceRef.current = raw;
 
@@ -64,8 +69,12 @@ export function Login() {
     };
 
     initGsi();
-    const timer = setTimeout(initGsi, 500);
-    return () => clearTimeout(timer);
+    const interval = setInterval(() => {
+      if ((window as any).google?.accounts?.id && !gsiInitializedGlobal) {
+        initGsi();
+      }
+    }, 300);
+    return () => clearInterval(interval);
   }, [handleIdTokenResponse]);
 
   const fallbackOAuth = async () => {
@@ -89,14 +98,7 @@ export function Login() {
       setError(null);
 
       if ((window as any).google?.accounts?.id) {
-        (window as any).google.accounts.id.prompt((notification: any) => {
-          if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
-            fallbackOAuth().catch((err: any) => {
-              setError(err.message || 'An error occurred during login.');
-              setIsLoading(false);
-            });
-          }
-        });
+        (window as any).google.accounts.id.prompt();
         return;
       }
 

@@ -23,7 +23,7 @@ app.use(
   helmet({
     contentSecurityPolicy: {
       directives: {
-        defaultSrc: ["'self'"],
+        defaultSrc: ["'self'", "https://accounts.google.com"],
         connectSrc: [
           "'self'",
           "https://*.supabase.co",
@@ -37,7 +37,7 @@ app.use(
           "https://*.googleusercontent.com",
           "https://*.supabase.co",
         ],
-        styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+        styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com", "https://accounts.google.com"],
         fontSrc: ["'self'", "https://fonts.gstatic.com", "data:"],
         scriptSrc: ["'self'", "'unsafe-inline'", "https://accounts.google.com"],
         frameSrc: ["'self'", "https://accounts.google.com"],
