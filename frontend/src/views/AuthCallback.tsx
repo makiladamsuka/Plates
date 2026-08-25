@@ -2,59 +2,67 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 
-/**
- * AuthCallback – handles the OAuth redirect from Supabase/Google.
- *
- * When the user is redirected back to /auth/callback#access_token=...,
- * the Supabase client automatically picks up the tokens from the URL hash.
- * This component listens for that event and navigates to the app once
- * the session is established.
- */
 export function AuthCallback() {
   const navigate = useNavigate();
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    console.log('[AuthCallback] Component mounted');
-    console.log('[AuthCallback] Current URL:', window.location.href);
-    console.log('[AuthCallback] URL Hash:', window.location.hash);
-    console.log('[AuthCallback] URL Search:', window.location.search);
+    let isMounted = true;
 
-    // Listen for the auth state change that fires when Supabase
-    // processes the tokens in the URL hash fragment.
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((event, session) => {
-      console.log(`[AuthCallback] Auth event fired: ${event}`);
-      console.log(`[AuthCallback] Session present:`, !!session);
+    const processAuth = async () => {
+      // 1. Check for error parameters returned from OAuth provider
+      const searchParams = new URLSearchParams(window.location.search);
+      const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ''));
       
-      // SIGNED_IN fires once the tokens have been exchanged for a session
-      if (event === 'SIGNED_IN' && session) {
-        console.log('[AuthCallback] Successfully signed in, navigating to /');
-        // Navigate to the home/dashboard page, replacing the callback URL
-        // in history so the user can't "back" into it.
-        navigate('/', { replace: true });
+      const errorMsg = searchParams.get('error_description') || searchParams.get('error') || hashParams.get('error_description') || hashParams.get('error');
+      if (errorMsg) {
+        if (isMounted) setError(errorMsg);
+        return;
+      }
+
+      // 2. Check for PKCE authorization code in query params
+      const code = searchParams.get('code');
+      if (code) {
+        try {
+          const { data, error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
+          if (!exchangeError && data.session) {
+            if (isMounted) navigate('/', { replace: true });
+            return;
+          }
+        } catch (e) {
+          console.warn('[AuthCallback] exchangeCodeForSession notice:', e);
+        }
+      }
+
+      // 3. Check for existing or newly resolved session
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        if (isMounted) navigate('/', { replace: true });
+        return;
+      }
+    };
+
+    processAuth();
+
+    // 4. Also listen for onAuthStateChange
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if ((event === 'SIGNED_IN' || event === 'INITIAL_SESSION') && session) {
+        if (isMounted) navigate('/', { replace: true });
       }
     });
 
-    // Safety net: if onAuthStateChange doesn't fire within 5 seconds,
-    // check if we already have a session (e.g. from a page refresh).
+    // 5. Safety timeout: after 6 seconds, attempt final getSession before notifying user
     const timeout = setTimeout(async () => {
-      console.log('[AuthCallback] 5-second timeout reached, checking manual session...');
-      const { data: { session }, error } = await supabase.auth.getSession();
-      console.log('[AuthCallback] Manual session check result:', { hasSession: !!session, error });
-      
+      const { data: { session } } = await supabase.auth.getSession();
       if (session) {
-        console.log('[AuthCallback] Found session manually, navigating to /');
-        navigate('/', { replace: true });
-      } else {
-        console.error('[AuthCallback] Timeout reached and no session found. Error:', error);
+        if (isMounted) navigate('/', { replace: true });
+      } else if (isMounted) {
         setError('Authentication timed out. Please try logging in again.');
       }
-    }, 5000);
+    }, 6000);
 
-    // Cleanup: unsubscribe listener and clear timeout to prevent memory leaks
     return () => {
+      isMounted = false;
       subscription.unsubscribe();
       clearTimeout(timeout);
     };
@@ -62,24 +70,26 @@ export function AuthCallback() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-[#EDEDF1] dark:bg-zinc-950 flex flex-col items-center justify-center gap-4 p-4">
-        <div className="text-red-500 font-semibold font-['Sora'] text-center">{error}</div>
-        <button
-          onClick={() => navigate('/', { replace: true })}
-          className="text-sm text-gray-500 hover:text-gray-700 dark:text-zinc-400 dark:hover:text-zinc-200 underline font-['Sora'] cursor-pointer"
-        >
-          Back to Login
-        </button>
+      <div className="min-h-screen bg-[#EDEDF1] dark:bg-zinc-950 flex flex-col items-center justify-center gap-4 p-6 font-['Sora']">
+        <div className="bg-white dark:bg-zinc-900 rounded-[28px] p-6 max-w-sm w-full text-center shadow-lg border border-black/5 dark:border-white/5">
+          <div className="text-red-500 font-semibold mb-2 text-base">Sign In Failed</div>
+          <div className="text-black/60 dark:text-zinc-400 text-xs mb-6">{error}</div>
+          <button
+            onClick={() => navigate('/', { replace: true })}
+            className="w-full bg-[#1A1A1A] dark:bg-zinc-100 text-white dark:text-zinc-900 py-3 rounded-full font-semibold text-sm cursor-pointer active:scale-95 transition-transform"
+          >
+            Back to Login
+          </button>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#EDEDF1] dark:bg-zinc-950 flex flex-col items-center justify-center gap-3">
-      {/* Spinner */}
-      <div className="w-8 h-8 border-3 border-gray-300 dark:border-zinc-600 border-t-[#F5C744] rounded-full animate-spin" />
-      <p className="text-gray-500 dark:text-zinc-400 text-sm font-['Sora']">
-        Signing you in...
+    <div className="min-h-screen bg-[#EDEDF1] dark:bg-zinc-950 flex flex-col items-center justify-center gap-4 font-['Sora']">
+      <div className="w-10 h-10 border-3 border-black/10 dark:border-white/10 border-t-[#F5C744] rounded-full animate-spin" />
+      <p className="text-black/60 dark:text-zinc-400 text-sm font-medium">
+        Connecting to Plates...
       </p>
     </div>
   );

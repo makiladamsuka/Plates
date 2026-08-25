@@ -22,7 +22,12 @@ export function Settings({ session, initialView = 'main', isDarkTheme = false, o
   const avatarUrl = user?.user_metadata?.avatar_url;
 
   const handleLogout = async () => {
-    await supabase.auth.signOut();
+    try {
+      await supabase.auth.signOut();
+    } catch (e) {
+      console.warn('Error during signOut:', e);
+    }
+    window.location.href = '/';
   };
 
   if (view === 'account') {

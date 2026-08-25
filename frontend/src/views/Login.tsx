@@ -27,7 +27,11 @@ export function Login() {
         provider: 'google',
         options: {
           redirectTo: redirectUrl,
-        }
+          queryParams: {
+            prompt: 'select_account',
+            access_type: 'offline',
+          },
+        },
       });
       if (error) throw error;
     } catch (err: any) {
