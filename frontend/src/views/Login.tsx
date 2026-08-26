@@ -1,158 +1,42 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
-import { syncUserProfile } from '../lib/profileSync';
-
-const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || '201004734198-3r780q0v3irrd2cbijaj2onq06dqkpq6.apps.googleusercontent.com';
-
-// Helper to generate raw and SHA-256 hashed nonce per Supabase documentation
-async function generateNonce(): Promise<{ raw: string; hashed: string }> {
-  const nonce = btoa(String.fromCharCode(...crypto.getRandomValues(new Uint8Array(32))));
-  const encoder = new TextEncoder();
-  const encodedNonce = encoder.encode(nonce);
-  const hashBuffer = await crypto.subtle.digest('SHA-256', encodedNonce);
-  const hashArray = Array.from(new Uint8Array(hashBuffer));
-  const hashedNonce = hashArray.map((b) => b.toString(16).padStart(2, '0')).join('');
-  return { raw: nonce, hashed: hashedNonce };
-}
-
-// Global guard to ensure GSI is only initialized once per page load
-let gsiInitializedGlobal = false;
 
 export function Login() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [isOneTapAvailable, setIsOneTapAvailable] = useState(true);
-  const rawNonceRef = useRef<string>('');
-
-  const handleIdTokenResponse = useCallback(async (response: any) => {
-    if (!response?.credential) return;
-    try {
-      setIsLoading(true);
-      setError(null);
-      const { data, error } = await supabase.auth.signInWithIdToken({
-        provider: 'google',
-        token: response.credential,
-        nonce: rawNonceRef.current || undefined,
-      });
-      if (error) throw error;
-      if (data?.session?.user) {
-        await syncUserProfile(data.session.user);
-        window.location.href = '/';
-      }
-    } catch (err: any) {
-      setError(err.message || 'Failed to authenticate with Google.');
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
 
   useEffect(() => {
-    const initGsi = async () => {
-      if (gsiInitializedGlobal) return;
-      if (typeof window !== 'undefined' && (window as any).google?.accounts?.id) {
-        try {
-          gsiInitializedGlobal = true;
-          const { raw, hashed } = await generateNonce();
-          rawNonceRef.current = raw;
-
-          (window as any).google.accounts.id.initialize({
-            client_id: GOOGLE_CLIENT_ID,
-            callback: handleIdTokenResponse,
-            nonce: hashed,
-            use_fedcm_for_prompt: true,
-            auto_select: false,
-            cancel_on_tap_outside: true,
-          });
-
-          // Attempt One-Tap prompt on load if allowed by browser
-          (window as any).google.accounts.id.prompt((notification: any) => {
-            if (
-              notification?.isNotDisplayed?.() ||
-              notification?.isSkippedMoment?.() ||
-              notification?.isDismissedMoment?.()
-            ) {
-              // Browser blocked One-Tap or user closed it -> smoothly mark for direct OAuth
-              setIsOneTapAvailable(false);
-            }
-          });
-        } catch (err) {
-          console.warn('Google One-Tap notice:', err);
-          setIsOneTapAvailable(false);
-        }
-      }
-    };
-
-    initGsi();
-    const interval = setInterval(() => {
-      if ((window as any).google?.accounts?.id && !gsiInitializedGlobal) {
-        initGsi();
-      }
-    }, 300);
-
-    // Window focus safety: reset loading if user cancels / returns to tab
+    // Safety: Reset loading state whenever user returns to the tab (e.g. cancelled Google OAuth)
     const handleFocus = () => {
       setIsLoading(false);
     };
     window.addEventListener('focus', handleFocus);
+    window.addEventListener('pageshow', handleFocus);
 
     return () => {
-      clearInterval(interval);
       window.removeEventListener('focus', handleFocus);
+      window.removeEventListener('pageshow', handleFocus);
     };
-  }, [handleIdTokenResponse]);
-
-  const fallbackOAuth = async () => {
-    const redirectUrl = `${window.location.origin}/auth/callback`;
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        redirectTo: redirectUrl,
-        queryParams: {
-          prompt: 'select_account',
-          access_type: 'offline',
-        },
-      },
-    });
-    if (error) throw error;
-  };
+  }, []);
 
   const handleGoogleLogin = async () => {
     try {
       setIsLoading(true);
       setError(null);
 
-      // If One-Tap is active and allowed, try prompt with safety fallback
-      if (typeof window !== 'undefined' && (window as any).google?.accounts?.id && isOneTapAvailable) {
-        let prompted = false;
-        (window as any).google.accounts.id.prompt((notification: any) => {
-          if (notification?.isDisplayed?.()) {
-            prompted = true;
-          }
-          if (
-            notification?.isNotDisplayed?.() ||
-            notification?.isSkippedMoment?.() ||
-            notification?.isDismissedMoment?.()
-          ) {
-            setIsOneTapAvailable(false);
-            setIsLoading(false);
-            fallbackOAuth().catch(err => {
-              setError(err.message || 'Login failed.');
-              setIsLoading(false);
-            });
-          }
-        });
+      const redirectUrl = `${window.location.origin}/auth/callback`;
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: redirectUrl,
+          queryParams: {
+            prompt: 'select_account',
+            access_type: 'offline',
+          },
+        },
+      });
 
-        // If prompt doesn't open within 1.5s (e.g. blocked by Chrome), launch standard OAuth
-        setTimeout(() => {
-          if (!prompted) {
-            fallbackOAuth().catch(console.warn);
-          }
-        }, 1500);
-        return;
-      }
-
-      // If One-Tap is blocked by Chrome or dismissed, directly launch standard OAuth
-      await fallbackOAuth();
+      if (error) throw error;
     } catch (err: any) {
       setError(err.message || 'An error occurred during login.');
       setIsLoading(false);
