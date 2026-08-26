@@ -21,6 +21,7 @@ let gsiInitializedGlobal = false;
 export function Login() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isOneTapAvailable, setIsOneTapAvailable] = useState(true);
   const rawNonceRef = useRef<string>('');
 
   const handleIdTokenResponse = useCallback(async (response: any) => {
@@ -62,8 +63,21 @@ export function Login() {
             auto_select: false,
             cancel_on_tap_outside: true,
           });
+
+          // Attempt One-Tap prompt on load if allowed by browser
+          (window as any).google.accounts.id.prompt((notification: any) => {
+            if (
+              notification?.isNotDisplayed?.() ||
+              notification?.isSkippedMoment?.() ||
+              notification?.isDismissedMoment?.()
+            ) {
+              // Browser blocked One-Tap or user closed it -> smoothly mark for direct OAuth
+              setIsOneTapAvailable(false);
+            }
+          });
         } catch (err) {
-          console.warn('Google Identity initialization notice:', err);
+          console.warn('Google One-Tap notice:', err);
+          setIsOneTapAvailable(false);
         }
       }
     };
@@ -74,7 +88,17 @@ export function Login() {
         initGsi();
       }
     }, 300);
-    return () => clearInterval(interval);
+
+    // Window focus safety: reset loading if user cancels / returns to tab
+    const handleFocus = () => {
+      setIsLoading(false);
+    };
+    window.addEventListener('focus', handleFocus);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('focus', handleFocus);
+    };
   }, [handleIdTokenResponse]);
 
   const fallbackOAuth = async () => {
@@ -96,6 +120,38 @@ export function Login() {
     try {
       setIsLoading(true);
       setError(null);
+
+      // If One-Tap is active and allowed, try prompt with safety fallback
+      if (typeof window !== 'undefined' && (window as any).google?.accounts?.id && isOneTapAvailable) {
+        let prompted = false;
+        (window as any).google.accounts.id.prompt((notification: any) => {
+          if (notification?.isDisplayed?.()) {
+            prompted = true;
+          }
+          if (
+            notification?.isNotDisplayed?.() ||
+            notification?.isSkippedMoment?.() ||
+            notification?.isDismissedMoment?.()
+          ) {
+            setIsOneTapAvailable(false);
+            setIsLoading(false);
+            fallbackOAuth().catch(err => {
+              setError(err.message || 'Login failed.');
+              setIsLoading(false);
+            });
+          }
+        });
+
+        // If prompt doesn't open within 1.5s (e.g. blocked by Chrome), launch standard OAuth
+        setTimeout(() => {
+          if (!prompted) {
+            fallbackOAuth().catch(console.warn);
+          }
+        }, 1500);
+        return;
+      }
+
+      // If One-Tap is blocked by Chrome or dismissed, directly launch standard OAuth
       await fallbackOAuth();
     } catch (err: any) {
       setError(err.message || 'An error occurred during login.');
