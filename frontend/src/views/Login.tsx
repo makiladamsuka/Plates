@@ -19,7 +19,6 @@ export function Login() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const rawNonceRef = useRef<string>('');
-  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     // Safety: Reset loading state whenever user returns to the tab (e.g. cancelled Google OAuth)
@@ -30,101 +29,104 @@ export function Login() {
     window.addEventListener('pageshow', handleFocus);
 
     return () => {
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-      }
       window.removeEventListener('focus', handleFocus);
       window.removeEventListener('pageshow', handleFocus);
     };
   }, []);
 
-  const triggerOAuthFallback = async (reason: string) => {
-    console.error('[Google Sign-In] Falling back to OAuth redirect. Reason:', reason);
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
-      timeoutRef.current = null;
-    }
-    setIsLoading(false);
-
-    try {
-      const redirectUrl = `${window.location.origin}/auth/callback`;
-      const { error: oauthError } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: redirectUrl,
-          queryParams: {
-            prompt: 'select_account',
-            access_type: 'offline',
-          },
+  const fallbackOAuth = async () => {
+    const redirectUrl = `${window.location.origin}/auth/callback`;
+    const { error: oauthError } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: redirectUrl,
+        queryParams: {
+          prompt: 'select_account',
+          access_type: 'offline',
         },
-      });
-      if (oauthError) throw oauthError;
-    } catch (err: any) {
-      console.error('[Google Sign-In] OAuth fallback error:', err);
-      setError(err.message || 'Login failed. Please try again.');
-      setIsLoading(false);
-    }
+      },
+    });
+    if (oauthError) throw oauthError;
   };
 
-  const handleGoogleLogin = async () => {
+  async function handleGoogleLogin() {
     setIsLoading(true);
     setError(null);
-    let isResolved = false;
+    let settled = false;
 
-    // 1. 7-second safety timeout starting the moment the flow begins
-    if (timeoutRef.current) clearTimeout(timeoutRef.current);
-    timeoutRef.current = setTimeout(() => {
-      if (!isResolved) {
-        isResolved = true;
-        triggerOAuthFallback('FedCM flow timed out after 7s without completing');
-      }
-    }, 7000);
-
-    // 2. Credential callback for ID Token exchange
-    const handleIdTokenResponse = async (response: any) => {
-      if (isResolved) return;
-
-      if (!response?.credential) {
-        isResolved = true;
-        triggerOAuthFallback('No credential returned in Google Identity response');
-        return;
-      }
-
+    // 1. Independent fallback timer (6 seconds) — not tied to any AbortSignal or GSI state
+    const fallbackTimer = setTimeout(async () => {
+      if (settled) return;
+      settled = true;
+      console.warn('[auth] GSI timed out after 6s, falling back to redirect flow');
+      setIsLoading(false);
       try {
-        const { data, error: idTokenError } = await supabase.auth.signInWithIdToken({
-          provider: 'google',
-          token: response.credential,
-          nonce: rawNonceRef.current || undefined,
-        });
-
-        if (idTokenError) throw idTokenError;
-
-        if (data?.session?.user) {
-          isResolved = true;
-          if (timeoutRef.current) {
-            clearTimeout(timeoutRef.current);
-            timeoutRef.current = null;
-          }
-          await syncUserProfile(data.session.user);
-          window.location.href = '/';
-        }
+        await fallbackOAuth();
       } catch (err: any) {
-        console.error('[Google Sign-In] signInWithIdToken rejection:', err);
-        if (!isResolved) {
-          isResolved = true;
-          triggerOAuthFallback(`signInWithIdToken failed: ${err?.name || 'Error'} - ${err?.message || 'Unknown error'}`);
-        }
+        console.error('[auth] OAuth redirect fallback error:', err);
+        setError(err.message || 'Login failed. Please try again.');
+        setIsLoading(false);
       }
-    };
+    }, 6000);
 
-    // 3. Fresh nonce generation and GSI FedCM prompt execution wrapped in universal try/catch
     try {
       if (typeof window === 'undefined' || !(window as any).google?.accounts?.id) {
-        throw new Error('Google Identity Services library not loaded');
+        throw new Error('Google Identity Services script not available');
       }
 
       const { raw, hashed } = await generateNonce();
       rawNonceRef.current = raw;
+
+      const handleIdTokenResponse = async (response: any) => {
+        if (settled) return;
+
+        if (!response?.credential) {
+          if (!settled) {
+            settled = true;
+            clearTimeout(fallbackTimer);
+            console.warn('[auth] No credential in GSI response, falling back to redirect flow');
+            setIsLoading(false);
+            try {
+              await fallbackOAuth();
+            } catch (err: any) {
+              setError(err.message || 'Login failed.');
+              setIsLoading(false);
+            }
+          }
+          return;
+        }
+
+        try {
+          const { data, error: idTokenError } = await supabase.auth.signInWithIdToken({
+            provider: 'google',
+            token: response.credential,
+            nonce: rawNonceRef.current || undefined,
+          });
+
+          if (idTokenError) throw idTokenError;
+
+          if (!settled && data?.session?.user) {
+            settled = true;
+            clearTimeout(fallbackTimer);
+            setIsLoading(false);
+            await syncUserProfile(data.session.user);
+            window.location.href = '/';
+          }
+        } catch (err: any) {
+          if (!settled) {
+            settled = true;
+            clearTimeout(fallbackTimer);
+            console.warn('[auth] signInWithIdToken rejected, falling back:', err?.name, err?.message);
+            setIsLoading(false);
+            try {
+              await fallbackOAuth();
+            } catch (fallbackErr: any) {
+              setError(fallbackErr.message || 'Login failed.');
+              setIsLoading(false);
+            }
+          }
+        }
+      };
 
       (window as any).google.accounts.id.initialize({
         client_id: GOOGLE_CLIENT_ID,
@@ -135,32 +137,46 @@ export function Login() {
         cancel_on_tap_outside: true,
       });
 
-      // 4. Moment listener for early not-displayed/skipped/dismissed detection
       (window as any).google.accounts.id.prompt((notification: any) => {
-        if (isResolved) return;
+        if (settled) return;
 
-        if (notification?.isNotDisplayed?.()) {
-          const reason = notification?.getNotDisplayedReason?.() || 'not_displayed';
-          isResolved = true;
-          triggerOAuthFallback(`Google prompt isNotDisplayed (${reason})`);
-        } else if (notification?.isSkippedMoment?.()) {
-          const reason = notification?.getSkippedReason?.() || 'skipped';
-          isResolved = true;
-          triggerOAuthFallback(`Google prompt isSkippedMoment (${reason})`);
-        } else if (notification?.isDismissedMoment?.()) {
-          const reason = notification?.getDismissedReason?.() || 'dismissed_by_user';
-          isResolved = true;
-          triggerOAuthFallback(`Google prompt isDismissedMoment (${reason})`);
+        if (
+          notification?.isNotDisplayed?.() ||
+          notification?.isSkippedMoment?.() ||
+          notification?.isDismissedMoment?.()
+        ) {
+          if (!settled) {
+            settled = true;
+            clearTimeout(fallbackTimer);
+            const reason = notification?.getNotDisplayedReason?.() ||
+                           notification?.getSkippedReason?.() ||
+                           notification?.getDismissedReason?.() ||
+                           'prompt_unavailable';
+            console.warn('[auth] GSI prompt not displayed / skipped / dismissed, falling back. Reason:', reason);
+            setIsLoading(false);
+            fallbackOAuth().catch((err: any) => {
+              setError(err.message || 'Login failed.');
+              setIsLoading(false);
+            });
+          }
         }
       });
     } catch (err: any) {
-      console.error('[Google Sign-In] Universal rejection caught during GSI init/prompt:', err);
-      if (!isResolved) {
-        isResolved = true;
-        triggerOAuthFallback(`GSI execution error: ${err?.name || 'Error'} - ${err?.message || 'Unknown error'}`);
+      if (!settled) {
+        settled = true;
+        clearTimeout(fallbackTimer);
+        console.warn('[auth] GSI rejected, falling back:', err?.name, err?.message);
+        setIsLoading(false);
+        try {
+          await fallbackOAuth();
+        } catch (fallbackErr: any) {
+          console.error('[auth] Fallback OAuth failed:', fallbackErr);
+          setError(fallbackErr.message || 'Login failed.');
+          setIsLoading(false);
+        }
       }
     }
-  };
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center p-0 sm:p-4 md:p-8 lg:p-12 selection:bg-[#F5C744]/30 bg-gradient-to-br from-[#F5C744]/30 via-[#f0f4ea] to-[#1A1A1A]/90 relative overflow-hidden bg-[#F0F0F4]">
