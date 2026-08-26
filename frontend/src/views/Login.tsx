@@ -96,33 +96,6 @@ export function Login() {
     try {
       setIsLoading(true);
       setError(null);
-
-      // Safety timer: ensure the button never stays permanently disabled if prompt is closed
-      const safetyTimer = setTimeout(() => {
-        setIsLoading(false);
-      }, 4000);
-
-      if (typeof window !== 'undefined' && (window as any).google?.accounts?.id) {
-        (window as any).google.accounts.id.prompt((notification: any) => {
-          // If Google suppressed prompt, user closed it, or prompt was skipped
-          if (
-            notification?.isNotDisplayed?.() ||
-            notification?.isSkippedMoment?.() ||
-            notification?.isDismissedMoment?.()
-          ) {
-            clearTimeout(safetyTimer);
-            setIsLoading(false);
-            // Fallback to standard OAuth redirect flow so user can always log in
-            fallbackOAuth().catch((err: any) => {
-              setError(err.message || 'Login failed. Please try again.');
-              setIsLoading(false);
-            });
-          }
-        });
-        return;
-      }
-
-      clearTimeout(safetyTimer);
       await fallbackOAuth();
     } catch (err: any) {
       setError(err.message || 'An error occurred during login.');
