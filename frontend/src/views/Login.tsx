@@ -4,6 +4,33 @@ import { syncUserProfile } from '../lib/profileSync';
 
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || '201004734198-3r780q0v3irrd2cbijaj2onq06dqkpq6.apps.googleusercontent.com';
 
+// Helper to dynamically load the Google Identity Services script ONLY when requested
+function loadGsiScript(): Promise<void> {
+  if (typeof window !== 'undefined' && (window as any).google?.accounts?.id) {
+    return Promise.resolve();
+  }
+  return new Promise((resolve, reject) => {
+    const existingScript = document.getElementById('google-gsi-client');
+    if (existingScript) {
+      if ((window as any).google?.accounts?.id) {
+        resolve();
+      } else {
+        existingScript.addEventListener('load', () => resolve());
+        existingScript.addEventListener('error', (err) => reject(err));
+      }
+      return;
+    }
+    const script = document.createElement('script');
+    script.id = 'google-gsi-client';
+    script.src = 'https://accounts.google.com/gsi/client';
+    script.async = true;
+    script.defer = true;
+    script.onload = () => resolve();
+    script.onerror = (err) => reject(err);
+    document.head.appendChild(script);
+  });
+}
+
 // Helper to generate raw and SHA-256 hashed nonce per Supabase documentation
 async function generateNonce(): Promise<{ raw: string; hashed: string }> {
   const nonce = btoa(String.fromCharCode(...crypto.getRandomValues(new Uint8Array(32))));
@@ -70,6 +97,9 @@ export function Login() {
     }, 6000);
 
     try {
+      // Dynamically load GSI script only now (no scripts loaded on page mount)
+      await loadGsiScript();
+
       if (typeof window === 'undefined' || !(window as any).google?.accounts?.id) {
         throw new Error('Google Identity Services script not available');
       }
