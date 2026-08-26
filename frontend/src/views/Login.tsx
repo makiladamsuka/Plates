@@ -1,51 +1,9 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
-import { syncUserProfile } from '../lib/profileSync';
-
-const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || '201004734198-3r780q0v3irrd2cbijaj2onq06dqkpq6.apps.googleusercontent.com';
-
-// Helper to dynamically load the Google Identity Services script ONLY when requested
-function loadGsiScript(): Promise<void> {
-  if (typeof window !== 'undefined' && (window as any).google?.accounts?.id) {
-    return Promise.resolve();
-  }
-  return new Promise((resolve, reject) => {
-    const existingScript = document.getElementById('google-gsi-client');
-    if (existingScript) {
-      if ((window as any).google?.accounts?.id) {
-        resolve();
-      } else {
-        existingScript.addEventListener('load', () => resolve());
-        existingScript.addEventListener('error', (err) => reject(err));
-      }
-      return;
-    }
-    const script = document.createElement('script');
-    script.id = 'google-gsi-client';
-    script.src = 'https://accounts.google.com/gsi/client';
-    script.async = true;
-    script.defer = true;
-    script.onload = () => resolve();
-    script.onerror = (err) => reject(err);
-    document.head.appendChild(script);
-  });
-}
-
-// Helper to generate raw and SHA-256 hashed nonce per Supabase documentation
-async function generateNonce(): Promise<{ raw: string; hashed: string }> {
-  const nonce = btoa(String.fromCharCode(...crypto.getRandomValues(new Uint8Array(32))));
-  const encoder = new TextEncoder();
-  const encodedNonce = encoder.encode(nonce);
-  const hashBuffer = await crypto.subtle.digest('SHA-256', encodedNonce);
-  const hashArray = Array.from(new Uint8Array(hashBuffer));
-  const hashedNonce = hashArray.map((b) => b.toString(16).padStart(2, '0')).join('');
-  return { raw: nonce, hashed: hashedNonce };
-}
 
 export function Login() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const rawNonceRef = useRef<string>('');
 
   useEffect(() => {
     // Safety: Reset loading state whenever user returns to the tab (e.g. cancelled Google OAuth)
@@ -61,152 +19,30 @@ export function Login() {
     };
   }, []);
 
-  const fallbackOAuth = async () => {
-    const redirectUrl = `${window.location.origin}/auth/callback`;
-    const { error: oauthError } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        redirectTo: redirectUrl,
-        queryParams: {
-          prompt: 'select_account',
-          access_type: 'offline',
-        },
-      },
-    });
-    if (oauthError) throw oauthError;
-  };
-
-  async function handleGoogleLogin() {
-    setIsLoading(true);
-    setError(null);
-    let settled = false;
-
-    // 1. Independent fallback timer (6 seconds) — not tied to any AbortSignal or GSI state
-    const fallbackTimer = setTimeout(async () => {
-      if (settled) return;
-      settled = true;
-      console.warn('[auth] GSI timed out after 6s, falling back to redirect flow');
-      setIsLoading(false);
-      try {
-        await fallbackOAuth();
-      } catch (err: any) {
-        console.error('[auth] OAuth redirect fallback error:', err);
-        setError(err.message || 'Login failed. Please try again.');
-        setIsLoading(false);
-      }
-    }, 6000);
-
+  const handleGoogleLogin = async () => {
     try {
-      // Dynamically load GSI script only now (no scripts loaded on page mount)
-      await loadGsiScript();
+      setIsLoading(true);
+      setError(null);
 
-      if (typeof window === 'undefined' || !(window as any).google?.accounts?.id) {
-        throw new Error('Google Identity Services script not available');
-      }
-
-      const { raw, hashed } = await generateNonce();
-      rawNonceRef.current = raw;
-
-      const handleIdTokenResponse = async (response: any) => {
-        if (settled) return;
-
-        if (!response?.credential) {
-          if (!settled) {
-            settled = true;
-            clearTimeout(fallbackTimer);
-            console.warn('[auth] No credential in GSI response, falling back to redirect flow');
-            setIsLoading(false);
-            try {
-              await fallbackOAuth();
-            } catch (err: any) {
-              setError(err.message || 'Login failed.');
-              setIsLoading(false);
-            }
-          }
-          return;
-        }
-
-        try {
-          const { data, error: idTokenError } = await supabase.auth.signInWithIdToken({
-            provider: 'google',
-            token: response.credential,
-            nonce: rawNonceRef.current || undefined,
-          });
-
-          if (idTokenError) throw idTokenError;
-
-          if (!settled && data?.session?.user) {
-            settled = true;
-            clearTimeout(fallbackTimer);
-            setIsLoading(false);
-            await syncUserProfile(data.session.user);
-            window.location.href = '/';
-          }
-        } catch (err: any) {
-          if (!settled) {
-            settled = true;
-            clearTimeout(fallbackTimer);
-            console.warn('[auth] signInWithIdToken rejected, falling back:', err?.name, err?.message);
-            setIsLoading(false);
-            try {
-              await fallbackOAuth();
-            } catch (fallbackErr: any) {
-              setError(fallbackErr.message || 'Login failed.');
-              setIsLoading(false);
-            }
-          }
-        }
-      };
-
-      (window as any).google.accounts.id.initialize({
-        client_id: GOOGLE_CLIENT_ID,
-        callback: handleIdTokenResponse,
-        nonce: hashed,
-        use_fedcm_for_prompt: true,
-        auto_select: false,
-        cancel_on_tap_outside: true,
+      const redirectUrl = `${window.location.origin}/auth/callback`;
+      const { error: oauthError } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: redirectUrl,
+          queryParams: {
+            prompt: 'select_account',
+            access_type: 'offline',
+          },
+        },
       });
 
-      (window as any).google.accounts.id.prompt((notification: any) => {
-        if (settled) return;
-
-        if (
-          notification?.isNotDisplayed?.() ||
-          notification?.isSkippedMoment?.() ||
-          notification?.isDismissedMoment?.()
-        ) {
-          if (!settled) {
-            settled = true;
-            clearTimeout(fallbackTimer);
-            const reason = notification?.getNotDisplayedReason?.() ||
-                           notification?.getSkippedReason?.() ||
-                           notification?.getDismissedReason?.() ||
-                           'prompt_unavailable';
-            console.warn('[auth] GSI prompt not displayed / skipped / dismissed, falling back. Reason:', reason);
-            setIsLoading(false);
-            fallbackOAuth().catch((err: any) => {
-              setError(err.message || 'Login failed.');
-              setIsLoading(false);
-            });
-          }
-        }
-      });
+      if (oauthError) throw oauthError;
     } catch (err: any) {
-      if (!settled) {
-        settled = true;
-        clearTimeout(fallbackTimer);
-        console.warn('[auth] GSI rejected, falling back:', err?.name, err?.message);
-        setIsLoading(false);
-        try {
-          await fallbackOAuth();
-        } catch (fallbackErr: any) {
-          console.error('[auth] Fallback OAuth failed:', fallbackErr);
-          setError(fallbackErr.message || 'Login failed.');
-          setIsLoading(false);
-        }
-      }
+      console.error('[auth] Google OAuth error:', err);
+      setError(err.message || 'Login failed. Please try again.');
+      setIsLoading(false);
     }
-  }
+  };
 
   return (
     <div className="min-h-screen flex items-center justify-center p-0 sm:p-4 md:p-8 lg:p-12 selection:bg-[#F5C744]/30 bg-gradient-to-br from-[#F5C744]/30 via-[#f0f4ea] to-[#1A1A1A]/90 relative overflow-hidden bg-[#F0F0F4]">
