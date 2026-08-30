@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { ChevronRight } from 'lucide-react';
 
 interface ConfirmTransferModalProps {
   isOpen: boolean;
@@ -51,12 +52,12 @@ export function ConfirmTransferModal({ isOpen, onClose, onConfirm, amount, usern
     const thumbWidth = 50;
     const maxX = trackRect.width - thumbWidth - 12;
     
-    // If slid past 90%, confirm it!
-    if (slideProgress > maxX * 0.9) {
+    // If slid past 25%, confirm it!
+    if (slideProgress > maxX * 0.25) {
       setSlideProgress(maxX);
       setTimeout(() => {
         onConfirm();
-      }, 300);
+      }, 50);
     } else {
       // Snap back to start
       setSlideProgress(12);
@@ -74,7 +75,7 @@ export function ConfirmTransferModal({ isOpen, onClose, onConfirm, amount, usern
         />
         
         {/* Modal Container */}
-        <div className="w-full bg-[#1A1A1A] rounded-t-[35px] p-6 relative flex flex-col items-center pointer-events-auto animate-in slide-in-from-bottom-32 duration-300 shadow-2xl h-[422px]">
+        <div className="w-full bg-[#1A1A1A] rounded-t-[35px] p-6 pb-5 relative flex flex-col items-center pointer-events-auto animate-in slide-in-from-bottom-32 duration-300 shadow-2xl">
           
           {/* Header Content */}
           <div className="mt-4 text-center">
@@ -109,11 +110,8 @@ export function ConfirmTransferModal({ isOpen, onClose, onConfirm, amount, usern
                 onPointerUp={handlePointerUp}
                 onPointerCancel={handlePointerUp}
               >
-                {/* Double Arrow Icon */}
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-black ml-0.5">
-                  <polyline points="13 17 18 12 13 7" />
-                  <polyline points="6 17 11 12 6 7" />
-                </svg>
+                {/* Sleek Single Arrow Icon */}
+                <ChevronRight size={28} strokeWidth={2.5} className="text-black ml-1" />
               </div>
             </div>
           </div>

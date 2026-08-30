@@ -1,4 +1,6 @@
+import { useState, useEffect } from 'react';
 import { Home, BookmarkMinus, UserSearch, Settings } from 'lucide-react';
+import { supabase } from '../lib/supabase';
 
 interface DesktopNavProps {
   currentTab: string;
@@ -8,8 +10,31 @@ interface DesktopNavProps {
 }
 
 export function DesktopNav({ currentTab, session, onTabChange, onAvatarClick }: DesktopNavProps) {
-  const avatarUrl = session?.user?.user_metadata?.avatar_url;
-  const initial = (session?.user?.user_metadata?.full_name || 'ME').substring(0, 2).toUpperCase();
+  const [profileAvatar, setProfileAvatar] = useState<string | null>(session?.user?.user_metadata?.avatar_url || null);
+  const [profileName, setProfileName] = useState<string>(session?.user?.user_metadata?.full_name || 'My Account');
+
+  useEffect(() => {
+    if (!session?.user?.id) return;
+    const fetchProf = async () => {
+      try {
+        const { data } = await supabase
+          .from('profiles')
+          .select('avatar_url, full_name')
+          .eq('id', session.user.id)
+          .maybeSingle();
+
+        if (data) {
+          if (data.avatar_url !== undefined) setProfileAvatar(data.avatar_url);
+          if (data.full_name) setProfileName(data.full_name);
+        }
+      } catch (e) {
+        console.warn('DesktopNav fetchProf notice:', e);
+      }
+    };
+    fetchProf();
+  }, [session?.user?.id, session?.user?.user_metadata?.avatar_url]);
+
+  const initial = (profileName || 'ME').substring(0, 2).toUpperCase();
 
   const navItems = [
     { id: 'home', icon: Home, label: 'Home' },
@@ -52,15 +77,15 @@ export function DesktopNav({ currentTab, session, onTabChange, onAvatarClick }: 
         className="mt-auto flex items-center gap-4 p-3 rounded-[20px] hover:bg-[#D9D9D9] dark:hover:bg-zinc-900 transition-colors cursor-pointer text-left"
       >
         <div className="w-12 h-12 rounded-full bg-[#D9D9D9] dark:bg-zinc-800 flex items-center justify-center font-bold text-black dark:text-zinc-100 overflow-hidden shrink-0">
-          {avatarUrl ? (
-            <img src={avatarUrl} alt="Profile" className="w-full h-full object-cover" />
+          {profileAvatar ? (
+            <img src={profileAvatar} alt="Profile" className="w-full h-full object-cover" />
           ) : (
             <span>{initial}</span>
           )}
         </div>
         <div className="flex flex-col items-start min-w-0">
           <span className="text-[#1A1A1A] dark:text-zinc-100 text-sm font-bold truncate w-full">
-            {session?.user?.user_metadata?.full_name || 'My Account'}
+            {profileName || 'My Account'}
           </span>
           <span className="text-black/50 dark:text-zinc-400 text-xs truncate w-full">
             View Settings

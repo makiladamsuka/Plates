@@ -112,26 +112,32 @@ export function IncomingBillModal({
   const isMySharePaid = isCreator || myParticipant?.paid === true;
   const isFullySettled = bill.status === 'Settled';
 
+  const getEffectiveUserId = async (): Promise<string> => {
+    if (userId) return userId;
+    const { data: { session } } = await supabase.auth.getSession();
+    return session?.user?.id || '';
+  };
+
   const handleAccept = async () => {
     setIsSubmitting(true);
     try {
-      // 1. Try API endpoint
-      try {
-        await api.acceptBill(bill.id, userId);
-      } catch (apiErr) {
-        // 2. Direct Supabase fallback
-        const { error } = await supabase
-          .from('participants')
-          .update({ accepted: true, paid: false })
-          .eq('bill_id', bill.id)
-          .eq('friend_id', userId);
-        if (error) throw error;
+      const activeUid = await getEffectiveUserId();
+      if (!activeUid) throw new Error('User not authenticated');
 
-        await supabase
-          .from('bills')
-          .update({ status: 'Pending' })
-          .eq('id', bill.id);
-      }
+      // 1. Direct Supabase update for immediate DB write
+      await supabase
+        .from('participants')
+        .update({ accepted: true, paid: false })
+        .eq('bill_id', bill.id)
+        .eq('friend_id', activeUid);
+
+      await supabase
+        .from('bills')
+        .update({ status: 'Pending' })
+        .eq('id', bill.id);
+
+      // 2. Also notify backend API (in background, non-blocking)
+      api.acceptBill(bill.id, activeUid).catch(console.warn);
 
       if (onSuccess) onSuccess();
       onClose();
@@ -146,21 +152,21 @@ export function IncomingBillModal({
   const handleDecline = async () => {
     setIsSubmitting(true);
     try {
-      try {
-        await api.declineBill(bill.id, userId);
-      } catch (apiErr) {
-        const { error } = await supabase
-          .from('participants')
-          .update({ accepted: false, paid: false })
-          .eq('bill_id', bill.id)
-          .eq('friend_id', userId);
-        if (error) throw error;
+      const activeUid = await getEffectiveUserId();
+      if (!activeUid) throw new Error('User not authenticated');
 
-        await supabase
-          .from('bills')
-          .update({ status: 'Rejected' })
-          .eq('id', bill.id);
-      }
+      await supabase
+        .from('participants')
+        .update({ accepted: false, paid: false })
+        .eq('bill_id', bill.id)
+        .eq('friend_id', activeUid);
+
+      await supabase
+        .from('bills')
+        .update({ status: 'Rejected' })
+        .eq('id', bill.id);
+
+      api.declineBill(bill.id, activeUid).catch(console.warn);
 
       if (onSuccess) onSuccess();
       onClose();
@@ -172,40 +178,53 @@ export function IncomingBillModal({
     }
   };
 
+  const isMyPaymentSent = myParticipant?.payment_sent === true && !myParticipant?.paid;
+
   const handleExecuteSettle = async () => {
     setIsSubmitting(true);
     try {
-      try {
-        await api.payBill(bill.id, userId);
-      } catch (apiErr) {
-        const { error } = await supabase
-          .from('participants')
-          .update({ paid: true, accepted: true })
-          .eq('bill_id', bill.id)
-          .eq('friend_id', userId);
-        if (error) throw error;
+      const activeUid = await getEffectiveUserId();
+      if (!activeUid) throw new Error('User not authenticated');
 
-        // Check if all participants are paid
-        const { data: parts } = await supabase
-          .from('participants')
-          .select('paid')
-          .eq('bill_id', bill.id);
-
-        const allPaid = parts && parts.length > 0 && parts.every((p: any) => p.paid === true);
-        if (allPaid) {
-          await supabase
-            .from('bills')
-            .update({ status: 'Settled' })
-            .eq('id', bill.id);
-        }
-      }
+      // Route through backend API (uses service role key, bypasses RLS)
+      await api.sendPayment(bill.id, activeUid);
 
       if (onSuccess) onSuccess();
       setIsConfirmTransferOpen(false);
       onClose();
     } catch (err: any) {
-      console.error('Error settling bill:', err);
-      alert(err.message || 'Failed to settle bill');
+      console.error('Error sending payment confirmation:', err);
+      alert(err.message || 'Failed to send payment confirmation');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleConfirmParticipantPayment = async (friendId: string) => {
+    setIsSubmitting(true);
+    try {
+      // Route through backend API (uses service role key, bypasses RLS)
+      await api.confirmPayment(bill.id, friendId);
+
+      if (onSuccess) onSuccess();
+    } catch (err: any) {
+      console.error('Error confirming participant payment:', err);
+      alert(err.message || 'Failed to confirm payment');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleDeclineParticipantPayment = async (friendId: string) => {
+    setIsSubmitting(true);
+    try {
+      // Route through backend API (uses service role key, bypasses RLS)
+      await api.declinePayment(bill.id, friendId);
+
+      if (onSuccess) onSuccess();
+    } catch (err: any) {
+      console.error('Error declining participant payment:', err);
+      alert(err.message || 'Failed to decline payment');
     } finally {
       setIsSubmitting(false);
     }
@@ -213,7 +232,7 @@ export function IncomingBillModal({
 
   return (
     <>
-      <div className="fixed inset-0 z-[60] flex flex-col justify-end bg-black/60">
+      <div className="fixed inset-0 z-[60] flex flex-col justify-end bg-black/60 font-['Sora']">
         
         {/* The Bottom Sheet Modal */}
         <div className="w-full max-w-[480px] mx-auto bg-zinc-900 rounded-t-[35px] max-h-[85vh] relative flex flex-col px-6 pb-8 pt-4 animate-in slide-in-from-bottom-4 duration-300">
@@ -253,12 +272,14 @@ export function IncomingBillModal({
                 const isPMe = p.friend_id === userId || p.friendId === userId;
                 const isPCreator = bill.creator_id === (p.friend_id || p.friendId);
                 const isPPaid = isPCreator || p.paid;
+                const isPPaymentSent = p.payment_sent === true && !p.paid;
                 const pName = isPMe ? 'You' : (p.full_name || p.profile?.full_name || `Friend ${(p.friend_id || p.friendId || '').substring(0, 4)}`);
                 const pAvatar = p.avatar_url || p.profile?.avatar_url;
+                const pFriendId = p.friend_id || p.friendId;
 
                 return (
                   <div key={i} className="w-full bg-zinc-300/10 rounded-[20px] p-3 flex items-center justify-between">
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-3 min-w-0 pr-2">
                       {pAvatar ? (
                         <img src={pAvatar} alt="" className="w-8 h-8 rounded-full object-cover shrink-0" />
                       ) : (
@@ -271,14 +292,38 @@ export function IncomingBillModal({
                           {pName}
                         </span>
                         {isPCreator && <span className="text-amber-300 text-[10px]">Creator (Paid upfront)</span>}
+                        {isPPaymentSent && <span className="text-yellow-400 text-[10px]">Sent payment · Awaiting confirmation</span>}
                       </div>
                     </div>
+
                     <div className="flex items-center gap-2 shrink-0 ml-2">
                       <span className="text-white text-base font-semibold">LKR {p.share}</span>
+                      
                       {isPPaid ? (
                         <span className="text-[10px] bg-green-900/60 text-green-300 px-2 py-0.5 rounded-full font-bold">Paid</span>
+                      ) : isPPaymentSent ? (
+                        isCreator ? (
+                          <div className="flex items-center gap-1">
+                            <button
+                              onClick={() => handleConfirmParticipantPayment(pFriendId)}
+                              title="Confirm received payment"
+                              className="bg-[#4C8C3C] text-white px-2 py-1 rounded-full text-[10px] font-bold active:scale-95 transition-transform cursor-pointer"
+                            >
+                              Confirm
+                            </button>
+                            <button
+                              onClick={() => handleDeclineParticipantPayment(pFriendId)}
+                              title="Not received"
+                              className="bg-red-900/60 text-red-300 px-2 py-1 rounded-full text-[10px] font-bold active:scale-95 transition-transform cursor-pointer"
+                            >
+                              ✕
+                            </button>
+                          </div>
+                        ) : (
+                          <span className="text-[10px] bg-yellow-900/60 text-yellow-300 px-2 py-0.5 rounded-full font-bold">Sent</span>
+                        )
                       ) : (
-                        <span className="text-[10px] bg-yellow-900/60 text-yellow-300 px-2 py-0.5 rounded-full font-bold">Pending</span>
+                        <span className="text-[10px] bg-zinc-700 text-zinc-300 px-2 py-0.5 rounded-full font-bold">Pending</span>
                       )}
                     </div>
                   </div>
@@ -298,7 +343,7 @@ export function IncomingBillModal({
               </div>
             </div>
 
-            {/* Actions (Commit 9a3a00e style) */}
+            {/* Actions */}
             {!isEffectiveReadOnly ? (
               <div className="flex flex-col items-center gap-4 mt-2">
                 <SlideToAccept onAccept={handleAccept} isSubmitting={isSubmitting} />
@@ -314,17 +359,24 @@ export function IncomingBillModal({
             ) : (
               <div className="flex flex-col gap-3">
                 {!isMySharePaid && !isFullySettled ? (
-                  <button 
-                    onClick={() => setIsConfirmTransferOpen(true)}
-                    disabled={isSubmitting}
-                    className={`w-full h-14 bg-amber-400 hover:bg-amber-300 text-black text-lg font-semibold rounded-[30px] flex items-center justify-center gap-2 active:scale-[0.98] transition-all cursor-pointer ${isSubmitting ? 'opacity-50' : ''}`}
-                  >
-                    <CreditCard size={20} strokeWidth={2.5} />
-                    <span>{isSubmitting ? 'Processing...' : `Settle LKR ${myShare}`}</span>
-                  </button>
+                  isMyPaymentSent ? (
+                    <div className="w-full py-3.5 px-4 text-center text-yellow-300 text-sm font-semibold bg-yellow-950/40 rounded-[25px] border border-yellow-800/50 mb-1 flex flex-col items-center gap-0.5">
+                      <span>✓ Payment Sent (LKR {myShare})</span>
+                      <span className="text-xs text-white/60 font-normal">Waiting for the creator to confirm receipt</span>
+                    </div>
+                  ) : (
+                    <button 
+                      onClick={() => setIsConfirmTransferOpen(true)}
+                      disabled={isSubmitting}
+                      className={`w-full h-14 bg-amber-400 hover:bg-amber-300 text-black text-lg font-semibold rounded-[30px] flex items-center justify-center gap-2 active:scale-[0.98] transition-all cursor-pointer ${isSubmitting ? 'opacity-50' : ''}`}
+                    >
+                      <CreditCard size={20} strokeWidth={2.5} />
+                      <span>{isSubmitting ? 'Processing...' : `Settle LKR ${myShare}`}</span>
+                    </button>
+                  )
                 ) : (
                   <div className="w-full py-3 text-center text-green-400 text-sm font-semibold bg-green-950/40 rounded-[20px] border border-green-800/40 mb-1">
-                    ✓ {isCreator ? 'You created this plate (Paid upfront)' : 'Your share is settled'}
+                    ✓ {isCreator ? 'You created this plate (Paid upfront)' : 'Your share is confirmed paid'}
                   </div>
                 )}
 

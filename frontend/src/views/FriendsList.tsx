@@ -1,7 +1,10 @@
 import { useState, useEffect } from 'react';
-import { ArrowUpRight, ArrowDownLeft, Check, X } from 'lucide-react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { ArrowUpRight, ArrowDownLeft, Check, X, Trash2 } from 'lucide-react';
 import { IncomingFriendRequestModal } from '../components/IncomingFriendRequestModal';
+import { DeleteConfirmationModal } from '../components/DeleteConfirmationModal';
 import { supabase } from '../lib/supabase';
+import { api } from '../services/api';
 
 interface FriendsListProps {
   session: any;
@@ -16,25 +19,38 @@ export function FriendsList({
 }: FriendsListProps) {
   const [activeTab, setActiveTab] = useState<'all' | 'pending'>('all');
   const [incomingFriend, setIncomingFriend] = useState<any>(null);
-  const [acceptedFriends, setAcceptedFriends] = useState<any[]>([]);
-  const [pendingRequests, setPendingRequests] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-
+  // Deletion Modal State
+  const [selectedDeleteFriend, setSelectedDeleteFriend] = useState<any>(null);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isDeletingFriend, setIsDeletingFriend] = useState(false);
+  const [deleteBlockedReason, setDeleteBlockedReason] = useState<string | null>(null);
   useEffect(() => {
-    fetchFriendsAndRequests();
-  }, [session]);
+    // Real-time listener for friends changes
+    const channel = supabase
+      .channel('realtime-friends-tab')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'friends' }, () => {
+        queryClient.invalidateQueries({ queryKey: ['friends', session?.user?.id] });
+      })
+      .subscribe();
 
-  const fetchFriendsAndRequests = async () => {
-    if (!session?.user) return;
-    setIsLoading(true);
-    try {
-      // 1. Fetch Accepted Friends for current user (where user_id = session.user.id)
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [session]);
+  
+  const queryClient = useQueryClient();
+
+  const { data, isLoading } = useQuery({
+    queryKey: ['friends', session?.user?.id],
+    queryFn: async () => {
+      // 1. Fetch Accepted Friends
       const { data: rawAccepted } = await supabase
         .from('friends')
         .select('friend_id, status')
         .eq('user_id', session.user.id)
         .or('status.eq.accepted,status.is.null');
 
+      let accepted: any[] = [];
       if (rawAccepted && rawAccepted.length > 0) {
         const friendIds = rawAccepted.map((f: any) => f.friend_id);
         const { data: profs } = await supabase
@@ -42,7 +58,7 @@ export function FriendsList({
           .select('id, full_name, avatar_url, email')
           .in('id', friendIds);
         
-        const friends = (profs || []).map((p: any) => ({
+        accepted = (profs || []).filter((p: any) => p && p.id).map((p: any) => ({
           id: p.id,
           name: p.full_name || 'Friend',
           username: p.email || '',
@@ -50,18 +66,16 @@ export function FriendsList({
           balance: 0,
           isPendingRequest: false,
         }));
-        setAcceptedFriends(friends);
-      } else {
-        setAcceptedFriends([]);
       }
 
-      // 2. Fetch Pending Friend Requests sent TO current user (where friend_id = session.user.id and status = 'pending')
+      // 2. Fetch Pending Friend Requests
       const { data: rawPending } = await supabase
         .from('friends')
         .select('user_id, status')
         .eq('friend_id', session.user.id)
         .eq('status', 'pending');
 
+      let pending: any[] = [];
       if (rawPending && rawPending.length > 0) {
         const requesterIds = rawPending.map((f: any) => f.user_id);
         const { data: profs } = await supabase
@@ -69,7 +83,7 @@ export function FriendsList({
           .select('id, full_name, avatar_url, email')
           .in('id', requesterIds);
 
-        const pending = (profs || []).map((p: any) => ({
+        pending = (profs || []).filter((p: any) => p && p.id).map((p: any) => ({
           id: p.id,
           name: p.full_name || 'User',
           username: p.email || '',
@@ -77,56 +91,192 @@ export function FriendsList({
           balance: 0,
           isPendingRequest: true,
         }));
-        setPendingRequests(pending);
-      } else {
-        setPendingRequests([]);
+      }
+      
+      return { accepted, pending };
+    },
+    enabled: !!session?.user?.id,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 10 * 60 * 1000 // 10 minutes
+  });
+
+  const acceptedFriends = data?.accepted || [];
+  const pendingRequests = data?.pending || [];
+
+  const handleInitiateDeleteFriend = async (friend: any, e: React.MouseEvent) => {
+    e.stopPropagation();
+    let uid = session?.user?.id;
+    if (!uid) {
+      const { data: { session: s } } = await supabase.auth.getSession();
+      uid = s?.user?.id;
+    }
+    if (!uid) return;
+
+    setSelectedDeleteFriend(friend);
+    setIsDeleteModalOpen(true);
+    setDeleteBlockedReason(null);
+
+    // Query shared bills to verify if deletion is allowed
+    try {
+      const { data: rawBills } = await supabase
+        .from('bills')
+        .select('id, title, status, creator_id, participants(*)');
+
+      const sharedBills = (rawBills || []).filter((b: any) => {
+        const parts = b.participants || [];
+        const isMeInvolved = b.creator_id === uid || parts.some((p: any) => p.friend_id === uid);
+        const isFriendInvolved = b.creator_id === friend.id || parts.some((p: any) => p.friend_id === friend.id);
+        return isMeInvolved && isFriendInvolved;
+      });
+
+      const unsettled = sharedBills.filter((b: any) => {
+        if (b.status === 'Settled') return false;
+        const isMeCreator = b.creator_id === uid;
+        const isFriendCreator = b.creator_id === friend.id;
+        const friendPart = (b.participants || []).find((p: any) => p.friend_id === friend.id);
+        const myPart = (b.participants || []).find((p: any) => p.friend_id === uid);
+
+        if (isMeCreator && friendPart && !friendPart.paid) return true;
+        if (isFriendCreator && myPart && !myPart.paid) return true;
+        if (!b.status || b.status !== 'Settled') {
+          if ((friendPart && !friendPart.paid) || (myPart && !myPart.paid)) return true;
+        }
+        return false;
+      });
+
+      if (unsettled.length > 0) {
+        setDeleteBlockedReason(
+          `You have ${unsettled.length} unsettled bill(s) with ${friend.name || 'this friend'}. Please settle all bills before deleting.`
+        );
       }
     } catch (err) {
-      console.error('Error fetching friends:', err);
-    } finally {
-      setIsLoading(false);
+      console.error('Error checking bills:', err);
     }
   };
 
-  const handleApprove = async (requesterId: string) => {
-    try {
-      // Step A: Mark incoming request as accepted
-      await supabase
-        .from('friends')
-        .update({ status: 'accepted' })
-        .eq('user_id', requesterId)
-        .eq('friend_id', session.user.id);
+  const handleConfirmDeleteFriend = async () => {
+    if (!selectedDeleteFriend) return;
+    let uid = session?.user?.id;
+    if (!uid) {
+      const { data: { session: s } } = await supabase.auth.getSession();
+      uid = s?.user?.id;
+    }
+    if (!uid) return;
 
-      // Step B: Insert reciprocal relationship so current user sees requester in their friends list
-      await supabase
-        .from('friends')
-        .upsert({
-          user_id: session.user.id,
-          friend_id: requesterId,
-          status: 'accepted'
-        }, { onConflict: 'user_id,friend_id' });
+    setIsDeletingFriend(true);
+    try {
+      await api.deleteFriend(uid, selectedDeleteFriend.id);
+      await Promise.allSettled([
+        supabase.from('friends').delete().eq('user_id', uid).eq('friend_id', selectedDeleteFriend.id),
+        supabase.from('friends').delete().eq('user_id', selectedDeleteFriend.id).eq('friend_id', uid)
+      ]);
+      setIsDeleteModalOpen(false);
+      setSelectedDeleteFriend(null);
+      queryClient.invalidateQueries({ queryKey: ['friends', session?.user?.id] });
+    } catch (err: any) {
+      setDeleteBlockedReason(err.message || 'Failed to remove friend.');
+    } finally {
+      setIsDeletingFriend(false);
+    }
+  };
+
+  const acceptMutation = useMutation({
+    mutationFn: async (requesterId: string) => {
+      // 1. Try Supabase RPC
+      const { error: rpcErr } = await supabase.rpc('accept_friend_request', {
+        p_requester_id: requesterId,
+        p_friend_id: session.user.id
+      });
+
+      if (rpcErr) {
+        // Fallback direct updates
+        await supabase
+          .from('friends')
+          .update({ status: 'accepted' })
+          .eq('user_id', requesterId)
+          .eq('friend_id', session.user.id);
+
+        await supabase
+          .from('friends')
+          .upsert({ user_id: session.user.id, friend_id: requesterId, status: 'accepted' });
+      }
+
+      await api.acceptFriend(requesterId, session.user.id).catch(console.warn);
+    },
+    onMutate: async (requesterId) => {
+      // Cancel any outgoing refetches (so they don't overwrite our optimistic update)
+      await queryClient.cancelQueries({ queryKey: ['friends', session?.user?.id] });
+
+      // Snapshot the previous value
+      const previousFriends = queryClient.getQueryData(['friends', session?.user?.id]);
+
+      // Optimistically update to the new value
+      queryClient.setQueryData(['friends', session?.user?.id], (old: any) => {
+        if (!old) return old;
+        
+        // Find the pending user
+        const pendingUser = old.pending.find((p: any) => p.id === requesterId);
+        if (!pendingUser) return old;
+
+        // Move them to accepted
+        return {
+          accepted: [...old.accepted, { ...pendingUser, isPendingRequest: false }],
+          pending: old.pending.filter((p: any) => p.id !== requesterId)
+        };
+      });
 
       setIncomingFriend(null);
-      fetchFriendsAndRequests();
-    } catch (err) {
-      console.error('Error accepting request:', err);
-    }
-  };
 
-  const handleDecline = async (requesterId: string) => {
-    try {
+      // Return a context object with the snapshotted value
+      return { previousFriends };
+    },
+    // If the mutation fails, use the context returned from onMutate to roll back
+    onError: (_err, _requesterId, context) => {
+      if (context?.previousFriends) {
+        queryClient.setQueryData(['friends', session?.user?.id], context.previousFriends);
+      }
+    },
+    // Always refetch after error or success:
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['friends', session?.user?.id] });
+    },
+  });
+
+  const declineMutation = useMutation({
+    mutationFn: async (requesterId: string) => {
       await supabase
         .from('friends')
         .delete()
         .eq('user_id', requesterId)
         .eq('friend_id', session.user.id);
+    },
+    onMutate: async (requesterId) => {
+      await queryClient.cancelQueries({ queryKey: ['friends', session?.user?.id] });
+      const previousFriends = queryClient.getQueryData(['friends', session?.user?.id]);
+
+      queryClient.setQueryData(['friends', session?.user?.id], (old: any) => {
+        if (!old) return old;
+        return {
+          ...old,
+          pending: old.pending.filter((p: any) => p.id !== requesterId)
+        };
+      });
 
       setIncomingFriend(null);
-      fetchFriendsAndRequests();
-    } catch (err) {
-      console.error('Error declining request:', err);
-    }
-  };
+      return { previousFriends };
+    },
+    onError: (_err, _requesterId, context) => {
+      if (context?.previousFriends) {
+        queryClient.setQueryData(['friends', session?.user?.id], context.previousFriends);
+      }
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['friends', session?.user?.id] });
+    },
+  });
+
+  const handleApprove = (id: string) => acceptMutation.mutate(id);
+  const handleDecline = (id: string) => declineMutation.mutate(id);
 
   const displayList = activeTab === 'pending' ? pendingRequests : acceptedFriends;
 
@@ -179,23 +329,23 @@ export function FriendsList({
                 className="w-full bg-[#D9D9D9] dark:bg-zinc-900 rounded-[30px] px-6 py-4.5 relative flex items-center justify-between shadow-sm cursor-pointer hover:bg-zinc-300/80 dark:hover:bg-zinc-800 transition-colors border border-transparent dark:border-white/5"
               >
                 {/* Left Side: Avatar & Details */}
-                <div className="flex items-center gap-3.5">
+                <div className="flex items-center gap-3.5 min-w-0 pr-2">
                   {friend.avatar_url ? (
                     <img src={friend.avatar_url} alt="" className="w-[44px] h-[44px] rounded-full object-cover shrink-0" />
                   ) : (
                     <div className="w-[44px] h-[44px] rounded-full bg-[#E5E7EB] dark:bg-zinc-800 opacity-50 shrink-0" />
                   )}
-                  <div className="flex flex-col">
-                    <span className="text-[#1A1A1A] dark:text-zinc-100 text-xl font-semibold leading-tight">
+                  <div className="flex flex-col min-w-0">
+                    <span className="text-[#1A1A1A] dark:text-zinc-100 text-xl font-semibold leading-tight truncate">
                       {friend.name}
                     </span>
-                    <span className="text-black/60 dark:text-zinc-400 text-xs font-normal mt-0.5">
+                    <span className="text-black/60 dark:text-zinc-400 text-xs font-normal mt-0.5 truncate">
                       {friend.username}
                     </span>
                   </div>
                 </div>
 
-                {/* Right Side: Action Icons OR Balances */}
+                {/* Right Side: Action Icons OR Balances + Quick Delete */}
                 {activeTab === 'pending' ? (
                   <div className="flex items-center gap-3 shrink-0 pr-1" onClick={(e) => e.stopPropagation()}>
                     <button 
@@ -214,18 +364,29 @@ export function FriendsList({
                     </button>
                   </div>
                 ) : (
-                  friend.balance !== 0 && (
-                    <div className="flex items-center gap-2 shrink-0">
-                      {friend.balance > 0 ? (
-                        <ArrowDownLeft size={22} strokeWidth={2.5} className="text-black dark:text-zinc-100" />
-                      ) : (
-                        <ArrowUpRight size={22} strokeWidth={2.5} className="text-black dark:text-zinc-100" />
-                      )}
-                      <span className="text-[#1A1A1A] dark:text-zinc-100 text-2xl font-semibold whitespace-nowrap">
-                        LKR {Math.abs(friend.balance)}
-                      </span>
-                    </div>
-                  )
+                  <div className="flex items-center gap-3 shrink-0" onClick={(e) => e.stopPropagation()}>
+                    {friend.balance !== 0 && (
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        {friend.balance > 0 ? (
+                          <ArrowDownLeft size={20} strokeWidth={2.5} className="text-[#4C8C3C] dark:text-[#5FAD4B]" />
+                        ) : (
+                          <ArrowUpRight size={20} strokeWidth={2.5} className="text-red-500" />
+                        )}
+                        <span className="text-[#1A1A1A] dark:text-zinc-100 text-lg font-semibold whitespace-nowrap">
+                          LKR {Math.abs(friend.balance)}
+                        </span>
+                      </div>
+                    )}
+                    
+                    {/* Quick Delete Friend Button */}
+                    <button
+                      onClick={(e) => handleInitiateDeleteFriend(friend, e)}
+                      title="Remove Friend"
+                      className="w-8 h-8 rounded-full bg-[#EDEDF1] dark:bg-zinc-800 flex items-center justify-center text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40 active:scale-95 transition-all shadow-xs cursor-pointer"
+                    >
+                      <Trash2 size={15} strokeWidth={2.2} />
+                    </button>
+                  </div>
                 )}
               </div>
             ))
@@ -258,6 +419,28 @@ export function FriendsList({
         onClose={() => setIncomingFriend(null)}
         onApprove={() => incomingFriend && handleApprove(incomingFriend.id)}
         friend={incomingFriend || undefined}
+      />
+
+      {/* Delete Friend Confirmation / Blocked Modal */}
+      <DeleteConfirmationModal
+        isOpen={isDeleteModalOpen}
+        onClose={() => {
+          setIsDeleteModalOpen(false);
+          setSelectedDeleteFriend(null);
+          setDeleteBlockedReason(null);
+        }}
+        onConfirm={handleConfirmDeleteFriend}
+        title={deleteBlockedReason ? 'Cannot Remove Friend' : 'Remove Friend'}
+        description={
+          deleteBlockedReason
+            ? deleteBlockedReason
+            : `Are you sure you want to remove ${selectedDeleteFriend?.name || 'this friend'} from your friends list?`
+        }
+        confirmText="Remove Friend"
+        isBlocked={!!deleteBlockedReason}
+        blockedReason={deleteBlockedReason || undefined}
+        isLoading={isDeletingFriend}
+        itemType="friend"
       />
 
     </div>

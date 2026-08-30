@@ -3,18 +3,48 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import path from 'path';
 import fs from 'fs';
+import { fileURLToPath } from 'url';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
-import { supabase } from './utils/supabase';
-import { authenticate } from './middleware/auth';
+import { supabase } from './utils/supabase.js';
+import { authenticate } from './middleware/auth.js';
+import { createClient } from '@supabase/supabase-js';
 
 dotenv.config();
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
 const port = process.env.PORT || 3000;
 
-// Security HTTP Headers
-app.use(helmet());
+// Security HTTP Headers with CSP configured for Supabase & Google OAuth
+app.use(
+  helmet({
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'", "https://accounts.google.com"],
+        connectSrc: [
+          "'self'",
+          "https://*.supabase.co",
+          "wss://*.supabase.co",
+          "https://accounts.google.com",
+        ],
+        imgSrc: [
+          "'self'",
+          "data:",
+          "blob:",
+          "https://*.googleusercontent.com",
+          "https://*.supabase.co",
+        ],
+        styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com", "https://accounts.google.com"],
+        fontSrc: ["'self'", "https://fonts.gstatic.com", "data:"],
+        scriptSrc: ["'self'", "'unsafe-inline'", "https://accounts.google.com"],
+        frameSrc: ["'self'", "https://accounts.google.com"],
+      },
+    },
+  })
+);
 
 // CORS configuration - Restrict allowed origins
 const allowedOrigins = [
@@ -288,7 +318,84 @@ app.post('/api/bills/:id/decline', async (req, res) => {
   }
 });
 
-// Settle user's share (Pay)
+// Step 1: Participant marks payment as sent (awaiting creator confirmation)
+app.post('/api/bills/:id/send-payment', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { friendId } = req.body;
+    
+    const { data, error } = await supabase
+      .from('participants')
+      .update({ payment_sent: true, accepted: true, paid: false })
+      .eq('bill_id', id)
+      .eq('friend_id', friendId)
+      .select();
+      
+    if (error) throw error;
+
+    res.json({ message: 'Payment marked as sent, awaiting creator confirmation', data });
+  } catch (err: any) {
+    handleError(res, err);
+  }
+});
+
+// Step 2: Creator confirms receipt of payment
+app.post('/api/bills/:id/confirm-payment', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { friendId } = req.body;
+    
+    const { data, error } = await supabase
+      .from('participants')
+      .update({ paid: true, payment_sent: true, accepted: true })
+      .eq('bill_id', id)
+      .eq('friend_id', friendId)
+      .select();
+      
+    if (error) throw error;
+
+    // Check if all participants are paid
+    const { data: parts } = await supabase
+      .from('participants')
+      .select('paid')
+      .eq('bill_id', id);
+
+    const allPaid = parts && parts.length > 0 && parts.every((p: any) => p.paid === true);
+    if (allPaid) {
+      await supabase
+        .from('bills')
+        .update({ status: 'Settled' })
+        .eq('id', id);
+    }
+
+    res.json({ message: 'Payment confirmed by creator', data, allPaid });
+  } catch (err: any) {
+    handleError(res, err);
+  }
+});
+
+// Step 2 Alternate: Creator declines receipt of payment (not received)
+app.post('/api/bills/:id/decline-payment', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { friendId } = req.body;
+    
+    const { data, error } = await supabase
+      .from('participants')
+      .update({ payment_sent: false, paid: false })
+      .eq('bill_id', id)
+      .eq('friend_id', friendId)
+      .select();
+      
+    if (error) throw error;
+
+    res.json({ message: 'Payment receipt declined', data });
+  } catch (err: any) {
+    handleError(res, err);
+  }
+});
+
+// Settle user's share (Legacy direct Pay endpoint)
 app.post('/api/bills/:id/pay', async (req, res) => {
   try {
     const { id } = req.params;
@@ -296,7 +403,7 @@ app.post('/api/bills/:id/pay', async (req, res) => {
     
     const { data, error } = await supabase
       .from('participants')
-      .update({ paid: true })
+      .update({ paid: true, payment_sent: true })
       .eq('bill_id', id)
       .eq('friend_id', friendId)
       .select();
@@ -317,6 +424,76 @@ app.post('/api/bills/:id/pay', async (req, res) => {
     }
 
     res.json({ message: 'Share paid', data, allPaid });
+  } catch (err: any) {
+    handleError(res, err);
+  }
+});
+
+// Delete a bill (Creator can delete anytime; Participants can only remove settled bills)
+app.delete('/api/bills/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const effectiveUserId = (req as any).user?.id || req.body?.userId || req.query?.userId;
+
+    if (!effectiveUserId) {
+      return res.status(401).json({ error: 'User ID required' });
+    }
+
+    // 1. Fetch the bill and its participants
+    const { data: bill, error: fetchErr } = await supabase
+      .from('bills')
+      .select('*, participants(*)')
+      .eq('id', id)
+      .single();
+
+    if (fetchErr || !bill) {
+      return res.status(404).json({ error: 'Bill not found' });
+    }
+
+    const isCreator = bill.creator_id === effectiveUserId;
+    const isParticipant = (bill.participants || []).some((p: any) => p.friend_id === effectiveUserId);
+
+    if (!isCreator && !isParticipant) {
+      return res.status(403).json({ error: 'You are not authorized to modify this bill' });
+    }
+
+    if (isCreator) {
+      // Bill owner / creator can delete without any problem
+      const { error: partErr } = await supabase
+        .from('participants')
+        .delete()
+        .eq('bill_id', id);
+      if (partErr) throw partErr;
+
+      const { error: billErr } = await supabase
+        .from('bills')
+        .delete()
+        .eq('id', id);
+      if (billErr) throw billErr;
+
+      return res.json({ message: 'Bill deleted successfully', isCreator: true });
+    } else {
+      // Non-creator participant: cannot delete unsettled bills
+      const isSettled = bill.status === 'Settled';
+      const myPart = (bill.participants || []).find((p: any) => p.friend_id === effectiveUserId);
+      const isMySharePaid = myPart?.paid === true;
+
+      if (!isSettled && !isMySharePaid) {
+        return res.status(403).json({
+          error: 'Only the bill creator can delete an unsettled bill. You can only remove bills once they are settled.'
+        });
+      }
+
+      // Remove this participant's record from the settled bill
+      const { error: partErr } = await supabase
+        .from('participants')
+        .delete()
+        .eq('bill_id', id)
+        .eq('friend_id', effectiveUserId);
+      if (partErr) throw partErr;
+
+      return res.json({ message: 'Settled bill removed from your list', isCreator: false });
+    }
   } catch (err: any) {
     handleError(res, err);
   }
@@ -375,7 +552,7 @@ app.get('/api/friends/:userId', async (req, res) => {
       .eq('user_id', userId);
     
     if (error) throw error;
-    res.json(data?.map(d => d.profiles) || []);
+    res.json(data?.map((d: any) => d.profiles) || []);
   } catch (err: any) {
     handleError(res, err);
   }
@@ -401,19 +578,215 @@ app.post('/api/friends', async (req, res) => {
     handleError(res, err);
   }
 });
+// Accept a friend request
+app.post('/api/friends/accept', async (req, res) => {
+  try {
+    const { requesterId, friendId } = req.body;
+    
+    if (!requesterId || !friendId) {
+      return res.status(400).json({ error: 'requesterId and friendId are required' });
+    }
 
-// Remove a friend
+    const authHeader = req.headers.authorization;
+    const token = authHeader?.replace('Bearer ', '');
+    const supabaseUrl = process.env.SUPABASE_URL || 'https://rvxyaepqrvtmprfjhtld.supabase.co';
+    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY || 'sb_publishable_9h1vRM946kBiK5gBKZTUBQ_8DeObQYA';
+    const dbClient = token
+      ? createClient(supabaseUrl, supabaseKey, { global: { headers: { Authorization: `Bearer ${token}` } } })
+      : supabase;
+
+    // 1. Try Supabase RPC first
+    const { error: rpcErr } = await dbClient.rpc('accept_friend_request', {
+      p_requester_id: requesterId,
+      p_friend_id: friendId
+    });
+
+    if (rpcErr) {
+      // Fallback: direct table updates
+      const { error: e1 } = await dbClient
+        .from('friends')
+        .update({ status: 'accepted' })
+        .eq('user_id', requesterId)
+        .eq('friend_id', friendId);
+
+      if (e1) console.warn('Direct friend update notice:', e1);
+
+      const { error: e2 } = await dbClient
+        .from('friends')
+        .upsert({
+          user_id: friendId,
+          friend_id: requesterId,
+          status: 'accepted'
+        }, { onConflict: 'user_id,friend_id' });
+
+      if (e2) console.warn('Direct reciprocal friend upsert notice:', e2);
+    }
+
+    res.json({ message: 'Friend request accepted successfully' });
+  } catch (err: any) {
+    handleError(res, err);
+  }
+});
+
+// Remove a friend (Only allowed if all shared bills are settled)
 app.delete('/api/friends', async (req, res) => {
   try {
-    const { userId, friendId } = req.body;
-    const { error } = await supabase
+    const effectiveUserId = (req as any).user?.id || req.body?.userId;
+    const { friendId } = req.body;
+
+    if (!effectiveUserId || !friendId) {
+      return res.status(400).json({ error: 'User ID and Friend ID are required' });
+    }
+
+    // 1. Fetch all bills involving both users
+    const { data: bills, error: billsErr } = await supabase
+      .from('bills')
+      .select('id, title, status, creator_id, participants(*)');
+
+    if (billsErr) throw billsErr;
+
+    const sharedBills = (bills || []).filter((b: any) => {
+      const parts = b.participants || [];
+      const isUserInvolved = b.creator_id === effectiveUserId || parts.some((p: any) => p.friend_id === effectiveUserId);
+      const isFriendInvolved = b.creator_id === friendId || parts.some((p: any) => p.friend_id === friendId);
+      return isUserInvolved && isFriendInvolved;
+    });
+
+    // Check for any unsettled shared bill or unpaid balance between them
+    const unsettledBills = sharedBills.filter((b: any) => {
+      if (b.status === 'Settled') return false;
+
+      const isUserCreator = b.creator_id === effectiveUserId;
+      const isFriendCreator = b.creator_id === friendId;
+      const friendPart = (b.participants || []).find((p: any) => p.friend_id === friendId);
+      const userPart = (b.participants || []).find((p: any) => p.friend_id === effectiveUserId);
+
+      // If user is creator and friend hasn't paid
+      if (isUserCreator && friendPart && !friendPart.paid) return true;
+      // If friend is creator and user hasn't paid
+      if (isFriendCreator && userPart && !userPart.paid) return true;
+      // If general bill is not settled
+      if (b.status !== 'Settled') {
+        if ((friendPart && !friendPart.paid) || (userPart && !userPart.paid)) {
+          return true;
+        }
+      }
+      return false;
+    });
+
+    if (unsettledBills.length > 0) {
+      return res.status(400).json({
+        error: `Cannot delete friend: You have ${unsettledBills.length} unsettled bill(s) with this friend. Please settle all bills before deleting.`,
+        unsettledBills: unsettledBills.map((b: any) => ({ id: b.id, title: b.title, status: b.status }))
+      });
+    }
+
+    // 2. Perform friend deletion from both directions if all bills are settled
+    const { error: delErr1 } = await supabase
       .from('friends')
       .delete()
-      .eq('user_id', userId)
+      .eq('user_id', effectiveUserId)
       .eq('friend_id', friendId);
-    
-    if (error) throw error;
-    res.json({ message: 'Friend removed' });
+
+    if (delErr1) throw delErr1;
+
+    // Delete reciprocal link
+    await supabase
+      .from('friends')
+      .delete()
+      .eq('user_id', friendId)
+      .eq('friend_id', effectiveUserId);
+
+    res.json({ message: 'Friend removed successfully' });
+  } catch (err: any) {
+    handleError(res, err);
+  }
+});
+
+// Delete user account (Only allowed if all debts and payments with all friends are 0 / settled)
+app.delete('/api/account', async (req, res) => {
+  try {
+    const effectiveUserId = (req as any).user?.id || req.body?.userId;
+
+    if (!effectiveUserId) {
+      return res.status(400).json({ error: 'User ID is required' });
+    }
+
+    const authHeader = req.headers.authorization;
+    const token = authHeader?.replace('Bearer ', '');
+    const supabaseUrl = process.env.SUPABASE_URL || 'https://rvxyaepqrvtmprfjhtld.supabase.co';
+    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY || 'sb_publishable_9h1vRM946kBiK5gBKZTUBQ_8DeObQYA';
+    const dbClient = token
+      ? createClient(supabaseUrl, supabaseKey, { global: { headers: { Authorization: `Bearer ${token}` } } })
+      : supabase;
+
+    // 1. Fetch all bills involving this user
+    const { data: bills, error: billsErr } = await dbClient
+      .from('bills')
+      .select('id, title, status, creator_id, participants(*)');
+
+    if (billsErr) throw billsErr;
+
+    const userBills = (bills || []).filter((b: any) => {
+      const parts = b.participants || [];
+      return b.creator_id === effectiveUserId || parts.some((p: any) => p.friend_id === effectiveUserId);
+    });
+
+    // 2. Check for any unsettled bill or unpaid participant share
+    const unsettledBills = userBills.filter((b: any) => {
+      if (b.status === 'Settled') return false;
+
+      const isCreator = b.creator_id === effectiveUserId;
+      const parts = b.participants || [];
+
+      if (isCreator) {
+        // If user is creator, all participants must be paid for the bill to be settled
+        const hasUnpaidParticipants = parts.some((p: any) => !p.paid);
+        if (hasUnpaidParticipants) return true;
+      } else {
+        // If user is a participant, user's own share must be paid
+        const userPart = parts.find((p: any) => p.friend_id === effectiveUserId);
+        if (userPart && !userPart.paid) return true;
+      }
+
+      return false;
+    });
+
+    if (unsettledBills.length > 0) {
+      return res.status(400).json({
+        error: `Cannot delete account: You have ${unsettledBills.length} unsettled bill(s). Please settle all payments and debts with all friends first.`,
+        unsettledCount: unsettledBills.length,
+      });
+    }
+
+    // 3. Clean up database records
+    // A. Delete user's participant entries in other bills
+    await dbClient.from('participants').delete().eq('friend_id', effectiveUserId);
+
+    // B. Delete bills created by this user (and their participants)
+    const userCreatedBillIds = (bills || []).filter((b: any) => b.creator_id === effectiveUserId).map((b: any) => b.id);
+    if (userCreatedBillIds.length > 0) {
+      await dbClient.from('participants').delete().in('bill_id', userCreatedBillIds);
+      await dbClient.from('bills').delete().eq('creator_id', effectiveUserId);
+    }
+
+    // C. Delete all friend relationships (both directions)
+    await dbClient.from('friends').delete().eq('user_id', effectiveUserId);
+    await dbClient.from('friends').delete().eq('friend_id', effectiveUserId);
+
+    // D. Delete profile from profiles table
+    await dbClient.from('profiles').delete().eq('id', effectiveUserId);
+
+    // E. Attempt Supabase Auth admin delete if available
+    try {
+      if (supabase.auth.admin && typeof supabase.auth.admin.deleteUser === 'function') {
+        await supabase.auth.admin.deleteUser(effectiveUserId);
+      }
+    } catch (authErr) {
+      console.warn('Auth admin delete notice:', authErr);
+    }
+
+    res.json({ success: true, message: 'Account and associated records deleted successfully' });
   } catch (err: any) {
     handleError(res, err);
   }
@@ -423,16 +796,30 @@ app.delete('/api/friends', async (req, res) => {
 const possibleDistPaths = [
   path.join(__dirname, '../../frontend/dist'),
   path.join(__dirname, '../frontend/dist'),
-  path.resolve(process.cwd(), 'frontend/dist')
+  path.resolve(process.cwd(), 'frontend/dist'),
+  path.resolve(process.cwd(), '../frontend/dist'),
+  path.join(__dirname, '../../dist'),
+  path.join(__dirname, '../dist'),
+  path.resolve(process.cwd(), 'dist'),
+  path.resolve(process.cwd(), '../dist')
 ];
 const frontendDistPath = possibleDistPaths.find(p => fs.existsSync(p)) || path.resolve(process.cwd(), 'frontend/dist');
-app.use(express.static(frontendDistPath));
+console.log(`📦 Serving static frontend from: ${frontendDistPath} (exists: ${fs.existsSync(frontendDistPath)})`);
+if (fs.existsSync(frontendDistPath)) {
+  app.use(express.static(frontendDistPath));
+}
 
-app.get('*', (req, res, next) => {
+// Express 5 compatible catch-all route using regex /.*/
+app.get(/.*/, (req, res, next) => {
   if (req.path.startsWith('/api')) {
     return next();
   }
-  res.sendFile(path.join(frontendDistPath, 'index.html'));
+  const indexPath = path.join(frontendDistPath, 'index.html');
+  if (fs.existsSync(indexPath)) {
+    res.sendFile(indexPath);
+  } else {
+    res.status(404).json({ error: 'Endpoint not found' });
+  }
 });
 
 app.listen(port, () => {

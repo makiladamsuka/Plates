@@ -4,13 +4,41 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="Content-Security-Policy" content="
+      default-src 'self' https://accounts.google.com;
+      connect-src 'self' https://*.supabase.co wss://*.supabase.co https://accounts.google.com https://*.ondigitalocean.app http://localhost:*;
+      img-src 'self' data: blob: https://*.googleusercontent.com https://*.supabase.co;
+      style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://accounts.google.com;
+      font-src 'self' https://fonts.gstatic.com data:;
+      script-src 'self' 'unsafe-inline' https://accounts.google.com;
+      frame-src 'self' https://accounts.google.com;
+    " />
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;0,800;0,900;1,700&family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&family=Sora:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <meta name="theme-color" content="#FDF6E6" />
+    <link rel="apple-touch-icon" href="/logo.svg" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <title>Plates</title>
   </head>
   <body>
     <div id="root"></div>
+    <script>
+      // Clear any legacy Service Workers & PWA caches from earlier builds
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.getRegistrations().then(function(registrations) {
+          for (var reg of registrations) {
+            reg.unregister();
+          }
+        });
+      }
+      if ('caches' in window) {
+        caches.keys().then(function(names) {
+          for (var name of names) caches.delete(name);
+        });
+      }
+    </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
