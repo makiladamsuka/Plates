@@ -37,3 +37,16 @@ body {
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
+
+@keyframes shimmer-sweep {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(200%);
+  }
+}
+
+.animate-shimmer {
+  animation: shimmer-sweep 1.8s infinite ease-in-out;
+}

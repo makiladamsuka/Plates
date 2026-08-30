@@ -258,23 +258,36 @@ export function Login() {
               <button
                 type="button"
                 onClick={handleGoogleLogin}
-                className="w-full h-[56px] md:h-[64px] bg-[#1A1A1A] hover:bg-[#2A2A2A] active:scale-[0.98] text-white rounded-full flex items-center gap-3 md:gap-4 transition-all duration-200 hover:shadow-lg hover:shadow-black/10 cursor-pointer font-sans-app px-2 md:px-2.5 select-none touch-manipulation"
+                className="relative overflow-hidden w-full h-[56px] md:h-[64px] bg-[#1A1A1A] hover:bg-[#262626] active:scale-[0.98] text-white rounded-full flex items-center transition-all duration-300 hover:shadow-xl hover:shadow-black/15 cursor-pointer font-sans-app p-1.5 md:p-2 select-none touch-manipulation border border-white/5"
               >
-                <div className="w-[40px] h-[40px] md:w-[46px] md:h-[46px] bg-white rounded-full flex items-center justify-center shadow-sm shrink-0">
-                  {isSpinning ? (
-                    <div className="w-5 h-5 border-2 border-black/20 border-t-[#4285F4] rounded-full animate-spin" />
-                  ) : (
-                    <svg width="22" height="22" className="md:w-6 md:h-6" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
-                      <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" />
-                      <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05" />
-                      <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" />
-                    </svg>
+                {/* Formal Shimmer Sweep when active */}
+                {isSpinning && (
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent animate-shimmer pointer-events-none" />
+                )}
+
+                {/* Google Icon Badge (Always crisp & intact) */}
+                <div className={`w-[42px] h-[42px] md:w-[48px] md:h-[48px] bg-white rounded-full flex items-center justify-center shadow-md shrink-0 transition-all duration-300 ${isSpinning ? 'ring-2 ring-[#F5C744]/80 shadow-[#F5C744]/25 scale-95' : ''}`}>
+                  <svg width="22" height="22" className="md:w-6 md:h-6" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
+                    <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" />
+                    <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05" />
+                    <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" />
+                  </svg>
+                </div>
+
+                {/* Text Label + Subtle Formal Pulsing Dots */}
+                <div className="flex-1 flex items-center justify-center gap-2 pr-[42px] md:pr-[48px]">
+                  <span className="text-[16px] md:text-[18px] font-semibold tracking-wide text-white/95">
+                    Continue with Google
+                  </span>
+                  {isSpinning && (
+                    <span className="flex items-center gap-1 ml-0.5">
+                      <span className="w-1.5 h-1.5 bg-[#F5C744] rounded-full animate-bounce [animation-delay:-0.3s]" />
+                      <span className="w-1.5 h-1.5 bg-[#F5C744] rounded-full animate-bounce [animation-delay:-0.15s]" />
+                      <span className="w-1.5 h-1.5 bg-[#F5C744] rounded-full animate-bounce" />
+                    </span>
                   )}
                 </div>
-                <span className="text-[16px] md:text-[18px] font-semibold tracking-wide flex-1 text-center pr-[40px] md:pr-[46px]">
-                  Continue with Google
-                </span>
               </button>
               
               {error && (
