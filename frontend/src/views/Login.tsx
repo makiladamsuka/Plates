@@ -6,51 +6,40 @@ export function Login() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // Reset loading state on focus or visibility change
     const resetLoading = () => {
       setIsLoading(false);
     };
 
-    // If loading is active, touching or clicking anywhere on the screen resets it immediately
-    const handleGlobalInteraction = (e: MouseEvent | TouchEvent | PointerEvent) => {
-      // If user clicked inside the button itself while not loading, don't interfere
-      const target = e.target as HTMLElement;
-      if (target?.closest('button[data-google-login]')) {
-        return;
-      }
-      setIsLoading(false);
-    };
-
+    // Any touch, click, focus change, blur, or app switch resets the connecting state
     window.addEventListener('focus', resetLoading);
+    window.addEventListener('blur', resetLoading);
     window.addEventListener('pageshow', resetLoading);
     document.addEventListener('visibilitychange', resetLoading);
-    window.addEventListener('pointerdown', handleGlobalInteraction, { passive: true });
-    window.addEventListener('touchstart', handleGlobalInteraction, { passive: true });
-    window.addEventListener('mousedown', handleGlobalInteraction, { passive: true });
+    window.addEventListener('pointerdown', resetLoading, { passive: true });
+    window.addEventListener('touchstart', resetLoading, { passive: true });
+    window.addEventListener('click', resetLoading, { passive: true });
 
     return () => {
       window.removeEventListener('focus', resetLoading);
+      window.removeEventListener('blur', resetLoading);
       window.removeEventListener('pageshow', resetLoading);
       document.removeEventListener('visibilitychange', resetLoading);
-      window.removeEventListener('pointerdown', handleGlobalInteraction);
-      window.removeEventListener('touchstart', handleGlobalInteraction);
-      window.removeEventListener('mousedown', handleGlobalInteraction);
+      window.removeEventListener('pointerdown', resetLoading);
+      window.removeEventListener('touchstart', resetLoading);
+      window.removeEventListener('click', resetLoading);
     };
   }, []);
 
-  // Auto-reset loading after 5 seconds if navigation hasn't occurred
-  useEffect(() => {
-    if (!isLoading) return;
-    const timer = setTimeout(() => {
-      setIsLoading(false);
-    }, 5000);
-    return () => clearTimeout(timer);
-  }, [isLoading]);
-
-  const handleGoogleLogin = async () => {
+  const handleGoogleLogin = async (e: React.MouseEvent) => {
+    e.stopPropagation();
     try {
       setIsLoading(true);
       setError(null);
+
+      // Auto-revert back to "Continue with Google" after 1.8s so mobile popup cancellation never leaves it stuck
+      setTimeout(() => {
+        setIsLoading(false);
+      }, 1800);
 
       const redirectUrl = `${window.location.origin}/auth/callback`;
       const { error: oauthError } = await supabase.auth.signInWithOAuth({
@@ -138,10 +127,9 @@ export function Login() {
             {/* Google Sign In Button */}
             <div className="w-full max-w-[400px] mx-auto md:mx-0">
               <button
-                data-google-login="true"
+                type="button"
                 onClick={handleGoogleLogin}
-                disabled={isLoading}
-                className="w-full h-[56px] md:h-[64px] bg-[#1A1A1A] hover:bg-[#2A2A2A] text-white rounded-full flex items-center gap-3 md:gap-4 transition-all duration-200 hover:shadow-lg hover:shadow-black/10 active:scale-[0.99] disabled:opacity-70 cursor-pointer font-sans-app px-2 md:px-2.5"
+                className="w-full h-[56px] md:h-[64px] bg-[#1A1A1A] hover:bg-[#2A2A2A] text-white rounded-full flex items-center gap-3 md:gap-4 transition-all duration-200 hover:shadow-lg hover:shadow-black/10 active:scale-[0.99] cursor-pointer font-sans-app px-2 md:px-2.5"
               >
                 <div className="w-[40px] h-[40px] md:w-[46px] md:h-[46px] bg-white rounded-full flex items-center justify-center shadow-sm shrink-0">
                   <svg width="22" height="22" className="md:w-6 md:h-6" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
