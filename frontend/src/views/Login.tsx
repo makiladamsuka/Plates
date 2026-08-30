@@ -6,18 +6,46 @@ export function Login() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // Safety: Reset loading state whenever user returns to the tab (e.g. cancelled Google OAuth)
-    const handleFocus = () => {
+    // Reset loading state on focus or visibility change
+    const resetLoading = () => {
       setIsLoading(false);
     };
-    window.addEventListener('focus', handleFocus);
-    window.addEventListener('pageshow', handleFocus);
+
+    // If loading is active, touching or clicking anywhere on the screen resets it immediately
+    const handleGlobalInteraction = (e: MouseEvent | TouchEvent | PointerEvent) => {
+      // If user clicked inside the button itself while not loading, don't interfere
+      const target = e.target as HTMLElement;
+      if (target?.closest('button[data-google-login]')) {
+        return;
+      }
+      setIsLoading(false);
+    };
+
+    window.addEventListener('focus', resetLoading);
+    window.addEventListener('pageshow', resetLoading);
+    document.addEventListener('visibilitychange', resetLoading);
+    window.addEventListener('pointerdown', handleGlobalInteraction, { passive: true });
+    window.addEventListener('touchstart', handleGlobalInteraction, { passive: true });
+    window.addEventListener('mousedown', handleGlobalInteraction, { passive: true });
 
     return () => {
-      window.removeEventListener('focus', handleFocus);
-      window.removeEventListener('pageshow', handleFocus);
+      window.removeEventListener('focus', resetLoading);
+      window.removeEventListener('pageshow', resetLoading);
+      document.removeEventListener('visibilitychange', resetLoading);
+      window.removeEventListener('pointerdown', handleGlobalInteraction);
+      window.removeEventListener('touchstart', handleGlobalInteraction);
+      window.removeEventListener('mousedown', handleGlobalInteraction);
     };
   }, []);
+
+  // Auto-reset loading after 5 seconds if navigation hasn't occurred
+  useEffect(() => {
+    if (!isLoading) return;
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 5000);
+    return () => clearTimeout(timer);
+  }, [isLoading]);
 
   const handleGoogleLogin = async () => {
     try {
@@ -110,6 +138,7 @@ export function Login() {
             {/* Google Sign In Button */}
             <div className="w-full max-w-[400px] mx-auto md:mx-0">
               <button
+                data-google-login="true"
                 onClick={handleGoogleLogin}
                 disabled={isLoading}
                 className="w-full h-[56px] md:h-[64px] bg-[#1A1A1A] hover:bg-[#2A2A2A] text-white rounded-full flex items-center gap-3 md:gap-4 transition-all duration-200 hover:shadow-lg hover:shadow-black/10 active:scale-[0.99] disabled:opacity-70 cursor-pointer font-sans-app px-2 md:px-2.5"
