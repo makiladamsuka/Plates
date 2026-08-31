@@ -109,6 +109,8 @@ export function IncomingBillModal({
   useEffect(() => {
     if (!isOpen || !bill) return;
 
+    let isMounted = true;
+
     const enrichData = async () => {
       try {
         let activeUid = userId;
@@ -119,8 +121,22 @@ export function IncomingBillModal({
             setCurrentUserAvatar(session.user.user_metadata.avatar_url);
           }
         }
-        setEffectiveUserId(activeUid || '');
+        if (isMounted) setEffectiveUserId(activeUid || '');
 
+        // 1. Try to fetch fully enriched bill from backend API first
+        if (bill.id) {
+          try {
+            const apiBill = await api.getBill(bill.id);
+            if (isMounted && apiBill && apiBill.participants && apiBill.participants.length > 0) {
+              setEnrichedParticipants(apiBill.participants);
+              return;
+            }
+          } catch (e) {
+            console.warn('API bill fetch failed, falling back to direct profiles query:', e);
+          }
+        }
+
+        // 2. Direct Supabase query fallback
         const rawParts = bill.participants || [];
         const allIds = new Set<string>();
         if (bill.creator_id) allIds.add(bill.creator_id);
@@ -161,17 +177,21 @@ export function IncomingBillModal({
             };
           });
 
-          setEnrichedParticipants(enriched);
+          if (isMounted) setEnrichedParticipants(enriched);
         } else {
-          setEnrichedParticipants(rawParts);
+          if (isMounted) setEnrichedParticipants(rawParts);
         }
       } catch (err) {
         console.error('Error enriching participants in IncomingBillModal:', err);
-        setEnrichedParticipants(bill.participants || []);
+        if (isMounted) setEnrichedParticipants(bill.participants || []);
       }
     };
 
     enrichData();
+
+    return () => {
+      isMounted = false;
+    };
   }, [bill, isOpen, userId]);
 
   if (!isOpen || !bill) return null;

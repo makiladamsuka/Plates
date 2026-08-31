@@ -115,7 +115,10 @@ app.get('/api/bills', async (req, res) => {
 
     // Enrich participants with profile information (full_name, avatar_url, username)
     const allFriendIds = Array.from(new Set(
-      filteredData.flatMap((b: any) => (b.participants || []).map((p: any) => p.friend_id))
+      filteredData.flatMap((b: any) => [
+        ...(b.participants || []).map((p: any) => p.friend_id),
+        b.creator_id
+      ].filter(Boolean))
     ));
 
     let profilesMap: Record<string, any> = {};
@@ -160,7 +163,11 @@ app.get('/api/bills/:id', async (req, res) => {
     if (error) throw error;
 
     // Enrich participants with profile information
-    const friendIds = (bill.participants || []).map((p: any) => p.friend_id);
+    const friendIds = Array.from(new Set([
+      ...(bill.participants || []).map((p: any) => p.friend_id),
+      bill.creator_id
+    ].filter(Boolean)));
+
     let profilesMap: Record<string, any> = {};
     if (friendIds.length > 0) {
       const { data: profiles } = await supabase
