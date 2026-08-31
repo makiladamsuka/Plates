@@ -94,8 +94,9 @@ export function Login() {
       provider: 'google',
       options: {
         redirectTo: redirectUrl,
+        scopes: 'https://www.googleapis.com/auth/contacts.readonly',
         queryParams: {
-          prompt: 'select_account',
+          prompt: 'consent',
           access_type: 'offline',
         },
       },
