@@ -1,4 +1,5 @@
 import { supabase } from './supabase';
+import { generateUniqueUsername } from './usernameUtils';
 
 export async function syncUserProfile(user: any) {
   if (!user?.id) return;
@@ -18,11 +19,15 @@ export async function syncUserProfile(user: any) {
       const fullName = user.user_metadata?.full_name || user.email?.split('@')[0] || 'User';
       const avatarUrl = user.user_metadata?.avatar_url || user.user_metadata?.picture || null;
       
+      // Generate a unique username for this new profile
+      const uniqueUsername = await generateUniqueUsername(fullName, supabase);
+      
       const { error: upsertError } = await supabase.from('profiles').upsert({
         id: user.id,
         email: user.email,
         full_name: fullName,
         avatar_url: avatarUrl,
+        username: uniqueUsername,
       }, { onConflict: 'id' });
 
       if (upsertError) {
