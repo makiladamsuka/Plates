@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Sparkles, Check, AlertCircle, Loader2, AtSign } from 'lucide-react';
+import { Sparkles, Check, AlertCircle, Loader2, AtSign, X } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { cleanUsername, generateUniqueUsername, isUsernameAvailable } from '../lib/usernameUtils';
 
@@ -26,7 +26,8 @@ export function SetUsernameModal({
   const [isSaving, setIsSaving] = useState(false);
   const [success, setSuccess] = useState(false);
 
-  const checkDebounceRef = useRef<NodeJS.Timeout | null>(null);
+  const checkDebounceRef = useRef<any>(null);
+
   const userId = session?.user?.id;
   const fullName =
     session?.user?.user_metadata?.full_name ||
@@ -156,6 +157,16 @@ export function SetUsernameModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-md animate-in fade-in duration-200 font-['Sora']">
       <div className="bg-white dark:bg-zinc-900 rounded-[35px] max-w-md w-full p-7 relative shadow-2xl border border-black/5 dark:border-white/5 flex flex-col">
+        {canClose && onClose && (
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={isSaving}
+            className="absolute top-5 right-5 p-1.5 rounded-full hover:bg-black/5 dark:hover:bg-white/10 text-black/60 dark:text-zinc-400 cursor-pointer transition-colors"
+          >
+            <X size={20} />
+          </button>
+        )}
         
         {/* Header Icon */}
         <div className="w-14 h-14 rounded-2xl bg-amber-400/20 dark:bg-amber-400/15 flex items-center justify-center mb-4 text-amber-600 dark:text-amber-400">
