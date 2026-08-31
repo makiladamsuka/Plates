@@ -1,12 +1,11 @@
 import { supabase } from './supabase';
-import { generateUniqueUsername } from './usernameUtils';
 
 export async function syncUserProfile(user: any) {
-  if (!user?.id) return;
+  if (!user?.id) return null;
   try {
     const { data, error } = await supabase
       .from('profiles')
-      .select('id')
+      .select('id, username, full_name, avatar_url, email')
       .eq('id', user.id)
       .maybeSingle();
 
@@ -19,22 +18,35 @@ export async function syncUserProfile(user: any) {
       const fullName = user.user_metadata?.full_name || user.email?.split('@')[0] || 'User';
       const avatarUrl = user.user_metadata?.avatar_url || user.user_metadata?.picture || null;
       
-      // Generate a unique username for this new profile
-      const uniqueUsername = await generateUniqueUsername(fullName, supabase);
-      
-      const { error: upsertError } = await supabase.from('profiles').upsert({
-        id: user.id,
-        email: user.email,
-        full_name: fullName,
-        avatar_url: avatarUrl,
-        username: uniqueUsername,
-      }, { onConflict: 'id' });
+      const { data: newProfile, error: upsertError } = await supabase
+        .from('profiles')
+        .upsert({
+          id: user.id,
+          email: user.email,
+          full_name: fullName,
+          avatar_url: avatarUrl,
+          username: null,
+        }, { onConflict: 'id' })
+        .select('id, username, full_name, avatar_url, email')
+        .maybeSingle();
 
       if (upsertError) {
         console.warn('syncUserProfile upsert notice:', upsertError);
       }
+
+      return {
+        ...(newProfile || { id: user.id, email: user.email, full_name: fullName, avatar_url: avatarUrl, username: null }),
+        requiresUsername: true,
+      };
     }
+
+    return {
+      ...data,
+      requiresUsername: !data.username || data.username.trim() === '',
+    };
   } catch (err) {
     console.warn('syncUserProfile notice:', err);
+    return null;
   }
 }
+

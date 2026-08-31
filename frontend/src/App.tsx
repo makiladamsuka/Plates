@@ -14,6 +14,7 @@ import { Settings } from './views/Settings';
 import { LiveNotificationPopup, type LiveAlert } from './components/LiveNotificationPopup';
 import { IncomingBillModal } from './components/IncomingBillModal';
 import { IncomingFriendRequestModal } from './components/IncomingFriendRequestModal';
+import { SetUsernameModal } from './components/SetUsernameModal';
 import { supabase } from './lib/supabase';
 import { api } from './services/api';
 
@@ -31,6 +32,7 @@ function App() {
   // Auth state
   const [session, setSession] = useState<any>(null);
   const [isInitializing, setIsInitializing] = useState(true);
+  const [isSetUsernameOpen, setIsSetUsernameOpen] = useState(false);
 
   // Live in-app alert state
   const [activeLiveAlert, setActiveLiveAlert] = useState<LiveAlert | null>(null);
@@ -113,20 +115,26 @@ function App() {
   }, []);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
       setSession(session);
       if (session?.user) {
-        syncUserProfile(session.user);
+        const profile = await syncUserProfile(session.user);
+        if (profile?.requiresUsername) {
+          setIsSetUsernameOpen(true);
+        }
       }
       setIsInitializing(false);
     });
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((event, session) => {
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
       setSession(session);
       if (session?.user) {
-        syncUserProfile(session.user);
+        const profile = await syncUserProfile(session.user);
+        if (profile?.requiresUsername) {
+          setIsSetUsernameOpen(true);
+        }
       }
       if (event === 'SIGNED_OUT' || !session) {
         setCurrentTab('home');
@@ -136,6 +144,7 @@ function App() {
         setReviewingBill(null);
         setReviewingFriend(null);
         setActiveLiveAlert(null);
+        setIsSetUsernameOpen(false);
       }
     });
 
@@ -517,6 +526,15 @@ function App() {
           }
         }}
         friend={reviewingFriend || undefined}
+      />
+
+      {/* Choose Username Modal on First Login / Missing Username */}
+      <SetUsernameModal
+        isOpen={isSetUsernameOpen}
+        session={activeSession}
+        onUsernameSet={() => {
+          setIsSetUsernameOpen(false);
+        }}
       />
       </main>
     </div>

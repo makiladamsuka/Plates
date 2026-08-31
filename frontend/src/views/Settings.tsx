@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
-import { LogOut, ChevronRight, User as UserIcon, Moon, ChevronLeft, Edit3, Image as ImageIcon, Trash2 } from 'lucide-react';
+import { LogOut, ChevronRight, User as UserIcon, Moon, ChevronLeft, Edit3, Image as ImageIcon, Trash2, AtSign } from 'lucide-react';
 import { ChangeDPModal } from '../components/ChangeDPModal';
 import { ChangeNameModal } from '../components/ChangeNameModal';
+import { SetUsernameModal } from '../components/SetUsernameModal';
 import { DeleteConfirmationModal } from '../components/DeleteConfirmationModal';
 import { api } from '../services/api';
 
@@ -17,12 +18,14 @@ export function Settings({ session, initialView = 'main', isDarkTheme = false, o
   const [view, setView] = useState<'main' | 'account'>(initialView);
   const [isChangeDPOpen, setIsChangeDPOpen] = useState(false);
   const [isChangeNameOpen, setIsChangeNameOpen] = useState(false);
+  const [isChangeUsernameOpen, setIsChangeUsernameOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [unsettledBillsCount, setUnsettledBillsCount] = useState(0);
 
   const user = session?.user;
   const [fullName, setFullName] = useState<string>(() => user?.user_metadata?.full_name || user?.email || 'User');
+  const [username, setUsername] = useState<string>(() => user?.user_metadata?.username || '');
   const [avatarUrl, setAvatarUrl] = useState<string | null>(() => user?.user_metadata?.avatar_url || null);
 
   // Sync internal state when initialView prop changes
@@ -37,12 +40,13 @@ export function Settings({ session, initialView = 'main', isDarkTheme = false, o
       try {
         const { data } = await supabase
           .from('profiles')
-          .select('full_name, avatar_url')
+          .select('full_name, username, avatar_url')
           .eq('id', user.id)
           .maybeSingle();
 
         if (data) {
           if (data.full_name) setFullName(data.full_name);
+          if (data.username) setUsername(data.username);
           if (data.avatar_url !== undefined) setAvatarUrl(data.avatar_url);
         }
       } catch (e) {
@@ -51,6 +55,7 @@ export function Settings({ session, initialView = 'main', isDarkTheme = false, o
     };
     fetchProfile();
   }, [user?.id]);
+
 
   const handleLogout = async () => {
     try {
@@ -180,7 +185,12 @@ export function Settings({ session, initialView = 'main', isDarkTheme = false, o
               </button>
             </div>
             
-            <h2 className="text-zinc-900 dark:text-zinc-100 text-2xl font-bold font-display mb-1 text-center">{fullName}</h2>
+            <h2 className="text-zinc-900 dark:text-zinc-100 text-2xl font-bold font-display mb-0.5 text-center">{fullName}</h2>
+            {username && (
+              <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-amber-400/20 dark:bg-amber-400/15 text-amber-700 dark:text-amber-400 mb-1">
+                @{username}
+              </span>
+            )}
             <p className="text-gray-500 dark:text-zinc-400 text-sm">{user?.email}</p>
           </div>
 
@@ -194,6 +204,19 @@ export function Settings({ session, initialView = 'main', isDarkTheme = false, o
                 <Edit3 size={18} className="text-gray-700 dark:text-zinc-300" />
               </div>
               <span className="text-base font-semibold text-zinc-900 dark:text-zinc-100">Change Name</span>
+            </div>
+            <ChevronRight size={18} className="text-gray-400 dark:text-zinc-600" />
+          </button>
+
+          <button 
+            onClick={() => setIsChangeUsernameOpen(true)}
+            className="w-full flex items-center justify-between p-4 hover:bg-gray-50 dark:hover:bg-zinc-800 rounded-[24px] transition-colors cursor-pointer"
+          >
+            <div className="flex items-center gap-4">
+              <div className="w-10 h-10 rounded-full bg-gray-100 dark:bg-zinc-800 flex items-center justify-center">
+                <AtSign size={18} className="text-gray-700 dark:text-zinc-300" />
+              </div>
+              <span className="text-base font-semibold text-zinc-900 dark:text-zinc-100">Change Username</span>
             </div>
             <ChevronRight size={18} className="text-gray-400 dark:text-zinc-600" />
           </button>
@@ -250,6 +273,18 @@ export function Settings({ session, initialView = 'main', isDarkTheme = false, o
           session={session}
           currentName={fullName}
           onNameUpdated={(newName) => setFullName(newName)}
+        />
+
+        {/* Change Username Modal */}
+        <SetUsernameModal
+          isOpen={isChangeUsernameOpen}
+          onClose={() => setIsChangeUsernameOpen(false)}
+          canClose={true}
+          session={session}
+          onUsernameSet={(newUsername) => {
+            setUsername(newUsername);
+            setIsChangeUsernameOpen(false);
+          }}
         />
 
         {/* Delete Account Modal */}
