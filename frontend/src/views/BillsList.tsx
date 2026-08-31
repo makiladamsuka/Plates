@@ -282,7 +282,9 @@ export function BillsList({ onBillClick, session }: BillsListProps) {
                     <div className="flex -space-x-1.5">
                       {(bill.participants || []).slice(0, 3).map((p: any, i: number) => {
                         const isMe = p.friend_id === userId || p.friendId === userId || p.friendId === 'me';
-                        const pAvatar = p.avatar_url || p.profile?.avatar_url;
+                        const pAvatar = isMe 
+                          ? (session?.user?.user_metadata?.avatar_url || p.avatar_url || p.profile?.avatar_url) 
+                          : (p.avatar_url || p.profile?.avatar_url);
                         const pName = isMe ? 'You' : (p.full_name || p.profile?.full_name || p.name || 'Friend');
                         const initial = (pName || 'F').trim()[0]?.toUpperCase() || 'U';
 

@@ -371,7 +371,9 @@ export function BillDetail({ onBack, billId, session }: BillDetailProps) {
             </div>
             <div className="text-black/60 dark:text-zinc-400 text-[14px] font-normal ml-1 mt-1">{formatTime(bill.created_at || bill.createdAt)}</div>
             {creatorName && (
-              <div className="text-black/70 dark:text-zinc-300 text-[14px] font-normal ml-1">Created by {creatorName}</div>
+              <div className="text-black/70 dark:text-zinc-300 text-[14px] font-normal ml-1">
+                Created by {isCreator ? 'You' : creatorName}
+              </div>
             )}
           </div>
         </div>
@@ -382,7 +384,9 @@ export function BillDetail({ onBack, billId, session }: BillDetailProps) {
             const isPMe = participant.friendId === 'me' || participant.friend_id === userId || participant.friendId === userId;
             const mockFriend = MOCK_FRIENDS.find(f => f.id === (participant.friendId || participant.friend_id));
             const pName = isPMe ? 'You' : (participant.full_name || participant.profile?.full_name || mockFriend?.name || `Friend ${(participant.friendId || participant.friend_id || '').substring(0, 4)}`);
-            const pAvatar = participant.avatar_url || participant.profile?.avatar_url;
+            const pAvatar = isPMe 
+              ? (session?.user?.user_metadata?.avatar_url || participant.avatar_url || participant.profile?.avatar_url) 
+              : (participant.avatar_url || participant.profile?.avatar_url);
             const isPCreator = bill.creator_id === (participant.friend_id || participant.friendId);
             const isPPaid = isPCreator || participant.paid;
             const isPPaymentSent = participant.payment_sent === true && !participant.paid;
