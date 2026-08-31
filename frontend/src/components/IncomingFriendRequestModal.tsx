@@ -19,6 +19,7 @@ export function IncomingFriendRequestModal({
 }: IncomingFriendRequestModalProps) {
   const [slideProgress, setSlideProgress] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isDraggingState, setIsDraggingState] = useState(false);
   const trackRef = useRef<HTMLDivElement>(null);
   const isDragging = useRef(false);
 
@@ -26,6 +27,7 @@ export function IncomingFriendRequestModal({
     if (isOpen) {
       setSlideProgress(0);
       setIsSubmitting(false);
+      setIsDraggingState(false);
     }
   }, [isOpen]);
 
@@ -34,6 +36,7 @@ export function IncomingFriendRequestModal({
   const handlePointerDown = (e: React.PointerEvent) => {
     if (isSubmitting) return;
     isDragging.current = true;
+    setIsDraggingState(true);
     (e.target as HTMLElement).setPointerCapture(e.pointerId);
   };
 
@@ -54,6 +57,7 @@ export function IncomingFriendRequestModal({
   const handlePointerUp = (e: React.PointerEvent) => {
     if (!isDragging.current) return;
     isDragging.current = false;
+    setIsDraggingState(false);
     try {
       (e.target as HTMLElement).releasePointerCapture(e.pointerId);
     } catch {}
@@ -128,7 +132,7 @@ export function IncomingFriendRequestModal({
               className="w-[58px] h-[58px] bg-[#F6D6DA] hover:bg-[#f1c3c9] active:scale-95 rounded-full flex items-center justify-center z-20 shadow-md cursor-grab active:cursor-grabbing touch-none select-none shrink-0"
               style={{ 
                 transform: `translateX(${slideProgress}px)`,
-                transition: isDragging.current ? 'none' : 'transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)'
+                transition: isDraggingState ? 'none' : 'transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)'
               }}
               onPointerDown={handlePointerDown}
               onPointerMove={handlePointerMove}

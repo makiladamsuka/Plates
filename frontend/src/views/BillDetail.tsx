@@ -64,11 +64,11 @@ export function BillDetail({ onBack, billId, session }: BillDetailProps) {
           if (data?.creator_id) {
             const { data: creator } = await supabase
               .from('profiles')
-              .select('full_name, email')
+              .select('full_name, username')
               .eq('id', data.creator_id)
               .maybeSingle();
             if (creator) {
-              setCreatorName(creator.full_name || creator.email || '');
+              setCreatorName(creator.full_name || (creator.username ? `@${creator.username}` : ''));
             }
           }
           setLoading(false);
@@ -96,7 +96,7 @@ export function BillDetail({ onBack, billId, session }: BillDetailProps) {
         if (allFriendIds.size > 0) {
           const { data: profiles } = await supabase
             .from('profiles')
-            .select('id, full_name, avatar_url, email')
+            .select('id, full_name, avatar_url, username')
             .in('id', Array.from(allFriendIds));
 
           (profiles || []).forEach((prof: any) => {
@@ -110,14 +110,15 @@ export function BillDetail({ onBack, billId, session }: BillDetailProps) {
             ...p,
             profile: profilesMap[p.friend_id] || null,
             full_name: profilesMap[p.friend_id]?.full_name || null,
-            avatar_url: profilesMap[p.friend_id]?.avatar_url || null
+            avatar_url: profilesMap[p.friend_id]?.avatar_url || null,
+            username: profilesMap[p.friend_id]?.username || null
           }))
         };
 
         setBill(enriched);
         const creatorProf = profilesMap[rawBill.creator_id];
         if (creatorProf) {
-          setCreatorName(creatorProf.full_name || creatorProf.email || '');
+          setCreatorName(creatorProf.full_name || (creatorProf.username ? `@${creatorProf.username}` : ''));
         }
       }
     } catch (err) {

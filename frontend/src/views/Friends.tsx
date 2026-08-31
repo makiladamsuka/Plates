@@ -29,7 +29,7 @@ export function Friends({ session }: FriendsProps) {
             id,
             full_name,
             avatar_url,
-            email
+            username
           )
         `)
         .eq('user_id', session.user.id);
@@ -53,12 +53,13 @@ export function Friends({ session }: FriendsProps) {
 
     setIsSearching(true);
     try {
-      // Search profiles where name or email matches, excluding the current user
+      const cleanQ = query.replace(/^@/, '').trim();
+      // Search profiles where name or username matches, excluding the current user
       const { data, error } = await supabase
         .from('profiles')
-        .select('id, full_name, email, avatar_url')
+        .select('id, full_name, username, avatar_url')
         .neq('id', session.user.id)
-        .or(`full_name.ilike.%${query}%,email.ilike.%${query}%`)
+        .or(`full_name.ilike.%${cleanQ}%,username.ilike.%${cleanQ}%`)
         .limit(10);
       
       if (error) {
@@ -83,71 +84,60 @@ export function Friends({ session }: FriendsProps) {
           friend_id: friendId
         });
       
-      if (error) {
-        if (error.code === '23505') {
-          alert('User is already your friend!');
-        } else {
-          throw error;
-        }
-      } else {
-        // Refresh friends list
-        fetchFriends();
-      }
+      if (error) throw error;
+      fetchFriends();
     } catch (err) {
       console.error('Error adding friend:', err);
-      alert('Failed to add friend.');
+      alert('Failed to add friend');
     }
   };
 
-  const isAlreadyFriend = (id: string) => {
-    return friends.some(f => f.id === id);
+  const isAlreadyFriend = (userId: string) => {
+    return friends.some(f => f?.id === userId);
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 pb-32 pt-10 px-6">
-      <div className="flex items-center gap-3 mb-8">
-        <Users size={32} className="text-black" />
-        <h1 className="text-black text-4xl font-bold font-['Sora']">Friends</h1>
-      </div>
-
+    <div className="p-6 max-w-lg mx-auto pb-24">
       {/* Search Bar */}
-      <div className="relative mb-8">
-        <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-          <Search size={20} className="text-gray-400" />
-        </div>
+      <div className="relative mb-6">
+        <Search className="absolute left-4 top-3.5 text-gray-400" size={20} />
         <input 
-          type="text"
-          placeholder="Search for friends by name..."
+          type="text" 
+          placeholder="Search by name or @username..." 
           value={searchQuery}
           onChange={(e) => handleSearch(e.target.value)}
-          className="w-full bg-white rounded-[20px] py-4 pl-12 pr-4 text-black placeholder:text-gray-400 font-['Sora'] shadow-sm outline-none border border-transparent focus:border-[#4C8C3C]/30 transition-colors"
+          className="w-full bg-white rounded-[25px] pl-12 pr-4 py-3 text-sm font-['Sora'] shadow-sm focus:outline-none focus:ring-2 focus:ring-[#4C8C3C]"
         />
       </div>
 
+      {searchError && (
+        <div className="bg-red-50 text-red-600 p-4 rounded-[20px] mb-6 text-sm font-['Sora']">
+          {searchError}
+        </div>
+      )}
+
       {/* Search Results */}
-      {searchQuery.length >= 2 && (
-        <div className="mb-10 animate-in fade-in slide-in-from-top-2">
+      {searchQuery && (
+        <div className="mb-8">
           <h2 className="text-gray-500 text-sm font-semibold font-['Sora'] mb-4 uppercase tracking-wider">Search Results</h2>
-          <div className="bg-white rounded-[25px] p-2 shadow-sm overflow-hidden">
-            {searchError ? (
-              <div className="p-6 text-center text-red-500 font-['Sora'] text-sm">Error: {searchError}</div>
-            ) : isSearching ? (
+          <div className="bg-white rounded-[25px] shadow-sm overflow-hidden">
+            {isSearching ? (
               <div className="p-6 text-center text-gray-400 font-['Sora']">Searching...</div>
             ) : searchResults.length > 0 ? (
-              <div className="flex flex-col">
+              <div className="divide-y divide-gray-100">
                 {searchResults.map((user) => (
-                  <div key={user.id} className="flex items-center justify-between p-4 hover:bg-gray-50 rounded-[20px] transition-colors">
-                    <div className="flex items-center gap-3 overflow-hidden">
+                  <div key={user.id} className="p-4 flex items-center justify-between hover:bg-gray-50 transition-colors">
+                    <div className="flex items-center gap-3 min-w-0">
                       {user.avatar_url ? (
-                        <img src={user.avatar_url} alt="" className="w-12 h-12 rounded-full object-cover shrink-0" />
+                        <img src={user.avatar_url} alt="" className="w-12 h-12 rounded-[16px] object-cover shrink-0" />
                       ) : (
-                        <div className="w-12 h-12 bg-[#F5C744] rounded-full flex items-center justify-center shrink-0">
+                        <div className="w-12 h-12 bg-gray-100 rounded-[16px] flex items-center justify-center shrink-0">
                           <span className="text-black font-semibold text-lg">{user.full_name?.charAt(0) || '?'}</span>
                         </div>
                       )}
                       <div className="min-w-0">
                         <p className="text-black font-semibold font-['Sora'] truncate">{user.full_name}</p>
-                        <p className="text-gray-400 text-xs font-['Sora'] truncate">{user.email}</p>
+                        <p className="text-gray-400 text-xs font-['Sora'] truncate">{user.username ? `@${user.username}` : ''}</p>
                       </div>
                     </div>
                     {isAlreadyFriend(user.id) ? (
@@ -190,7 +180,7 @@ export function Friends({ session }: FriendsProps) {
                 )}
                 <div>
                   <p className="text-black font-semibold font-['Sora'] text-lg">{friend.full_name}</p>
-                  <p className="text-gray-400 text-sm font-['Sora']">{friend.email}</p>
+                  <p className="text-gray-400 text-sm font-['Sora']">{friend.username ? `@${friend.username}` : ''}</p>
                 </div>
               </div>
             ))}

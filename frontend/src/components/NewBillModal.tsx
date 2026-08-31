@@ -37,7 +37,7 @@ export function NewBillModal({ isOpen, onClose, onSuccess, session: propSession 
         try {
           const { data: prof } = await supabase
             .from('profiles')
-            .select('id, full_name, email, avatar_url')
+            .select('id, full_name, username, avatar_url')
             .eq('id', s.user.id)
             .maybeSingle();
 
@@ -67,7 +67,7 @@ export function NewBillModal({ isOpen, onClose, onSuccess, session: propSession 
           const friendIds = friendRows.map((f: any) => f.friend_id);
           const { data: profs } = await supabase
             .from('profiles')
-            .select('id, full_name, email, avatar_url')
+            .select('id, full_name, username, avatar_url')
             .in('id', friendIds);
           
           setUserFriends(profs || []);
@@ -106,14 +106,14 @@ export function NewBillModal({ isOpen, onClose, onSuccess, session: propSession 
     { 
       id: userId || 'me', 
       name: 'You', 
-      username: currentUserProfile?.email || '@you', 
+      username: currentUserProfile?.username ? `@${currentUserProfile.username}` : '@you', 
       avatar_url: currentUserProfile?.avatar_url || currentUserProfile?.picture || null,
       color: '#E5E7EB' 
     }, 
     ...selectedFriends.map(f => ({ 
       id: f.id, 
       name: f.full_name || f.name, 
-      username: f.email || '', 
+      username: f.username ? `@${f.username}` : '', 
       avatar_url: f.avatar_url || null,
       color: '#D9D9D9' 
     }))
@@ -210,8 +210,8 @@ export function NewBillModal({ isOpen, onClose, onSuccess, session: propSession 
     .filter(f => !selectedFriends.some(sf => sf.id === f.id))
     .filter(f => {
       if (!searchQuery.trim()) return true;
-      const q = searchQuery.toLowerCase();
-      return (f.full_name || '').toLowerCase().includes(q) || (f.email || '').toLowerCase().includes(q);
+      const q = searchQuery.replace(/^@/, '').toLowerCase().trim();
+      return (f.full_name || '').toLowerCase().includes(q) || (f.username || '').toLowerCase().includes(q);
     });
 
   return (
@@ -359,7 +359,7 @@ export function NewBillModal({ isOpen, onClose, onSuccess, session: propSession 
                             )}
                             <div className="flex flex-col truncate">
                               <span className="text-[#1A1A1A] dark:text-zinc-100 text-xs font-semibold leading-tight truncate transition-colors">{friend.full_name}</span>
-                              <span className="text-black/60 dark:text-zinc-400 text-[10px] truncate transition-colors">{friend.email}</span>
+                              <span className="text-black/60 dark:text-zinc-400 text-[10px] truncate transition-colors">{friend.username ? `@${friend.username}` : ''}</span>
                             </div>
                           </div>
                           <span className="text-xs font-semibold text-[#1A1A1A] dark:text-zinc-100 bg-[#D9D9D9] dark:bg-zinc-700 px-2.5 py-1 rounded-full shrink-0 ml-2 transition-colors">
@@ -427,7 +427,7 @@ export function NewBillModal({ isOpen, onClose, onSuccess, session: propSession 
                           )}
                           <div className="flex flex-col truncate">
                             <span className="text-[#1A1A1A] dark:text-zinc-100 text-xs font-semibold leading-tight truncate transition-colors">{friend.full_name}</span>
-                            <span className="text-black/60 dark:text-zinc-400 text-[10px] truncate transition-colors">{friend.email}</span>
+                            <span className="text-black/60 dark:text-zinc-400 text-[10px] truncate transition-colors">{friend.username ? `@${friend.username}` : ''}</span>
                           </div>
                         </div>
                         <span className="text-xs font-semibold text-[#1A1A1A] dark:text-zinc-100 bg-[#D9D9D9] dark:bg-zinc-700 px-2.5 py-1 rounded-full shrink-0 transition-colors">
@@ -509,7 +509,7 @@ export function NewBillModal({ isOpen, onClose, onSuccess, session: propSession 
                         )}
                         <div className="flex flex-col min-w-0">
                           <span className="text-[#1A1A1A] dark:text-zinc-100 text-sm font-semibold leading-tight truncate">{participant.name}</span>
-                          <span className="text-black/60 dark:text-zinc-400 text-[10px] font-normal truncate">{participant.username?.split('@')[0]}</span>
+                          <span className="text-black/60 dark:text-zinc-400 text-[10px] font-normal truncate">{participant.username || ''}</span>
                         </div>
                       </div>
                       {isEditingSplits ? (
