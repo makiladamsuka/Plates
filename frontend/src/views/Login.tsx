@@ -1,193 +1,34 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState } from 'react';
 import { supabase } from '../lib/supabase';
-import { syncUserProfile } from '../lib/profileSync';
-
-const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || '201004734198-3r780q0v3irrd2cbijaj2onq06dqkpq6.apps.googleusercontent.com';
-
-// Helper to clear Google's exponential cooldown suppression cookie on prompt dismissal
-function clearGoogleCooldownCookie() {
-  document.cookie = 'g_state=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
-  try {
-    localStorage.removeItem('g_state');
-    sessionStorage.removeItem('g_state');
-  } catch {}
-}
-
-// Dynamically load Google Identity Services client script
-function loadGsiScript(): Promise<void> {
-  if (typeof window !== 'undefined' && (window as any).google?.accounts?.id) {
-    return Promise.resolve();
-  }
-  return new Promise((resolve, reject) => {
-    const existing = document.getElementById('google-gsi-client');
-    if (existing) {
-      if ((window as any).google?.accounts?.id) return resolve();
-      existing.addEventListener('load', () => resolve());
-      existing.addEventListener('error', (e) => reject(e));
-      return;
-    }
-    const script = document.createElement('script');
-    script.id = 'google-gsi-client';
-    script.src = 'https://accounts.google.com/gsi/client';
-    script.async = true;
-    script.defer = true;
-    script.onload = () => resolve();
-    script.onerror = (e) => reject(e);
-    document.head.appendChild(script);
-  });
-}
-
-// Generate raw and SHA-256 hashed nonce for Supabase auth verification
-async function generateNonce(): Promise<{ raw: string; hashed: string }> {
-  const raw = btoa(String.fromCharCode(...crypto.getRandomValues(new Uint8Array(32))));
-  const encoder = new TextEncoder();
-  const encoded = encoder.encode(raw);
-  const hashBuffer = await crypto.subtle.digest('SHA-256', encoded);
-  const hashArray = Array.from(new Uint8Array(hashBuffer));
-  const hashed = hashArray.map((b) => b.toString(16).padStart(2, '0')).join('');
-  return { raw, hashed };
-}
 
 export function Login() {
   const [isSpinning, setIsSpinning] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const rawNonceRef = useRef<string>('');
-  const spinTimerRef = useRef<any>(null);
-
-  const resetSpin = () => {
-    if (spinTimerRef.current) {
-      clearTimeout(spinTimerRef.current);
-      spinTimerRef.current = null;
-    }
-    setIsSpinning(false);
-    clearGoogleCooldownCookie();
-  };
-
-  useEffect(() => {
-    // Clear cooldown cookie on mount so popup is ready immediately
-    clearGoogleCooldownCookie();
-    loadGsiScript().catch(console.warn);
-
-    window.addEventListener('focus', resetSpin);
-    window.addEventListener('blur', resetSpin);
-    window.addEventListener('pageshow', resetSpin);
-    document.addEventListener('visibilitychange', resetSpin);
-    window.addEventListener('pointerdown', resetSpin, { passive: true });
-    window.addEventListener('touchstart', resetSpin, { passive: true });
-    window.addEventListener('click', resetSpin, { passive: true });
-
-    return () => {
-      window.removeEventListener('focus', resetSpin);
-      window.removeEventListener('blur', resetSpin);
-      window.removeEventListener('pageshow', resetSpin);
-      document.removeEventListener('visibilitychange', resetSpin);
-      window.removeEventListener('pointerdown', resetSpin);
-      window.removeEventListener('touchstart', resetSpin);
-      window.removeEventListener('click', resetSpin);
-      if (spinTimerRef.current) clearTimeout(spinTimerRef.current);
-    };
-  }, []);
-
-  const fallbackRedirectOAuth = async () => {
-    const redirectUrl = `${window.location.origin}/auth/callback`;
-    const { error: oauthError } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        redirectTo: redirectUrl,
-        scopes: 'https://www.googleapis.com/auth/contacts.readonly',
-        queryParams: {
-          prompt: 'consent',
-          access_type: 'offline',
-        },
-      },
-    });
-    if (oauthError) throw oauthError;
-  };
 
   const handleGoogleLogin = async (e: React.MouseEvent) => {
     e.stopPropagation();
     try {
       setIsSpinning(true);
       setError(null);
-      clearGoogleCooldownCookie();
 
-      await loadGsiScript();
-
-      if (!(window as any).google?.accounts?.id) {
-        // Fallback to standard redirect if GSI script is unavailable
-        await fallbackRedirectOAuth();
-        return;
-      }
-
-      const { raw, hashed } = await generateNonce();
-      rawNonceRef.current = raw;
-
-      const handleCredentialResponse = async (response: any) => {
-        setIsSpinning(false);
-        if (!response?.credential) return;
-
-        try {
-          setIsSpinning(true);
-          const { data, error: authError } = await supabase.auth.signInWithIdToken({
-            provider: 'google',
-            token: response.credential,
-            nonce: rawNonceRef.current || undefined,
-          });
-
-          if (authError) throw authError;
-
-          if (data?.session?.user) {
-            await syncUserProfile(data.session.user);
-            window.location.href = '/';
-          }
-        } catch (err: any) {
-          console.error('[auth] signInWithIdToken error:', err);
-          setError(err.message || 'Failed to authenticate with Google.');
-        } finally {
-          setIsSpinning(false);
-          clearGoogleCooldownCookie();
-        }
-      };
-
-      (window as any).google.accounts.id.initialize({
-        client_id: GOOGLE_CLIENT_ID,
-        callback: handleCredentialResponse,
-        nonce: hashed,
-        use_fedcm_for_prompt: true,
-        auto_select: false,
-        cancel_on_tap_outside: true,
+      const redirectUrl = `${window.location.origin}/auth/callback`;
+      const { error: oauthError } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: redirectUrl,
+          scopes: 'https://www.googleapis.com/auth/contacts.readonly',
+          queryParams: {
+            prompt: 'consent select_account',
+            access_type: 'offline',
+          },
+        },
       });
 
-      // Display the Google popup / bottom sheet directly in-app
-      (window as any).google.accounts.id.prompt((notification: any) => {
-        if (
-          notification?.isDismissedMoment?.() ||
-          notification?.isSkippedMoment?.()
-        ) {
-          // User tapped away / cancelled the popup: immediately reset
-          setIsSpinning(false);
-          clearGoogleCooldownCookie();
-        } else if (notification?.isNotDisplayed?.()) {
-          // If One-Tap is suppressed by browser policy, fall back to OAuth redirect
-          console.warn('[auth] GSI prompt not displayed, falling back to OAuth redirect');
-          fallbackRedirectOAuth().catch((err: any) => {
-            setError(err.message || 'Login failed. Please try again.');
-            setIsSpinning(false);
-          });
-        }
-      });
-
-      // Reset spinner pulse after 1.5s so button is always responsive
-      if (spinTimerRef.current) clearTimeout(spinTimerRef.current);
-      spinTimerRef.current = setTimeout(() => {
-        setIsSpinning(false);
-      }, 1500);
-
+      if (oauthError) throw oauthError;
     } catch (err: any) {
       console.error('[auth] Google login error:', err);
       setError(err.message || 'Login failed. Please try again.');
       setIsSpinning(false);
-      clearGoogleCooldownCookie();
     }
   };
 
