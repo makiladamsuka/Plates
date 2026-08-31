@@ -54,6 +54,17 @@ function App() {
   });
 
   useEffect(() => {
+    const color = isDarkTheme ? '#09090b' : '#EDEDF1';
+    const metaThemeTags = document.querySelectorAll('meta[name="theme-color"]');
+    if (metaThemeTags.length > 0) {
+      metaThemeTags.forEach(tag => tag.setAttribute('content', color));
+    } else {
+      const meta = document.createElement('meta');
+      meta.name = 'theme-color';
+      meta.content = color;
+      document.head.appendChild(meta);
+    }
+
     if (isDarkTheme) {
       document.documentElement.classList.add('dark');
       localStorage.setItem('theme', 'dark');

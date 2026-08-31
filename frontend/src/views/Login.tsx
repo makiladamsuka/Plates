@@ -191,17 +191,17 @@ export function Login() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-0 sm:p-4 md:p-8 lg:p-12 selection:bg-[#F5C744]/30 bg-gradient-to-br from-[#F5C744]/30 via-[#f0f4ea] to-[#1A1A1A]/90 relative overflow-hidden bg-[#F0F0F4]">
+    <div className="min-h-screen flex items-center justify-center p-0 sm:p-4 md:p-8 lg:p-12 selection:bg-[#F5C744]/30 bg-gradient-to-br from-[#F5C744]/20 via-[#EDEDF1] to-[#1A1A1A]/80 relative overflow-hidden bg-[#EDEDF1]">
       
       {/* Decorative ambient blurred blobs behind the card */}
       <div className="absolute top-0 left-0 w-[600px] h-[600px] bg-[#F5C744]/30 rounded-full blur-[100px] pointer-events-none -translate-x-1/4 -translate-y-1/4 hidden md:block" />
       <div className="absolute bottom-0 right-0 w-[600px] h-[600px] bg-[#4C8C3C]/20 rounded-full blur-[100px] pointer-events-none translate-x-1/4 translate-y-1/4 hidden md:block" />
 
       {/* Main Card Container */}
-      <div className="relative w-full max-w-[1200px] bg-[#FDF6E6] md:bg-white rounded-none sm:rounded-3xl md:rounded-[32px] shadow-2xl overflow-hidden flex flex-col md:flex-row min-h-screen sm:min-h-0 md:h-[720px] z-10">
+      <div className="relative w-full max-w-[1200px] bg-[#EDEDF1] md:bg-white rounded-none sm:rounded-3xl md:rounded-[32px] shadow-2xl overflow-hidden flex flex-col md:flex-row min-h-screen sm:min-h-0 md:h-[720px] z-10">
         
         {/* ── Left Panel: Desktop Only (Logo & Illustration) ── */}
-        <div className="hidden md:flex w-full md:w-[50%] p-6 pt-10 md:p-16 flex-col bg-[#FDF6E6]">
+        <div className="hidden md:flex w-full md:w-[50%] p-6 pt-10 md:p-16 flex-col bg-[#EDEDF1]">
           {/* Brand Logo */}
           <div className="flex items-center gap-3 md:gap-4 mb-4 md:mb-8 justify-center md:justify-start">
             <img src="/logo.svg" alt="Plates logo" className="w-10 h-10 md:w-14 md:h-14 rounded-[22.5%] shrink-0 shadow-sm" />
