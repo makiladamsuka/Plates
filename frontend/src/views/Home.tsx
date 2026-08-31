@@ -84,7 +84,7 @@ export function Home({
         if (allFriendIds.size > 0) {
           const { data: profiles } = await supabase
             .from('profiles')
-            .select('id, full_name, avatar_url, email')
+            .select('id, full_name, avatar_url, username')
             .in('id', Array.from(allFriendIds));
 
           (profiles || []).forEach((prof: any) => {
@@ -98,7 +98,8 @@ export function Home({
             ...p,
             profile: profilesMap[p.friend_id] || null,
             full_name: profilesMap[p.friend_id]?.full_name || null,
-            avatar_url: profilesMap[p.friend_id]?.avatar_url || null
+            avatar_url: profilesMap[p.friend_id]?.avatar_url || null,
+            username: profilesMap[p.friend_id]?.username || null
           }))
         }));
 
@@ -130,13 +131,13 @@ export function Home({
         const requesterIds = rawPending.map((f: any) => f.user_id);
         const { data: profs } = await supabase
           .from('profiles')
-          .select('id, full_name, avatar_url, email')
+          .select('id, full_name, avatar_url, username')
           .in('id', requesterIds);
 
         const pending = (profs || []).filter((p: any) => p && p.id).map((p: any) => ({
           id: p.id,
           name: p.full_name || 'Friend',
-          username: p.email || '',
+          username: p.username ? `@${p.username}` : '',
           avatar_url: p.avatar_url,
           color: '#4C8C3C',
           isPendingRequest: true,

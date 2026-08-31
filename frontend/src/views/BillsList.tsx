@@ -92,7 +92,7 @@ export function BillsList({ onBillClick, session }: BillsListProps) {
         if (allFriendIds.size > 0) {
           const { data: profiles } = await supabase
             .from('profiles')
-            .select('id, full_name, avatar_url, email')
+            .select('id, full_name, avatar_url, username')
             .in('id', Array.from(allFriendIds));
 
           (profiles || []).forEach((prof: any) => {
@@ -106,7 +106,8 @@ export function BillsList({ onBillClick, session }: BillsListProps) {
             ...p,
             profile: profilesMap[p.friend_id] || null,
             full_name: profilesMap[p.friend_id]?.full_name || null,
-            avatar_url: profilesMap[p.friend_id]?.avatar_url || null
+            avatar_url: profilesMap[p.friend_id]?.avatar_url || null,
+            username: profilesMap[p.friend_id]?.username || null
           }))
         }));
 

@@ -190,14 +190,14 @@ function App() {
               if (!knownFriendRequestIdsRef.current.has(f.user_id)) {
                 const { data: prof } = await supabase
                   .from('profiles')
-                  .select('id, full_name, avatar_url, email')
+                  .select('id, full_name, avatar_url, username')
                   .eq('id', f.user_id)
                   .maybeSingle();
 
                 const friendData = {
                   id: prof?.id || f.user_id,
                   name: prof?.full_name || 'Friend',
-                  username: prof?.email || '',
+                  username: prof?.username ? `@${prof.username}` : '',
                   avatar_url: prof?.avatar_url,
                   isPendingRequest: true,
                 };

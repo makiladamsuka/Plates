@@ -36,7 +36,7 @@ export function FriendDetail({ session, friendId, onBack, onBillClick }: FriendD
         // 2. Fetch friend profile
         const { data: friendProfile, error: friendErr } = await supabase
           .from('profiles')
-          .select('id, full_name, email, avatar_url')
+          .select('id, full_name, username, avatar_url')
           .eq('id', friendId)
           .single();
         
@@ -158,16 +158,16 @@ export function FriendDetail({ session, friendId, onBack, onBillClick }: FriendD
 
           <div className="flex justify-between items-start">
             <div className="flex flex-col">
-              <h1 className="text-[#1A1A1A] dark:text-zinc-100 text-2xl md:text-3xl font-bold font-display">{friend.full_name || friend.name || 'Friend'}</h1>
+              <h1 className="text-[#1A1A1A] dark:text-zinc-100 text-2xl md:text-3xl font-bold font-display">{friend.full_name || friend.username || 'Friend'}</h1>
               <div className="flex items-center gap-4 mt-2">
                 {friend.avatar_url ? (
                   <img src={friend.avatar_url} alt="" className="w-[50px] h-[50px] rounded-full object-cover shrink-0" />
                 ) : (
                   <div className="w-[50px] h-[50px] rounded-full bg-[#D9D9D9] dark:bg-zinc-800 flex items-center justify-center font-bold text-black dark:text-white text-xl shrink-0 opacity-80">
-                    {(friend.full_name || friend.email || 'F')[0].toUpperCase()}
+                    {(friend.full_name || friend.username || 'F')[0].toUpperCase()}
                   </div>
                 )}
-                <span className="text-black/70 dark:text-zinc-400 text-[15px] font-normal">{friend.email}</span>
+                <span className="text-black/70 dark:text-zinc-400 text-[15px] font-normal">{friend.username ? `@${friend.username}` : ''}</span>
               </div>
             </div>
 

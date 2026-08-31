@@ -113,7 +113,7 @@ app.get('/api/bills', async (req, res) => {
       );
     }
 
-    // Enrich participants with profile information (full_name, avatar_url, email)
+    // Enrich participants with profile information (full_name, avatar_url, username)
     const allFriendIds = Array.from(new Set(
       filteredData.flatMap((b: any) => (b.participants || []).map((p: any) => p.friend_id))
     ));
@@ -122,7 +122,7 @@ app.get('/api/bills', async (req, res) => {
     if (allFriendIds.length > 0) {
       const { data: profiles } = await supabase
         .from('profiles')
-        .select('id, full_name, avatar_url, email')
+        .select('id, full_name, avatar_url, username')
         .in('id', allFriendIds);
       
       (profiles || []).forEach((prof: any) => {
@@ -136,7 +136,8 @@ app.get('/api/bills', async (req, res) => {
         ...p,
         profile: profilesMap[p.friend_id] || null,
         full_name: profilesMap[p.friend_id]?.full_name || null,
-        avatar_url: profilesMap[p.friend_id]?.avatar_url || null
+        avatar_url: profilesMap[p.friend_id]?.avatar_url || null,
+        username: profilesMap[p.friend_id]?.username || null
       }))
     }));
 
@@ -164,7 +165,7 @@ app.get('/api/bills/:id', async (req, res) => {
     if (friendIds.length > 0) {
       const { data: profiles } = await supabase
         .from('profiles')
-        .select('id, full_name, avatar_url, email')
+        .select('id, full_name, avatar_url, username')
         .in('id', friendIds);
       
       (profiles || []).forEach((prof: any) => {
@@ -178,7 +179,8 @@ app.get('/api/bills/:id', async (req, res) => {
         ...p,
         profile: profilesMap[p.friend_id] || null,
         full_name: profilesMap[p.friend_id]?.full_name || null,
-        avatar_url: profilesMap[p.friend_id]?.avatar_url || null
+        avatar_url: profilesMap[p.friend_id]?.avatar_url || null,
+        username: profilesMap[p.friend_id]?.username || null
       }))
     };
 
@@ -243,7 +245,7 @@ app.post('/api/bills', async (req, res) => {
     if (friendIds.length > 0) {
       const { data: profiles } = await supabase
         .from('profiles')
-        .select('id, full_name, avatar_url, email')
+        .select('id, full_name, avatar_url, username')
         .in('id', friendIds);
       
       (profiles || []).forEach((prof: any) => {
@@ -257,7 +259,8 @@ app.post('/api/bills', async (req, res) => {
         ...p,
         profile: profilesMap[p.friend_id] || null,
         full_name: profilesMap[p.friend_id]?.full_name || null,
-        avatar_url: profilesMap[p.friend_id]?.avatar_url || null
+        avatar_url: profilesMap[p.friend_id]?.avatar_url || null,
+        username: profilesMap[p.friend_id]?.username || null
       }))
     };
     
@@ -501,7 +504,7 @@ app.delete('/api/bills/:id', async (req, res) => {
 
 // =============== FRIENDS ROUTES ===============
 
-// Search profiles by name or email with input sanitization
+// Search profiles by name or username with input sanitization
 app.get('/api/profiles/search', async (req, res) => {
   try {
     const { q, userId } = req.query;
@@ -510,15 +513,15 @@ app.get('/api/profiles/search', async (req, res) => {
     }
 
     // Strip special control characters to prevent filter injection
-    const sanitizedQ = (q as string).replace(/[,()%.]/g, '').trim();
+    const sanitizedQ = (q as string).replace(/[,()%.@]/g, '').trim();
     if (sanitizedQ.length < 1) {
       return res.json([]);
     }
 
     let query = supabase
       .from('profiles')
-      .select('id, full_name, email, avatar_url')
-      .or(`full_name.ilike.%${sanitizedQ}%,email.ilike.%${sanitizedQ}%`)
+      .select('id, full_name, username, avatar_url')
+      .or(`full_name.ilike.%${sanitizedQ}%,username.ilike.%${sanitizedQ}%`)
       .limit(10);
     
     if (userId) {
@@ -546,7 +549,7 @@ app.get('/api/friends/:userId', async (req, res) => {
           id,
           full_name,
           avatar_url,
-          email
+          username
         )
       `)
       .eq('user_id', userId);

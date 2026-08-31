@@ -55,13 +55,13 @@ export function FriendsList({
         const friendIds = rawAccepted.map((f: any) => f.friend_id);
         const { data: profs } = await supabase
           .from('profiles')
-          .select('id, full_name, avatar_url, email')
+          .select('id, full_name, avatar_url, username')
           .in('id', friendIds);
         
         accepted = (profs || []).filter((p: any) => p && p.id).map((p: any) => ({
           id: p.id,
           name: p.full_name || 'Friend',
-          username: p.email || '',
+          username: p.username ? `@${p.username}` : '',
           avatar_url: p.avatar_url,
           balance: 0,
           isPendingRequest: false,
@@ -80,13 +80,13 @@ export function FriendsList({
         const requesterIds = rawPending.map((f: any) => f.user_id);
         const { data: profs } = await supabase
           .from('profiles')
-          .select('id, full_name, avatar_url, email')
+          .select('id, full_name, avatar_url, username')
           .in('id', requesterIds);
 
         pending = (profs || []).filter((p: any) => p && p.id).map((p: any) => ({
           id: p.id,
           name: p.full_name || 'User',
-          username: p.email || '',
+          username: p.username ? `@${p.username}` : '',
           avatar_url: p.avatar_url,
           balance: 0,
           isPendingRequest: true,

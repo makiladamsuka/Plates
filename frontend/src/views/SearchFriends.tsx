@@ -35,11 +35,12 @@ export function SearchFriends({ session, onBack }: SearchFriendsProps) {
 
     setIsSearching(true);
     try {
+      const cleanQ = query.replace(/^@/, '').trim();
       const { data, error } = await supabase
         .from('profiles')
-        .select('id, full_name, email, avatar_url')
+        .select('id, full_name, username, avatar_url')
         .neq('id', session.user.id)
-        .or(`full_name.ilike.%${query}%,email.ilike.%${query}%`)
+        .or(`full_name.ilike.%${cleanQ}%,username.ilike.%${cleanQ}%`)
         .limit(10);
       
       if (error) throw error;
@@ -76,7 +77,7 @@ export function SearchFriends({ session, onBack }: SearchFriendsProps) {
   };
 
   return (
-    <div className="min-h-screen bg-[#EDEDF1] dark:bg-zinc-950 pb-36 relative transition-colors">
+    <div className="min-h-screen bg-[#EDEDF1] dark:bg-zinc-950 pb-36 relative transition-colors font-['Sora']">
       
       {/* Top Header */}
       <div className="px-6 pt-6 pb-2">
@@ -93,7 +94,7 @@ export function SearchFriends({ session, onBack }: SearchFriendsProps) {
           <Search size={20} strokeWidth={2.5} className="text-black/60 dark:text-zinc-400 mr-3 shrink-0" />
           <input 
             type="text"
-            placeholder="Search People"
+            placeholder="Search by name or @username..."
             value={searchQuery}
             onChange={(e) => handleSearch(e.target.value)}
             autoFocus
@@ -125,8 +126,8 @@ export function SearchFriends({ session, onBack }: SearchFriendsProps) {
                     <span className="text-[#1A1A1A] dark:text-zinc-100 text-[13px] font-semibold leading-tight truncate">
                       {user.full_name}
                     </span>
-                    <span className="text-black dark:text-zinc-400 text-[11px] font-light leading-tight mt-0.5 truncate">
-                      {user.email}
+                    <span className="text-black/60 dark:text-zinc-400 text-[11px] font-light leading-tight mt-0.5 truncate">
+                      {user.username ? `@${user.username}` : ''}
                     </span>
                   </div>
                 </div>
@@ -156,7 +157,7 @@ export function SearchFriends({ session, onBack }: SearchFriendsProps) {
           </div>
         ) : (
           <div className="text-center py-12 text-black/40 dark:text-zinc-500 text-sm font-light">
-            Type a name or email to search
+            Type a name or @username to search
           </div>
         )}
       </div>
