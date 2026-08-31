@@ -246,7 +246,7 @@ function App() {
         // 3. Check incoming payments sent to creator's bills
         const { data: creatorBills } = await supabase
           .from('bills')
-          .select('id, title, creator_id, participants(*)')
+          .select('*, participants(*)')
           .eq('creator_id', uid)
           .neq('status', 'Settled');
 

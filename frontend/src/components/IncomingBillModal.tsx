@@ -1,14 +1,14 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { X, CreditCard } from 'lucide-react';
-import { api } from '../services/api';
 import { supabase } from '../lib/supabase';
+import { api } from '../services/api';
 import { ConfirmTransferModal } from './ConfirmTransferModal';
 
 interface IncomingBillModalProps {
   isOpen: boolean;
   onClose: () => void;
   bill: any;
-  userId: string;
+  userId?: string;
   onSuccess?: () => void;
   readOnly?: boolean;
 }
@@ -60,7 +60,7 @@ function SlideToAccept({ onAccept, isSubmitting }: { onAccept: () => void; isSub
   return (
     <div 
       ref={trackRef}
-      className="w-full h-20 bg-[#D9D9D9] rounded-[50px] relative flex items-center px-2 shadow-inner overflow-hidden select-none touch-none"
+      className="w-full max-w-[365px] h-[74px] shrink-0 bg-[#D9D9D9] rounded-[50px] relative flex items-center px-2 shadow-inner overflow-hidden select-none touch-none"
     >
       {/* Slider Knob */}
       <div 
@@ -101,19 +101,94 @@ export function IncomingBillModal({
 }: IncomingBillModalProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isConfirmTransferOpen, setIsConfirmTransferOpen] = useState(false);
+  const [enrichedParticipants, setEnrichedParticipants] = useState<any[]>([]);
+  const [creatorProfile, setCreatorProfile] = useState<any>(null);
+  const [currentUserAvatar, setCurrentUserAvatar] = useState<string | null>(null);
+  const [effectiveUserId, setEffectiveUserId] = useState<string>(userId || '');
+
+  useEffect(() => {
+    if (!isOpen || !bill) return;
+
+    const enrichData = async () => {
+      try {
+        let activeUid = userId;
+        if (!activeUid) {
+          const { data: { session } } = await supabase.auth.getSession();
+          activeUid = session?.user?.id || '';
+          if (session?.user?.user_metadata?.avatar_url) {
+            setCurrentUserAvatar(session.user.user_metadata.avatar_url);
+          }
+        }
+        setEffectiveUserId(activeUid || '');
+
+        const rawParts = bill.participants || [];
+        const allIds = new Set<string>();
+        if (bill.creator_id) allIds.add(bill.creator_id);
+        if (activeUid) allIds.add(activeUid);
+        rawParts.forEach((p: any) => {
+          if (p.friend_id) allIds.add(p.friend_id);
+          if (p.friendId && p.friendId !== 'me') allIds.add(p.friendId);
+        });
+
+        if (allIds.size > 0) {
+          const { data: profiles } = await supabase
+            .from('profiles')
+            .select('id, full_name, avatar_url, username')
+            .in('id', Array.from(allIds));
+
+          const profilesMap: Record<string, any> = {};
+          (profiles || []).forEach((prof: any) => {
+            profilesMap[prof.id] = prof;
+          });
+
+          if (activeUid && profilesMap[activeUid]?.avatar_url) {
+            setCurrentUserAvatar(profilesMap[activeUid].avatar_url);
+          }
+
+          if (bill.creator_id && profilesMap[bill.creator_id]) {
+            setCreatorProfile(profilesMap[bill.creator_id]);
+          }
+
+          const enriched = rawParts.map((p: any) => {
+            const fid = p.friend_id || p.friendId || (p.friendId === 'me' ? activeUid : null);
+            const prof = (fid && profilesMap[fid]) ? profilesMap[fid] : (p.profile || {});
+            return {
+              ...p,
+              friend_id: fid,
+              full_name: prof.full_name || p.full_name || null,
+              avatar_url: prof.avatar_url || p.avatar_url || null,
+              username: prof.username || p.username || null,
+            };
+          });
+
+          setEnrichedParticipants(enriched);
+        } else {
+          setEnrichedParticipants(rawParts);
+        }
+      } catch (err) {
+        console.error('Error enriching participants in IncomingBillModal:', err);
+        setEnrichedParticipants(bill.participants || []);
+      }
+    };
+
+    enrichData();
+  }, [bill, isOpen, userId]);
 
   if (!isOpen || !bill) return null;
 
-  const myParticipant = (bill.participants || []).find((p: any) => p.friend_id === userId || p.friendId === userId);
-  const myShare = myParticipant ? myParticipant.share : 0;
-  const isCreator = bill.creator_id === userId;
+  const currentParticipants = enrichedParticipants.length > 0 ? enrichedParticipants : (bill.participants || []);
+  const myParticipant = currentParticipants.find((p: any) => p.friend_id === effectiveUserId || p.friendId === effectiveUserId || (effectiveUserId && p.friendId === 'me'));
+  const myShare = myParticipant ? Number(myParticipant.share || 0) : 0;
+  const isCreator = bill.creator_id === effectiveUserId;
   const isAcceptedByMe = isCreator || (myParticipant ? myParticipant.accepted === true : false);
   const isEffectiveReadOnly = readOnly || isAcceptedByMe;
   const isMySharePaid = isCreator || myParticipant?.paid === true;
   const isFullySettled = bill.status === 'Settled';
+  const isMyPaymentSent = myParticipant?.payment_sent === true && !myParticipant?.paid;
+  const billTotal = bill.total || bill.amount || currentParticipants.reduce((sum: number, p: any) => sum + Number(p.share || 0), 0);
 
   const getEffectiveUserId = async (): Promise<string> => {
-    if (userId) return userId;
+    if (effectiveUserId) return effectiveUserId;
     const { data: { session } } = await supabase.auth.getSession();
     return session?.user?.id || '';
   };
@@ -178,8 +253,6 @@ export function IncomingBillModal({
     }
   };
 
-  const isMyPaymentSent = myParticipant?.payment_sent === true && !myParticipant?.paid;
-
   const handleExecuteSettle = async () => {
     setIsSubmitting(true);
     try {
@@ -206,6 +279,14 @@ export function IncomingBillModal({
       // Route through backend API (uses service role key, bypasses RLS)
       await api.confirmPayment(bill.id, friendId);
 
+      // Local optimistic update
+      setEnrichedParticipants(prev => prev.map(p => {
+        if (p.friend_id === friendId || p.friendId === friendId) {
+          return { ...p, paid: true, payment_sent: false };
+        }
+        return p;
+      }));
+
       if (onSuccess) onSuccess();
     } catch (err: any) {
       console.error('Error confirming participant payment:', err);
@@ -220,6 +301,14 @@ export function IncomingBillModal({
     try {
       // Route through backend API (uses service role key, bypasses RLS)
       await api.declinePayment(bill.id, friendId);
+
+      // Local optimistic update
+      setEnrichedParticipants(prev => prev.map(p => {
+        if (p.friend_id === friendId || p.friendId === friendId) {
+          return { ...p, payment_sent: false };
+        }
+        return p;
+      }));
 
       if (onSuccess) onSuccess();
     } catch (err: any) {
@@ -258,7 +347,9 @@ export function IncomingBillModal({
                     {isFullySettled ? 'Settled' : (bill.status || 'Pending')}
                   </div>
                 )}
-                <div className="text-white/70 text-sm">{bill.category} · {bill.participants?.length || 0} Participants</div>
+                <div className="text-white/70 text-sm">
+                  {bill.category ? `${bill.category} · ` : ''}{currentParticipants.length} Participants
+                </div>
               </div>
               <button onClick={onClose} className="text-white/60 hover:text-white p-1 cursor-pointer">
                 <X size={24} />
@@ -268,13 +359,13 @@ export function IncomingBillModal({
             {/* Participants Card */}
             <div className="bg-neutral-800 rounded-[25px] p-4 flex flex-col gap-2.5 mb-6">
               <span className="text-white/60 text-xs font-semibold uppercase tracking-wider mb-1">Participants & Shares</span>
-              {(bill.participants || []).map((p: any, i: number) => {
-                const isPMe = p.friend_id === userId || p.friendId === userId;
+              {currentParticipants.map((p: any, i: number) => {
+                const isPMe = p.friend_id === effectiveUserId || p.friendId === effectiveUserId || (effectiveUserId && p.friendId === 'me');
                 const isPCreator = bill.creator_id === (p.friend_id || p.friendId);
                 const isPPaid = isPCreator || p.paid;
                 const isPPaymentSent = p.payment_sent === true && !p.paid;
-                const pName = isPMe ? 'You' : (p.full_name || p.profile?.full_name || `Friend ${(p.friend_id || p.friendId || '').substring(0, 4)}`);
-                const pAvatar = p.avatar_url || p.profile?.avatar_url;
+                const pName = isPMe ? 'You' : (p.full_name || (p.username ? `@${p.username}` : 'Friend'));
+                const pAvatar = isPMe ? (currentUserAvatar || p.avatar_url) : p.avatar_url;
                 const pFriendId = p.friend_id || p.friendId;
 
                 return (
@@ -293,11 +384,14 @@ export function IncomingBillModal({
                         </span>
                         {isPCreator && <span className="text-amber-300 text-[10px]">Creator (Paid upfront)</span>}
                         {isPPaymentSent && <span className="text-yellow-400 text-[10px]">Sent payment · Awaiting confirmation</span>}
+                        {!isPCreator && !isPPaymentSent && p.username && !isPMe && (
+                          <span className="text-white/50 text-[10px] truncate">@{p.username}</span>
+                        )}
                       </div>
                     </div>
 
                     <div className="flex items-center gap-2 shrink-0 ml-2">
-                      <span className="text-white text-base font-semibold">LKR {p.share}</span>
+                      <span className="text-white text-base font-semibold">LKR {Number(p.share || 0).toFixed(0)}</span>
                       
                       {isPPaid ? (
                         <span className="text-[10px] bg-green-900/60 text-green-300 px-2 py-0.5 rounded-full font-bold">Paid</span>
@@ -307,14 +401,14 @@ export function IncomingBillModal({
                             <button
                               onClick={() => handleConfirmParticipantPayment(pFriendId)}
                               title="Confirm received payment"
-                              className="bg-[#4C8C3C] text-white px-2 py-1 rounded-full text-[10px] font-bold active:scale-95 transition-transform cursor-pointer"
+                              className="bg-[#4C8C3C] text-white px-2 py-1 rounded-full text-[10px] font-bold active:scale-95 transition-transform cursor-pointer hover:bg-[#437d35]"
                             >
                               Confirm
                             </button>
                             <button
                               onClick={() => handleDeclineParticipantPayment(pFriendId)}
                               title="Not received"
-                              className="bg-red-900/60 text-red-300 px-2 py-1 rounded-full text-[10px] font-bold active:scale-95 transition-transform cursor-pointer"
+                              className="bg-red-900/60 text-red-300 px-2 py-1 rounded-full text-[10px] font-bold active:scale-95 transition-transform cursor-pointer hover:bg-red-900"
                             >
                               ✕
                             </button>
@@ -338,8 +432,8 @@ export function IncomingBillModal({
                 <div className="text-white/70 text-lg">Your Share</div>
               </div>
               <div className="flex flex-col items-end gap-1">
-                <div className="text-white/70 text-sm">LKR {bill.total}</div>
-                <div className="text-amber-300 text-3xl font-bold font-display">LKR {myShare}</div>
+                <div className="text-white/70 text-sm">LKR {Number(billTotal).toFixed(0)}</div>
+                <div className="text-amber-300 text-3xl font-bold font-display">LKR {Number(myShare).toFixed(0)}</div>
               </div>
             </div>
 
@@ -361,7 +455,7 @@ export function IncomingBillModal({
                 {!isMySharePaid && !isFullySettled ? (
                   isMyPaymentSent ? (
                     <div className="w-full py-3.5 px-4 text-center text-yellow-300 text-sm font-semibold bg-yellow-950/40 rounded-[25px] border border-yellow-800/50 mb-1 flex flex-col items-center gap-0.5">
-                      <span>✓ Payment Sent (LKR {myShare})</span>
+                      <span>✓ Payment Sent (LKR {Number(myShare).toFixed(0)})</span>
                       <span className="text-xs text-white/60 font-normal">Waiting for the creator to confirm receipt</span>
                     </div>
                   ) : (
@@ -371,7 +465,7 @@ export function IncomingBillModal({
                       className={`w-full h-14 bg-amber-400 hover:bg-amber-300 text-black text-lg font-semibold rounded-[30px] flex items-center justify-center gap-2 active:scale-[0.98] transition-all cursor-pointer ${isSubmitting ? 'opacity-50' : ''}`}
                     >
                       <CreditCard size={20} strokeWidth={2.5} />
-                      <span>{isSubmitting ? 'Processing...' : `Settle LKR ${myShare}`}</span>
+                      <span>{isSubmitting ? 'Processing...' : `Settle LKR ${Number(myShare).toFixed(0)}`}</span>
                     </button>
                   )
                 ) : (
@@ -399,7 +493,7 @@ export function IncomingBillModal({
         onClose={() => setIsConfirmTransferOpen(false)}
         onConfirm={handleExecuteSettle}
         amount={myShare}
-        username={isCreator ? "the group" : `Creator`}
+        username={isCreator ? "the group" : (creatorProfile?.full_name || (creatorProfile?.username ? `@${creatorProfile.username}` : 'Creator'))}
       />
     </>
   );
