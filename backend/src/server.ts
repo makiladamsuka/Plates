@@ -29,6 +29,8 @@ app.use(
           "https://*.supabase.co",
           "wss://*.supabase.co",
           "https://accounts.google.com",
+          "https://people.googleapis.com",
+          "https://*.googleapis.com",
         ],
         imgSrc: [
           "'self'",
@@ -36,6 +38,8 @@ app.use(
           "blob:",
           "https://*.googleusercontent.com",
           "https://*.supabase.co",
+          "https://*.googleapis.com",
+          "https://*.google.com",
         ],
         styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com", "https://accounts.google.com"],
         fontSrc: ["'self'", "https://fonts.gstatic.com", "data:"],
