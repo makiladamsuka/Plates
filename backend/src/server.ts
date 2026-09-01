@@ -29,6 +29,7 @@ app.use(
           "https://*.supabase.co",
           "wss://*.supabase.co",
           "https://accounts.google.com",
+          "https://people.googleapis.com",
           "https://*.googleapis.com",
           "https://plates.live",
           "https://*.plates.live",
