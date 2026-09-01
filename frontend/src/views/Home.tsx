@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
+import { useData } from '../lib/DataContext';
 import { ArrowDownLeft, ArrowUpRight, Plus, UserPlus, ChevronRight, Check } from 'lucide-react';
 import { NewBillModal } from '../components/NewBillModal';
 import { IncomingBillModal } from '../components/IncomingBillModal';
@@ -29,159 +30,36 @@ export function Home({
   const [isNewBillModalOpen, setIsNewBillModalOpen] = useState(false);
   const [selectedIncomingBill, setSelectedIncomingBill] = useState<any>(null);
   const [selectedIncomingFriend, setSelectedIncomingFriend] = useState<any>(null);
-  const [bills, setBills] = useState<any[]>(initialBills || []);
-  const [pendingFriendRequests, setPendingFriendRequests] = useState<any[]>([]);
-  const [userId, setUserId] = useState<string>(session?.user?.id || '');
-
-  const getActiveUserId = async (): Promise<string> => {
-    if (session?.user?.id) return session.user.id;
-    if (userId) return userId;
-    const { data: { session: s } } = await supabase.auth.getSession();
-    const uid = s?.user?.id || '';
-    if (uid && uid !== userId) {
-      setUserId(uid);
-    }
-    return uid;
-  };
-
-  const fetchBills = async (currentUid?: string) => {
-    const uid = currentUid || await getActiveUserId();
-    try {
-      if (uid) {
-        const data = await api.getBills(uid);
-        if (data && Array.isArray(data) && data.length > 0) {
-          setBills(data);
-          return;
-        }
-      }
-    } catch (e) {
-      console.warn('API getBills failed, falling back to direct Supabase:', e);
-    }
-
-    try {
-      const { data: rawBills } = await supabase
-        .from('bills')
-        .select('*, participants(*)');
-
-      if (rawBills) {
-        // Filter strictly to bills where current user is creator or participant
-        const myBills = rawBills.filter((b: any) => {
-          if (!uid) return true;
-          const isCreator = b.creator_id === uid;
-          const isParticipant = (b.participants || []).some((p: any) => p.friend_id === uid || p.friendId === uid);
-          return isCreator || isParticipant;
-        });
-
-        const allFriendIds = new Set<string>();
-        myBills.forEach((b: any) => {
-          if (b.creator_id) allFriendIds.add(b.creator_id);
-          (b.participants || []).forEach((p: any) => {
-            if (p.friend_id) allFriendIds.add(p.friend_id);
-          });
-        });
-
-        let profilesMap: Record<string, any> = {};
-        if (allFriendIds.size > 0) {
-          const { data: profiles } = await supabase
-            .from('profiles')
-            .select('id, full_name, avatar_url, username')
-            .in('id', Array.from(allFriendIds));
-
-          (profiles || []).forEach((prof: any) => {
-            profilesMap[prof.id] = prof;
-          });
-        }
-
-        const enriched = myBills.map((b: any) => ({
-          ...b,
-          participants: (b.participants || []).map((p: any) => ({
-            ...p,
-            profile: profilesMap[p.friend_id] || null,
-            full_name: profilesMap[p.friend_id]?.full_name || null,
-            avatar_url: profilesMap[p.friend_id]?.avatar_url || null,
-            username: profilesMap[p.friend_id]?.username || null
-          }))
-        }));
-
-        setBills(enriched);
-      }
-    } catch (err) {
-      console.error('Error fetching bills via Supabase:', err);
-    }
-  };
-
-  const fetchPendingFriends = async (currentUid?: string) => {
-    const uid = currentUid || await getActiveUserId();
-    if (!uid) return;
-
-    try {
-      // Fetch Pending Friend Requests sent TO current user
-      const { data: rawPending, error } = await supabase
-        .from('friends')
-        .select('user_id, status')
-        .eq('friend_id', uid)
-        .eq('status', 'pending');
-
-      if (error) {
-        console.error('Error fetching pending friend requests:', error);
-        return;
-      }
-
-      if (rawPending && rawPending.length > 0) {
-        const requesterIds = rawPending.map((f: any) => f.user_id);
-        const { data: profs } = await supabase
-          .from('profiles')
-          .select('id, full_name, avatar_url, username')
-          .in('id', requesterIds);
-
-        const pending = (profs || []).filter((p: any) => p && p.id).map((p: any) => ({
-          id: p.id,
-          name: p.full_name || 'Friend',
-          username: p.username ? `@${p.username}` : '',
-          avatar_url: p.avatar_url,
-          color: '#4C8C3C',
-          isPendingRequest: true,
-        }));
-        setPendingFriendRequests(pending);
-      } else {
-        setPendingFriendRequests([]);
-      }
-    } catch (err) {
-      console.error('Error loading friend requests:', err);
-    }
-  };
+    const { 
+    bills, 
+    setBills, 
+    pendingFriendRequests, 
+    setPendingFriendRequests, 
+    fetchBills, 
+    fetchPendingFriends, 
+    isLoadingInitialData 
+  } = useData();
+  const userId = session?.user?.id || '';
 
   const handleApproveFriend = async (requesterId: string) => {
-    const uid = await getActiveUserId();
+    const uid = userId;
     if (!uid) return;
 
-    // Optimistic UI update: remove request immediately so it disappears with zero delay
     setPendingFriendRequests(prev => prev.filter(r => r.id !== requesterId));
     setSelectedIncomingFriend(null);
 
     try {
-      // 1. Try Supabase RPC first
       const { error: rpcErr } = await supabase.rpc('accept_friend_request', {
         p_requester_id: requesterId,
         p_friend_id: uid
       });
 
       if (rpcErr) {
-        // Fallback: direct table updates
-        await supabase
-          .from('friends')
-          .update({ status: 'accepted' })
-          .eq('user_id', requesterId)
-          .eq('friend_id', uid);
-
-        await supabase
-          .from('friends')
-          .upsert({ user_id: uid, friend_id: requesterId, status: 'accepted' });
+        await supabase.from('friends').update({ status: 'accepted' }).eq('user_id', requesterId).eq('friend_id', uid);
+        await supabase.from('friends').upsert({ user_id: uid, friend_id: requesterId, status: 'accepted' });
       }
 
-      // Background API sync
       api.acceptFriend(requesterId, uid).catch(console.warn);
-
       fetchPendingFriends(uid);
       onApproveFriend?.(requesterId);
     } catch (err) {
@@ -191,10 +69,9 @@ export function Home({
   };
 
   const handleDirectAcceptBill = async (bill: any) => {
-    const uid = await getActiveUserId();
+    const uid = userId;
     if (!uid) return;
 
-    // Optimistic UI update: immediately mark accepted so it disappears instantly
     setBills(prev => prev.map(b => {
       if (b.id !== bill.id) return b;
       return {
@@ -206,21 +83,9 @@ export function Home({
     }));
 
     try {
-      // 1. Direct Supabase write
-      await supabase
-        .from('participants')
-        .update({ accepted: true, paid: false })
-        .eq('bill_id', bill.id)
-        .eq('friend_id', uid);
-
-      await supabase
-        .from('bills')
-        .update({ status: 'Pending' })
-        .eq('id', bill.id);
-
-      // 2. Background API call
+      await supabase.from('participants').update({ accepted: true, paid: false }).eq('bill_id', bill.id).eq('friend_id', uid);
+      await supabase.from('bills').update({ status: 'Pending' }).eq('id', bill.id);
       api.acceptBill(bill.id, uid).catch(console.warn);
-
       fetchBills(uid);
     } catch (err) {
       console.error('Error accepting bill directly:', err);
@@ -229,10 +94,9 @@ export function Home({
   };
 
   const handleConfirmPaymentReceipt = async (billId: string, friendId: string) => {
-    const uid = await getActiveUserId();
+    const uid = userId;
     if (!uid) return;
 
-    // Optimistic UI update: mark participant as paid
     setBills(prev => prev.map(b => {
       if (b.id !== billId) return b;
       const updatedParts = (b.participants || []).map((p: any) => 
@@ -247,7 +111,6 @@ export function Home({
     }));
 
     try {
-      // Route through backend API (uses service role key, bypasses RLS)
       await api.confirmPayment(billId, friendId);
       fetchBills(uid);
     } catch (err) {
@@ -257,7 +120,7 @@ export function Home({
   };
 
   const handleDeclinePaymentReceipt = async (billId: string, friendId: string) => {
-    const uid = await getActiveUserId();
+    const uid = userId;
     if (!uid) return;
 
     setBills(prev => prev.map(b => {
@@ -271,7 +134,6 @@ export function Home({
     }));
 
     try {
-      // Route through backend API (uses service role key, bypasses RLS)
       await api.declinePayment(billId, friendId);
       fetchBills(uid);
     } catch (err) {
@@ -281,60 +143,17 @@ export function Home({
   };
 
   const handleDeclineFriend = async (requesterId: string) => {
-    const uid = await getActiveUserId();
+    const uid = userId;
     if (!uid) return;
 
     try {
-      await supabase
-        .from('friends')
-        .delete()
-        .eq('user_id', requesterId)
-        .eq('friend_id', uid);
-
+      await supabase.from('friends').delete().eq('user_id', requesterId).eq('friend_id', uid);
       setSelectedIncomingFriend(null);
       fetchPendingFriends(uid);
     } catch (err) {
       console.error('Error declining friend request:', err);
     }
   };
-
-  useEffect(() => {
-    // Initial fetch
-    getActiveUserId().then((uid) => {
-      if (uid) {
-        if (!initialBills) fetchBills(uid);
-        fetchPendingFriends(uid);
-      }
-    });
-
-    // Realtime subscription for instant sync on bills, participants, and friends
-    const channel = supabase
-      .channel('realtime-home-sync')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'bills' }, () => fetchBills())
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'participants' }, () => fetchBills())
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'friends' }, () => fetchPendingFriends())
-      .subscribe();
-
-    // Fast polling fallback (every 3 seconds) to ensure real-time appearance even if DB replication isn't configured
-    const interval = setInterval(() => {
-      fetchBills();
-      fetchPendingFriends();
-    }, 3000);
-
-    const handleFocus = () => {
-      fetchBills();
-      fetchPendingFriends();
-    };
-    window.addEventListener('focus', handleFocus);
-    document.addEventListener('visibilitychange', handleFocus);
-
-    return () => {
-      supabase.removeChannel(channel);
-      clearInterval(interval);
-      window.removeEventListener('focus', handleFocus);
-      document.removeEventListener('visibilitychange', handleFocus);
-    };
-  }, [initialBills, session]);
 
   // Compute dynamic balances from real bills data
   let totalYouAreOwed = 0;
@@ -401,6 +220,24 @@ export function Home({
         </button>
       </div>
 
+      {isLoadingInitialData ? (
+        <div className="max-w-[480px] md:max-w-6xl mx-auto px-5 md:px-10 flex flex-col md:grid md:grid-cols-12 gap-6 md:gap-10 md:pt-12 animate-pulse">
+          <div className="flex flex-col gap-6 w-full md:col-span-7 lg:col-span-8 shrink-0">
+            <div className="w-full bg-[#D9D9D9] dark:bg-zinc-900 rounded-[26px] h-36"></div>
+            <div className="flex gap-3 h-12">
+              <div className="flex-1 bg-[#D9D9D9] dark:bg-zinc-900 rounded-[25px]"></div>
+              <div className="flex-1 bg-[#D9D9D9] dark:bg-zinc-900 rounded-[25px]"></div>
+            </div>
+            <div className="flex flex-col gap-3 md:mt-2">
+              <div className="h-8 bg-[#D9D9D9] dark:bg-zinc-900 w-1/3 rounded-full"></div>
+              <div className="flex gap-3.5">
+                <div className="w-[200px] h-[205px] shrink-0 bg-[#D9D9D9] dark:bg-zinc-900 rounded-[28px]"></div>
+                <div className="w-[200px] h-[205px] shrink-0 bg-[#D9D9D9] dark:bg-zinc-900 rounded-[28px]"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : (
       <div className="max-w-[480px] md:max-w-6xl mx-auto px-5 md:px-10 flex flex-col md:grid md:grid-cols-12 gap-6 md:gap-10 md:pt-12">
         
         {/* Left Column (Desktop) */}
@@ -738,6 +575,8 @@ export function Home({
           </div>
         </div> {/* End of Right Column */}
       </div>
+
+      )}
 
       {/* New Bill Modal */}
       <NewBillModal 

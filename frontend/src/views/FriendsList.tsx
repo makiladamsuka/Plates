@@ -314,7 +314,11 @@ export function FriendsList({
         {/* Friends Cards */}
         <div className="px-5 md:px-0 mt-2 flex flex-col md:grid md:grid-cols-2 lg:grid-cols-3 gap-4">
           {isLoading ? (
-            <div className="text-center mt-10 text-black/50 dark:text-zinc-500 text-sm">Loading friends...</div>
+            <div className="w-full flex flex-col gap-4 animate-pulse">
+              <div className="w-full bg-[#D9D9D9] dark:bg-zinc-900 rounded-[30px] h-20"></div>
+              <div className="w-full bg-[#D9D9D9] dark:bg-zinc-900 rounded-[30px] h-20"></div>
+              <div className="w-full bg-[#D9D9D9] dark:bg-zinc-900 rounded-[30px] h-20"></div>
+            </div>
           ) : displayList.length > 0 ? (
             displayList.map((friend) => (
               <div 

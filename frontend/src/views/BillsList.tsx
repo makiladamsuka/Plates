@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
+import { useData } from '../lib/DataContext';
 import { Trash2 } from 'lucide-react';
 import { NewBillModal } from '../components/NewBillModal';
 import { DeleteConfirmationModal } from '../components/DeleteConfirmationModal';
@@ -39,84 +40,16 @@ interface BillsListProps {
 }
 
 export function BillsList({ onBillClick, session }: BillsListProps) {
-  const [bills, setBills] = useState<any[]>([]);
+  const { bills, isLoadingInitialData, fetchBills } = useData();
+  const userId = session?.user?.id || '';
   const [isNewBillModalOpen, setIsNewBillModalOpen] = useState(false);
   const [sortKey, setSortKey] = useState<SortKey>('all');
-  const [userId, setUserId] = useState<string>(() => session?.user?.id || '');
 
   // Delete Bill Modal State
   const [selectedDeleteBill, setSelectedDeleteBill] = useState<any>(null);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isDeletingBill, setIsDeletingBill] = useState(false);
   const [deleteBlockedReason, setDeleteBlockedReason] = useState<string | null>(null);
-
-  const fetchBills = async () => {
-    const { data: { session } } = await supabase.auth.getSession();
-    const uid = session?.user?.id;
-    if (uid) setUserId(uid);
-    try {
-      if (uid) {
-        const data = await api.getBills(uid);
-        if (data && Array.isArray(data) && data.length > 0) {
-          setBills(data);
-          return;
-        }
-      }
-    } catch (e) {
-      console.warn('API getBills failed in BillsList, falling back to direct Supabase:', e);
-    }
-
-    try {
-      const { data: rawBills } = await supabase
-        .from('bills')
-        .select('*, participants(*)');
-
-      if (rawBills) {
-        // Filter strictly to bills where current user is creator or participant
-        const myBills = rawBills.filter((b: any) => {
-          if (!uid) return true;
-          const isCreator = b.creator_id === uid;
-          const isParticipant = (b.participants || []).some((p: any) => p.friend_id === uid || p.friendId === uid);
-          return isCreator || isParticipant;
-        });
-
-        const allFriendIds = new Set<string>();
-        myBills.forEach((b: any) => {
-          if (b.creator_id) allFriendIds.add(b.creator_id);
-          (b.participants || []).forEach((p: any) => {
-            if (p.friend_id) allFriendIds.add(p.friend_id);
-          });
-        });
-
-        let profilesMap: Record<string, any> = {};
-        if (allFriendIds.size > 0) {
-          const { data: profiles } = await supabase
-            .from('profiles')
-            .select('id, full_name, avatar_url, username')
-            .in('id', Array.from(allFriendIds));
-
-          (profiles || []).forEach((prof: any) => {
-            profilesMap[prof.id] = prof;
-          });
-        }
-
-        const enriched = myBills.map((b: any) => ({
-          ...b,
-          participants: (b.participants || []).map((p: any) => ({
-            ...p,
-            profile: profilesMap[p.friend_id] || null,
-            full_name: profilesMap[p.friend_id]?.full_name || null,
-            avatar_url: profilesMap[p.friend_id]?.avatar_url || null,
-            username: profilesMap[p.friend_id]?.username || null
-          }))
-        }));
-
-        setBills(enriched);
-      }
-    } catch (err) {
-      console.error('Error fetching bills via Supabase:', err);
-    }
-  };
 
   const handleInitiateDeleteBill = (bill: any, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -157,32 +90,6 @@ export function BillsList({ onBillClick, session }: BillsListProps) {
       setIsDeletingBill(false);
     }
   };
-
-  useEffect(() => {
-    fetchBills();
-
-    // Realtime subscription for instant bill/participant status sync
-    const channel = supabase
-      .channel('realtime-bills-list')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'bills' }, fetchBills)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'participants' }, fetchBills)
-      .subscribe();
-
-    const interval = setInterval(() => {
-      fetchBills();
-    }, 3000);
-
-    const handleFocus = () => fetchBills();
-    window.addEventListener('focus', handleFocus);
-    document.addEventListener('visibilitychange', handleFocus);
-
-    return () => {
-      supabase.removeChannel(channel);
-      clearInterval(interval);
-      window.removeEventListener('focus', handleFocus);
-      document.removeEventListener('visibilitychange', handleFocus);
-    };
-  }, []);
 
   const sortedBills = [...bills].sort((a, b) => {
     const timeA = new Date(a.created_at || a.createdAt || Date.now()).getTime();
@@ -235,6 +142,13 @@ export function BillsList({ onBillClick, session }: BillsListProps) {
       <div className="max-w-[480px] md:max-w-6xl mx-auto md:px-10">
         
         {/* Bills Cards */}
+      {isLoadingInitialData ? (
+        <div className="px-5 md:px-0 mt-2 flex flex-col md:grid md:grid-cols-2 lg:grid-cols-3 gap-4 animate-pulse">
+           <div className="w-full bg-[#D9D9D9] dark:bg-zinc-900 rounded-[30px] h-32"></div>
+           <div className="w-full bg-[#D9D9D9] dark:bg-zinc-900 rounded-[30px] h-32"></div>
+           <div className="w-full bg-[#D9D9D9] dark:bg-zinc-900 rounded-[30px] h-32"></div>
+        </div>
+      ) : (
         <div className="px-5 md:px-0 mt-2 flex flex-col md:grid md:grid-cols-2 lg:grid-cols-3 gap-4">
           {sortedBills.map(bill => {
             const displayStatus = bill.status === 'Settled' ? 'Settled' : 'Pending';
@@ -320,6 +234,7 @@ export function BillsList({ onBillClick, session }: BillsListProps) {
         </div>
       </div>
 
+      )}
       {/* Floating Action Button */}
       <div className="fixed bottom-[140px] md:bottom-10 left-0 md:left-auto md:right-10 w-full md:w-auto z-40 pointer-events-none flex justify-center">
         <div className="w-full max-w-[480px] md:w-auto relative">
