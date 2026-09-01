@@ -53,16 +53,21 @@ const allowedOrigins = [
   'http://localhost:3000'
 ].filter(Boolean) as string[];
 
-app.use(cors({
+const corsOptions: cors.CorsOptions = {
   origin: (origin, callback) => {
     if (!origin || allowedOrigins.includes(origin) || process.env.NODE_ENV !== 'production') {
       callback(null, true);
     } else {
-      callback(null, false);
+      callback(new Error(`CORS blocked for origin: ${origin}`));
     }
   },
   credentials: true,
-}));
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
+};
+
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions));
 
 app.use(express.json({ limit: '10mb' }));
 

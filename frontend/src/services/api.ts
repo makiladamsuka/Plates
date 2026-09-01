@@ -35,6 +35,7 @@ async function fetchWithAuth(url: string, options: RequestInit = {}): Promise<Re
 
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
+    Accept: 'application/json',
     ...(options.headers as Record<string, string> || {}),
   };
 
@@ -42,7 +43,13 @@ async function fetchWithAuth(url: string, options: RequestInit = {}): Promise<Re
     headers['Authorization'] = `Bearer ${token}`;
   }
 
-  let res = await fetch(url, { ...options, headers });
+  let res: Response;
+  try {
+    res = await fetch(url, { ...options, headers });
+  } catch (networkErr: any) {
+    console.error(`[API Network Error] Failed to fetch from ${url}:`, networkErr);
+    throw new Error(`Unable to connect to the backend server (${url}). Please check your connection and ensure the server is running.`);
+  }
 
   // If 401 Unauthorized, refresh session and retry once
   if (res.status === 401) {
