@@ -21,7 +21,6 @@ interface HomeProps {
 
 export function Home({ 
   session,
-  bills: initialBills, 
   onBillClick, 
   onSearchClick,
   onAvatarClick,

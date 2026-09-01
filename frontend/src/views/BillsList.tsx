@@ -232,9 +232,9 @@ export function BillsList({ onBillClick, session }: BillsListProps) {
             <div className="text-center mt-10 text-black/50 dark:text-zinc-500 text-sm">No bills found. Create one!</div>
           )}
         </div>
+      )}
       </div>
 
-      )}
       {/* Floating Action Button */}
       <div className="fixed bottom-[140px] md:bottom-10 left-0 md:left-auto md:right-10 w-full md:w-auto z-40 pointer-events-none flex justify-center">
         <div className="w-full max-w-[480px] md:w-auto relative">
