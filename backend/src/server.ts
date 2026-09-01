@@ -18,38 +18,15 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const port = process.env.PORT || 3000;
 
-// Security HTTP Headers with CSP configured for Supabase & Google OAuth
+// Security HTTP Headers
+// CSP is defined ONLY in frontend/index.html <meta> tag (single source of truth).
+// Helmet CSP is DISABLED because the backend catch-all (line ~837) serves frontend
+// index.html, which means Helmet would add a SECOND Content-Security-Policy header
+// on top of the <meta> tag. Browsers enforce the INTERSECTION of all active CSPs,
+// so any domain missing from EITHER source gets blocked. One definition = no drift.
 app.use(
   helmet({
-    contentSecurityPolicy: {
-      directives: {
-        defaultSrc: ["'self'", "https://accounts.google.com"],
-        connectSrc: [
-          "'self'",
-          "https://*.supabase.co",
-          "wss://*.supabase.co",
-          "https://accounts.google.com",
-          "https://people.googleapis.com",
-          "https://*.googleapis.com",
-          "https://plates.live",
-          "https://*.plates.live",
-          "https://*.ondigitalocean.app",
-        ],
-        imgSrc: [
-          "'self'",
-          "data:",
-          "blob:",
-          "https://*.googleusercontent.com",
-          "https://*.supabase.co",
-          "https://*.googleapis.com",
-          "https://*.google.com",
-        ],
-        styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com", "https://accounts.google.com"],
-        fontSrc: ["'self'", "https://fonts.gstatic.com", "data:"],
-        scriptSrc: ["'self'", "'unsafe-inline'", "https://accounts.google.com"],
-        frameSrc: ["'self'", "https://accounts.google.com"],
-      },
-    },
+    contentSecurityPolicy: false,
   })
 );
 
