@@ -1,14 +1,14 @@
 import { useState, useEffect } from 'react';
-import { Search, ChevronLeft, UserPlus, Check, Users, Share2, AlertCircle, RefreshCw } from 'lucide-react';
+import { Search, ChevronLeft, UserPlus, Check, Smartphone, Share2, AlertCircle, RefreshCw } from 'lucide-react';
 import { supabase } from '../lib/supabase';
-import { fetchGoogleContacts, type GoogleContact } from '../services/googleContacts';
+import { getDevicePhoneContacts, isDeviceContactsSupported, type CleanContact } from '../services/deviceContacts';
 
 interface SearchFriendsProps {
   session: any;
   onBack: () => void;
 }
 
-interface MatchedContact extends GoogleContact {
+interface MatchedContact extends CleanContact {
   plateProfile?: {
     id: string;
     full_name: string;
@@ -18,17 +18,19 @@ interface MatchedContact extends GoogleContact {
 }
 
 export function SearchFriends({ session, onBack }: SearchFriendsProps) {
-  const [activeTab, setActiveTab] = useState<'search' | 'google'>('search');
+  const [activeTab, setActiveTab] = useState<'search' | 'phone'>('search');
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [addedIds, setAddedIds] = useState<string[]>([]);
   const [isSearching, setIsSearching] = useState(false);
 
-  // Google Contacts State
-  const [googleContacts, setGoogleContacts] = useState<MatchedContact[]>([]);
+  // Phone Contacts State
+  const [phoneContacts, setPhoneContacts] = useState<MatchedContact[]>([]);
   const [isLoadingContacts, setIsLoadingContacts] = useState(false);
   const [contactsError, setContactsError] = useState<string | null>(null);
   const [copiedInvite, setCopiedInvite] = useState<string | null>(null);
+
+  const isPickerSupported = isDeviceContactsSupported();
 
   useEffect(() => {
     if (!session?.user) return;
@@ -93,20 +95,16 @@ export function SearchFriends({ session, onBack }: SearchFriendsProps) {
     }
   };
 
-  const handleImportGoogleContacts = async () => {
+  const handlePickPhoneContacts = async () => {
     setIsLoadingContacts(true);
     setContactsError(null);
 
-    const token = sessionStorage.getItem('google_provider_token');
-
-    if (!token) {
-      setIsLoadingContacts(false);
-      setContactsError('Google access token not found. Please connect your Google account to grant contacts access.');
-      return;
-    }
-
     try {
-      const contacts = await fetchGoogleContacts(token);
+      const contacts = await getDevicePhoneContacts();
+      if (contacts.length === 0) {
+        setIsLoadingContacts(false);
+        return;
+      }
 
       // Extract all non-empty emails to match with existing Plates profiles
       const emails = contacts
@@ -137,39 +135,32 @@ export function SearchFriends({ session, onBack }: SearchFriendsProps) {
       // Sort so contacts already on Plates show first
       matched.sort((a, b) => (b.plateProfile ? 1 : 0) - (a.plateProfile ? 1 : 0));
 
-      setGoogleContacts(matched);
+      setPhoneContacts(prev => {
+        const existingIds = new Set(prev.map(p => `${p.name}-${p.phoneNumber || p.email}`));
+        const newUnique = matched.filter(m => !existingIds.has(`${m.name}-${m.phoneNumber || m.email}`));
+        return [...newUnique, ...prev];
+      });
     } catch (err: any) {
-      console.error('Error importing Google contacts:', err);
-      setContactsError(err.message || 'Failed to load Google Contacts.');
+      console.error('Error picking phone contacts:', err);
+      setContactsError(err.message || 'Failed to select contacts from device.');
     } finally {
       setIsLoadingContacts(false);
     }
   };
 
-  const handleConnectGoogleOAuth = async () => {
-    try {
-      const redirectUrl = `${window.location.origin}/auth/callback`;
-      await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: redirectUrl,
-          scopes: 'https://www.googleapis.com/auth/contacts.readonly',
-          queryParams: {
-            prompt: 'consent',
-            access_type: 'offline',
-          },
-        },
-      });
-    } catch (err: any) {
-      console.error('Error initiating Google OAuth:', err);
-      alert('Failed to connect Google account.');
-    }
-  };
-
-  const handleInviteContact = async (contact: GoogleContact) => {
+  const handleInviteContact = async (contact: CleanContact) => {
     const inviteUrl = window.location.origin;
     const inviteText = `Hey ${contact.name.split(' ')[0]}! Join me on Plates to split and settle bills easily: ${inviteUrl}`;
 
+    // 1. Try SMS if phone number exists
+    if (contact.phoneNumber) {
+      const cleanPhone = contact.phoneNumber.replace(/[^\d+]/g, '');
+      const smsUrl = `sms:${cleanPhone}?body=${encodeURIComponent(inviteText)}`;
+      window.open(smsUrl, '_blank');
+      return;
+    }
+
+    // 2. Try Web Share API
     if (navigator.share) {
       try {
         await navigator.share({
@@ -181,10 +172,10 @@ export function SearchFriends({ session, onBack }: SearchFriendsProps) {
       } catch {}
     }
 
-    // Fallback: Copy to clipboard
+    // 3. Fallback: Copy to clipboard
     try {
       await navigator.clipboard.writeText(inviteText);
-      setCopiedInvite(contact.email || contact.name);
+      setCopiedInvite(contact.phoneNumber || contact.email || contact.name);
       setTimeout(() => setCopiedInvite(null), 2500);
     } catch {
       alert('Invite link: ' + inviteUrl);
@@ -204,7 +195,7 @@ export function SearchFriends({ session, onBack }: SearchFriendsProps) {
           <ChevronLeft size={30} strokeWidth={2.5} className="text-[#1A1A1A] dark:text-zinc-100" />
         </button>
 
-        {/* Tab Toggle: Username Search vs Google Contacts */}
+        {/* Tab Toggle: Username Search vs Phone Contacts */}
         <div className="flex bg-[#D9D9D9]/70 dark:bg-zinc-900/70 p-1 rounded-[25px] mb-3 border border-transparent dark:border-white/5">
           <button
             onClick={() => setActiveTab('search')}
@@ -219,20 +210,15 @@ export function SearchFriends({ session, onBack }: SearchFriendsProps) {
           </button>
 
           <button
-            onClick={() => {
-              setActiveTab('google');
-              if (googleContacts.length === 0 && !isLoadingContacts) {
-                handleImportGoogleContacts();
-              }
-            }}
+            onClick={() => setActiveTab('phone')}
             className={`flex-1 py-1.5 rounded-[20px] text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
-              activeTab === 'google'
+              activeTab === 'phone'
                 ? 'bg-[#1A1A1A] text-white dark:bg-zinc-100 dark:text-zinc-950 shadow-xs'
                 : 'text-black/60 dark:text-zinc-400 hover:text-black dark:hover:text-white'
             }`}
           >
-            <Users size={14} />
-            <span>Google Contacts</span>
+            <Smartphone size={14} />
+            <span>Phone Contacts</span>
           </button>
         </div>
 
@@ -311,13 +297,13 @@ export function SearchFriends({ session, onBack }: SearchFriendsProps) {
         </div>
       )}
 
-      {/* Mode 2: Google Contacts Results */}
-      {activeTab === 'google' && (
+      {/* Mode 2: Phone / Device Contacts Results */}
+      {activeTab === 'phone' && (
         <div className="px-6 mt-2 flex flex-col gap-3">
           {isLoadingContacts ? (
             <div className="flex flex-col items-center justify-center py-16 text-black/50 dark:text-zinc-400 text-sm gap-3">
               <RefreshCw size={24} className="animate-spin text-[#F5C744]" />
-              <span>Fetching your Google Contacts...</span>
+              <span>Opening contacts picker...</span>
             </div>
           ) : contactsError ? (
             <div className="bg-amber-500/10 dark:bg-amber-950/30 border border-amber-500/30 rounded-[25px] p-5 flex flex-col items-center text-center gap-3 mt-4">
@@ -325,42 +311,44 @@ export function SearchFriends({ session, onBack }: SearchFriendsProps) {
               <p className="text-black/80 dark:text-zinc-200 text-xs font-normal max-w-[280px]">
                 {contactsError}
               </p>
-              <button
-                onClick={handleConnectGoogleOAuth}
-                className="px-5 py-2 rounded-full bg-[#1A1A1A] dark:bg-zinc-100 text-white dark:text-zinc-950 text-xs font-semibold cursor-pointer active:scale-95 transition-transform shadow-sm"
-              >
-                Connect Google Account
-              </button>
+              {isPickerSupported && (
+                <button
+                  onClick={handlePickPhoneContacts}
+                  className="px-5 py-2 rounded-full bg-[#1A1A1A] dark:bg-zinc-100 text-white dark:text-zinc-950 text-xs font-semibold cursor-pointer active:scale-95 transition-transform shadow-sm"
+                >
+                  Try Again
+                </button>
+              )}
             </div>
-          ) : googleContacts.length > 0 ? (
+          ) : phoneContacts.length > 0 ? (
             <div className="flex flex-col gap-2">
               <div className="flex items-center justify-between px-2 mb-1">
                 <span className="text-black/50 dark:text-zinc-400 text-xs font-semibold">
-                  {googleContacts.length} Contacts Found
+                  {phoneContacts.length} Contacts Selected
                 </span>
                 <button
-                  onClick={handleImportGoogleContacts}
+                  onClick={handlePickPhoneContacts}
                   className="text-xs text-[#4C8C3C] dark:text-[#5FAD4B] font-semibold flex items-center gap-1 cursor-pointer hover:underline"
                 >
-                  <RefreshCw size={11} />
-                  <span>Refresh</span>
+                  <UserPlus size={12} />
+                  <span>Pick More</span>
                 </button>
               </div>
 
-              {googleContacts.map((contact, idx) => {
+              {phoneContacts.map((contact) => {
                 const isRegistered = !!contact.plateProfile;
                 const registeredId = contact.plateProfile?.id;
                 const isSent = registeredId ? addedIds.includes(registeredId) : false;
 
                 return (
                   <div 
-                    key={contact.resourceName || idx}
+                    key={contact.id}
                     className="w-full bg-[#D9D9D9]/70 dark:bg-zinc-900/70 rounded-[20px] p-3 flex items-center justify-between border border-transparent dark:border-white/5 shadow-xs"
                   >
                     <div className="flex items-center gap-3 min-w-0 pr-2">
-                      {contact.photoUrl || contact.plateProfile?.avatar_url ? (
+                      {contact.avatarUrl || contact.plateProfile?.avatar_url ? (
                         <img 
-                          src={contact.plateProfile?.avatar_url || contact.photoUrl || ''} 
+                          src={contact.plateProfile?.avatar_url || contact.avatarUrl || ''} 
                           alt="" 
                           className="w-10 h-10 rounded-full object-cover shrink-0" 
                         />
@@ -383,7 +371,7 @@ export function SearchFriends({ session, onBack }: SearchFriendsProps) {
                         <span className="text-black/60 dark:text-zinc-400 text-[10px] font-light truncate mt-0.5">
                           {contact.plateProfile?.username 
                             ? `@${contact.plateProfile.username}` 
-                            : contact.email || contact.phoneNumber || 'Contact'}
+                            : contact.phoneNumber || contact.email || 'Contact'}
                         </span>
                       </div>
                     </div>
@@ -417,7 +405,7 @@ export function SearchFriends({ session, onBack }: SearchFriendsProps) {
                         className="h-8 px-3 rounded-full border border-black/20 dark:border-white/20 text-[#1A1A1A] dark:text-zinc-100 text-xs font-medium flex items-center gap-1 shrink-0 hover:bg-black/5 dark:hover:bg-white/5 active:scale-95 transition-all cursor-pointer"
                       >
                         <Share2 size={12} />
-                        <span>{copiedInvite === (contact.email || contact.name) ? 'Copied!' : 'Invite'}</span>
+                        <span>{copiedInvite === (contact.phoneNumber || contact.email || contact.name) ? 'Copied!' : 'Invite'}</span>
                       </button>
                     )}
                   </div>
@@ -426,19 +414,31 @@ export function SearchFriends({ session, onBack }: SearchFriendsProps) {
             </div>
           ) : (
             <div className="bg-[#D9D9D9]/50 dark:bg-zinc-900/50 rounded-[25px] p-6 text-center flex flex-col items-center gap-3 mt-4">
-              <Users size={32} className="text-black/40 dark:text-zinc-600" />
+              <Smartphone size={32} className="text-black/40 dark:text-zinc-600" />
               <div className="text-black/80 dark:text-zinc-200 text-sm font-semibold">
-                Import from Google Contacts
+                Access Phone Contacts
               </div>
               <p className="text-black/50 dark:text-zinc-400 text-xs max-w-[260px]">
-                Find friends who are already on Plates or invite your Google Contacts to split plates.
+                {isPickerSupported 
+                  ? 'Pick contacts directly from your device to find friends or invite them to split bills.'
+                  : 'Device Contacts Picker is supported on mobile browsers (Chrome / Edge on Android). You can also search by @username directly!'}
               </p>
-              <button
-                onClick={handleImportGoogleContacts}
-                className="px-5 py-2.5 bg-[#1A1A1A] dark:bg-zinc-100 text-white dark:text-zinc-950 rounded-full text-xs font-semibold cursor-pointer active:scale-95 transition-transform mt-2 shadow-sm"
-              >
-                Import Contacts
-              </button>
+              
+              {isPickerSupported ? (
+                <button
+                  onClick={handlePickPhoneContacts}
+                  className="px-5 py-2.5 bg-[#1A1A1A] dark:bg-zinc-100 text-white dark:text-zinc-950 rounded-full text-xs font-semibold cursor-pointer active:scale-95 transition-transform mt-2 shadow-sm"
+                >
+                  Pick Contacts from Device
+                </button>
+              ) : (
+                <button
+                  onClick={() => setActiveTab('search')}
+                  className="px-5 py-2.5 bg-[#1A1A1A] dark:bg-zinc-100 text-white dark:text-zinc-950 rounded-full text-xs font-semibold cursor-pointer active:scale-95 transition-transform mt-2 shadow-sm"
+                >
+                  Search by @Username
+                </button>
+              )}
             </div>
           )}
         </div>
@@ -447,4 +447,3 @@ export function SearchFriends({ session, onBack }: SearchFriendsProps) {
     </div>
   );
 }
-
