@@ -117,9 +117,6 @@ function App() {
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       setSession(session);
-      if (session?.provider_token) {
-        sessionStorage.setItem('google_provider_token', session.provider_token);
-      }
       if (session?.user) {
         const profile = await syncUserProfile(session.user);
         if (profile?.requiresUsername) {
@@ -133,9 +130,6 @@ function App() {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
       setSession(session);
-      if (session?.provider_token) {
-        sessionStorage.setItem('google_provider_token', session.provider_token);
-      }
       if (session?.user) {
         const profile = await syncUserProfile(session.user);
         if (profile?.requiresUsername) {
@@ -143,7 +137,6 @@ function App() {
         }
       }
       if (event === 'SIGNED_OUT' || !session) {
-        sessionStorage.removeItem('google_provider_token');
         setCurrentTab('home');
         setCurrentView('list');
         setSelectedBillId(null);
