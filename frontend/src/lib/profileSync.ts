@@ -1,75 +1,73 @@
 import { supabase } from './supabase';
 
-// Track in-flight sync promises to prevent concurrent race conditions
+// In-flight promise map to prevent parallel duplicate calls
 const inFlightSyncs = new Map<string, Promise<any>>();
 
+/**
+ * Fetches the active user's profile and checks if they need to set a username.
+ * Profile creation is handled automatically on the database by the Supabase PostgreSQL trigger.
+ */
 export async function syncUserProfile(user: any) {
   if (!user?.id) return null;
 
-  // Deduplicate if already syncing this user
   if (inFlightSyncs.has(user.id)) {
     return inFlightSyncs.get(user.id);
   }
 
   const syncPromise = (async () => {
     try {
-      // 1. Ensure Supabase auth session is established with a valid token
+      // 1. Ensure authentication session is initialized
       let session = (await supabase.auth.getSession()).data.session;
       if (!session) {
-        // Wait 250ms for OAuth hash parsing if needed
-        await new Promise(resolve => setTimeout(resolve, 250));
+        await new Promise((resolve) => setTimeout(resolve, 200));
         session = (await supabase.auth.getSession()).data.session;
       }
 
-      // 2. Query existing profile
-      const { data, error } = await supabase
+      // 2. Fetch profile from database (created automatically by SQL trigger)
+      let { data, error } = await supabase
         .from('profiles')
         .select('id, username, full_name, avatar_url, email')
         .eq('id', user.id)
         .maybeSingle();
 
-      if (error) {
-        // If 401 or network issue, retry once after session refresh
-        if (error.code === 'PGRST301' || error.message?.includes('JWT') || error.message?.includes('401')) {
-          await supabase.auth.refreshSession();
-        }
-        console.warn('syncUserProfile select notice:', error.message || error);
-      }
-
-      if (!data) {
-        // Profile does not exist in profiles table (e.g. after deletion and re-login) -> insert it!
-        const fullName = user.user_metadata?.full_name || user.email?.split('@')[0] || 'User';
-        const avatarUrl = user.user_metadata?.avatar_url || user.user_metadata?.picture || null;
-        
-        const { data: newProfile, error: upsertError } = await supabase
+      // If not yet available due to trigger completion timing, wait briefly and retry once
+      if (!data && !error) {
+        await new Promise((resolve) => setTimeout(resolve, 300));
+        const retry = await supabase
           .from('profiles')
-          .upsert({
-            id: user.id,
-            email: user.email,
-            full_name: fullName,
-            avatar_url: avatarUrl,
-            username: null,
-          }, { onConflict: 'id' })
           .select('id, username, full_name, avatar_url, email')
+          .eq('id', user.id)
           .maybeSingle();
-
-        if (upsertError) {
-          console.warn('syncUserProfile upsert notice:', upsertError.message || upsertError);
-        }
-
-        return {
-          ...(newProfile || { id: user.id, email: user.email, full_name: fullName, avatar_url: avatarUrl, username: null }),
-          requiresUsername: true,
-        };
+        data = retry.data;
+        error = retry.error;
       }
+
+      if (error) {
+        console.warn('syncUserProfile notice:', error.message || error);
+      }
+
+      const hasUsername = Boolean(data?.username && data.username.trim() !== '');
 
       return {
-        ...data,
-        requiresUsername: !data.username || data.username.trim() === '',
+        ...(data || {
+          id: user.id,
+          email: user.email,
+          full_name: user.user_metadata?.full_name || 'User',
+          avatar_url: user.user_metadata?.avatar_url || null,
+          username: null,
+        }),
+        requiresUsername: !hasUsername,
       };
     } catch (err: any) {
       console.warn('syncUserProfile exception:', err?.message || err);
-      return null;
+      return {
+        id: user.id,
+        email: user.email,
+        full_name: user.user_metadata?.full_name || 'User',
+        avatar_url: user.user_metadata?.avatar_url || null,
+        username: null,
+        requiresUsername: true,
+      };
     } finally {
       inFlightSyncs.delete(user.id);
     }
@@ -78,4 +76,3 @@ export async function syncUserProfile(user: any) {
   inFlightSyncs.set(user.id, syncPromise);
   return syncPromise;
 }
-
