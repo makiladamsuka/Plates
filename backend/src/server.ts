@@ -31,6 +31,9 @@ app.use(
           "https://accounts.google.com",
           "https://people.googleapis.com",
           "https://*.googleapis.com",
+          "https://plates.live",
+          "https://*.plates.live",
+          "https://*.ondigitalocean.app",
         ],
         imgSrc: [
           "'self'",
@@ -53,6 +56,8 @@ app.use(
 // CORS configuration - Restrict allowed origins
 const allowedOrigins = [
   process.env.CLIENT_URL,
+  'https://plates.live',
+  'https://www.plates.live',
   'http://localhost:5173',
   'http://localhost:3000'
 ].filter(Boolean) as string[];
