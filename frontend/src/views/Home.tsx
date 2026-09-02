@@ -35,8 +35,7 @@ export function Home({
     pendingFriendRequests, 
     setPendingFriendRequests, 
     fetchBills, 
-    fetchPendingFriends, 
-    isLoadingInitialData 
+    fetchPendingFriends 
   } = useData();
   const userId = session?.user?.id || '';
 
@@ -219,24 +218,6 @@ export function Home({
         </button>
       </div>
 
-      {isLoadingInitialData ? (
-        <div className="max-w-[480px] md:max-w-6xl mx-auto px-5 md:px-10 flex flex-col md:grid md:grid-cols-12 gap-6 md:gap-10 md:pt-12 animate-pulse">
-          <div className="flex flex-col gap-6 w-full md:col-span-7 lg:col-span-8 shrink-0">
-            <div className="w-full bg-[#D9D9D9] dark:bg-zinc-900 rounded-[26px] h-36"></div>
-            <div className="flex gap-3 h-12">
-              <div className="flex-1 bg-[#D9D9D9] dark:bg-zinc-900 rounded-[25px]"></div>
-              <div className="flex-1 bg-[#D9D9D9] dark:bg-zinc-900 rounded-[25px]"></div>
-            </div>
-            <div className="flex flex-col gap-3 md:mt-2">
-              <div className="h-8 bg-[#D9D9D9] dark:bg-zinc-900 w-1/3 rounded-full"></div>
-              <div className="flex gap-3.5">
-                <div className="w-[200px] h-[205px] shrink-0 bg-[#D9D9D9] dark:bg-zinc-900 rounded-[28px]"></div>
-                <div className="w-[200px] h-[205px] shrink-0 bg-[#D9D9D9] dark:bg-zinc-900 rounded-[28px]"></div>
-              </div>
-            </div>
-          </div>
-        </div>
-      ) : (
       <div className="max-w-[480px] md:max-w-6xl mx-auto px-5 md:px-10 flex flex-col md:grid md:grid-cols-12 gap-6 md:gap-10 md:pt-12">
         
         {/* Left Column (Desktop) */}
@@ -574,8 +555,6 @@ export function Home({
           </div>
         </div> {/* End of Right Column */}
       </div>
-
-      )}
 
       {/* New Bill Modal */}
       <NewBillModal 

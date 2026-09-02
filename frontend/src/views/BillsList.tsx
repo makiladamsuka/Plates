@@ -40,7 +40,7 @@ interface BillsListProps {
 }
 
 export function BillsList({ onBillClick, session }: BillsListProps) {
-  const { bills, isLoadingInitialData, fetchBills } = useData();
+  const { bills, fetchBills } = useData();
   const userId = session?.user?.id || '';
   const [isNewBillModalOpen, setIsNewBillModalOpen] = useState(false);
   const [sortKey, setSortKey] = useState<SortKey>('all');
@@ -142,13 +142,6 @@ export function BillsList({ onBillClick, session }: BillsListProps) {
       <div className="max-w-[480px] md:max-w-6xl mx-auto md:px-10">
         
         {/* Bills Cards */}
-      {isLoadingInitialData ? (
-        <div className="px-5 md:px-0 mt-2 flex flex-col md:grid md:grid-cols-2 lg:grid-cols-3 gap-4 animate-pulse">
-           <div className="w-full bg-[#D9D9D9] dark:bg-zinc-900 rounded-[30px] h-32"></div>
-           <div className="w-full bg-[#D9D9D9] dark:bg-zinc-900 rounded-[30px] h-32"></div>
-           <div className="w-full bg-[#D9D9D9] dark:bg-zinc-900 rounded-[30px] h-32"></div>
-        </div>
-      ) : (
         <div className="px-5 md:px-0 mt-2 flex flex-col md:grid md:grid-cols-2 lg:grid-cols-3 gap-4">
           {sortedBills.map(bill => {
             const displayStatus = bill.status === 'Settled' ? 'Settled' : 'Pending';
@@ -232,7 +225,6 @@ export function BillsList({ onBillClick, session }: BillsListProps) {
             <div className="text-center mt-10 text-black/50 dark:text-zinc-500 text-sm">No bills found. Create one!</div>
           )}
         </div>
-      )}
       </div>
 
       {/* Floating Action Button */}
