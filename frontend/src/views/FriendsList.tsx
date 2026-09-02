@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useState } from 'react';
+import { useMutation } from '@tanstack/react-query';
 import { ArrowUpRight, ArrowDownLeft, Check, X, Trash2 } from 'lucide-react';
 import { IncomingFriendRequestModal } from '../components/IncomingFriendRequestModal';
 import { DeleteConfirmationModal } from '../components/DeleteConfirmationModal';
@@ -18,95 +18,20 @@ export function FriendsList({
   onFriendClick, 
   onSearchClick 
 }: FriendsListProps) {
-  const { bills } = useData();
+  const { bills, friends, setFriends, pendingFriendRequests, setPendingFriendRequests, fetchFriends, fetchPendingFriends } = useData();
   const [activeTab, setActiveTab] = useState<'all' | 'pending'>('all');
   const [incomingFriend, setIncomingFriend] = useState<any>(null);
+
   // Deletion Modal State
   const [selectedDeleteFriend, setSelectedDeleteFriend] = useState<any>(null);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isDeletingFriend, setIsDeletingFriend] = useState(false);
   const [deleteBlockedReason, setDeleteBlockedReason] = useState<string | null>(null);
-  useEffect(() => {
-    // Real-time listener for friends changes
-    const channel = supabase
-      .channel('realtime-friends-tab')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'friends' }, () => {
-        queryClient.invalidateQueries({ queryKey: ['friends', session?.user?.id] });
-      })
-      .subscribe();
 
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [session]);
-  
-  const queryClient = useQueryClient();
-
-  const { data, isLoading } = useQuery({
-    queryKey: ['friends', session?.user?.id],
-    queryFn: async () => {
-      // 1. Fetch Accepted Friends
-      const { data: rawAccepted } = await supabase
-        .from('friends')
-        .select('friend_id, status')
-        .eq('user_id', session.user.id)
-        .or('status.eq.accepted,status.is.null');
-
-      let accepted: any[] = [];
-      if (rawAccepted && rawAccepted.length > 0) {
-        const friendIds = rawAccepted.map((f: any) => f.friend_id);
-        const { data: profs } = await supabase
-          .from('profiles')
-          .select('id, full_name, avatar_url, username')
-          .in('id', friendIds);
-        
-        accepted = (profs || []).filter((p: any) => p && p.id).map((p: any) => ({
-          id: p.id,
-          name: p.full_name || 'Friend',
-          username: p.username ? `@${p.username}` : '',
-          avatar_url: p.avatar_url,
-          balance: 0,
-          isPendingRequest: false,
-        }));
-      }
-
-      // 2. Fetch Pending Friend Requests
-      const { data: rawPending } = await supabase
-        .from('friends')
-        .select('user_id, status')
-        .eq('friend_id', session.user.id)
-        .eq('status', 'pending');
-
-      let pending: any[] = [];
-      if (rawPending && rawPending.length > 0) {
-        const requesterIds = rawPending.map((f: any) => f.user_id);
-        const { data: profs } = await supabase
-          .from('profiles')
-          .select('id, full_name, avatar_url, username')
-          .in('id', requesterIds);
-
-        pending = (profs || []).filter((p: any) => p && p.id).map((p: any) => ({
-          id: p.id,
-          name: p.full_name || 'User',
-          username: p.username ? `@${p.username}` : '',
-          avatar_url: p.avatar_url,
-          balance: 0,
-          isPendingRequest: true,
-        }));
-      }
-      
-      return { accepted, pending };
-    },
-    enabled: !!session?.user?.id,
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    gcTime: 10 * 60 * 1000 // 10 minutes
-  });
-
-  const rawAcceptedFriends = data?.accepted || [];
-  const pendingRequests = data?.pending || [];
   const currentUid = session?.user?.id || '';
 
-  const acceptedFriends = rawAcceptedFriends.map((f: any) => {
+  // Calculate real-time friend balances from cached bills
+  const acceptedFriends = (friends || []).map((f: any) => {
     let bal = 0;
     if (currentUid && f.id) {
       (bills || []).forEach((b: any) => {
@@ -126,6 +51,8 @@ export function FriendsList({
     }
     return { ...f, balance: bal };
   });
+
+  const pendingRequests = pendingFriendRequests || [];
 
   const handleInitiateDeleteFriend = async (friend: any, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -194,9 +121,10 @@ export function FriendsList({
         supabase.from('friends').delete().eq('user_id', uid).eq('friend_id', selectedDeleteFriend.id),
         supabase.from('friends').delete().eq('user_id', selectedDeleteFriend.id).eq('friend_id', uid)
       ]);
+      setFriends(prev => prev.filter(f => f.id !== selectedDeleteFriend.id));
       setIsDeleteModalOpen(false);
       setSelectedDeleteFriend(null);
-      queryClient.invalidateQueries({ queryKey: ['friends', session?.user?.id] });
+      fetchFriends(uid);
     } catch (err: any) {
       setDeleteBlockedReason(err.message || 'Failed to remove friend.');
     } finally {
@@ -206,6 +134,14 @@ export function FriendsList({
 
   const acceptMutation = useMutation({
     mutationFn: async (requesterId: string) => {
+      // Optimistically update local cache
+      const pendingUser = pendingRequests.find((p: any) => p.id === requesterId);
+      if (pendingUser) {
+        setFriends(prev => [...prev, { ...pendingUser, isPendingRequest: false }]);
+        setPendingFriendRequests(prev => prev.filter((p: any) => p.id !== requesterId));
+      }
+      setIncomingFriend(null);
+
       // 1. Try Supabase RPC
       const { error: rpcErr } = await supabase.rpc('accept_friend_request', {
         p_requester_id: requesterId,
@@ -226,77 +162,24 @@ export function FriendsList({
       }
 
       await api.acceptFriend(requesterId, session.user.id).catch(console.warn);
-    },
-    onMutate: async (requesterId) => {
-      // Cancel any outgoing refetches (so they don't overwrite our optimistic update)
-      await queryClient.cancelQueries({ queryKey: ['friends', session?.user?.id] });
-
-      // Snapshot the previous value
-      const previousFriends = queryClient.getQueryData(['friends', session?.user?.id]);
-
-      // Optimistically update to the new value
-      queryClient.setQueryData(['friends', session?.user?.id], (old: any) => {
-        if (!old) return old;
-        
-        // Find the pending user
-        const pendingUser = old.pending.find((p: any) => p.id === requesterId);
-        if (!pendingUser) return old;
-
-        // Move them to accepted
-        return {
-          accepted: [...old.accepted, { ...pendingUser, isPendingRequest: false }],
-          pending: old.pending.filter((p: any) => p.id !== requesterId)
-        };
-      });
-
-      setIncomingFriend(null);
-
-      // Return a context object with the snapshotted value
-      return { previousFriends };
-    },
-    // If the mutation fails, use the context returned from onMutate to roll back
-    onError: (_err, _requesterId, context) => {
-      if (context?.previousFriends) {
-        queryClient.setQueryData(['friends', session?.user?.id], context.previousFriends);
-      }
-    },
-    // Always refetch after error or success:
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ['friends', session?.user?.id] });
-    },
+      fetchFriends(session.user.id);
+      fetchPendingFriends(session.user.id);
+    }
   });
 
   const declineMutation = useMutation({
     mutationFn: async (requesterId: string) => {
+      setPendingFriendRequests(prev => prev.filter((p: any) => p.id !== requesterId));
+      setIncomingFriend(null);
+
       await supabase
         .from('friends')
         .delete()
         .eq('user_id', requesterId)
         .eq('friend_id', session.user.id);
-    },
-    onMutate: async (requesterId) => {
-      await queryClient.cancelQueries({ queryKey: ['friends', session?.user?.id] });
-      const previousFriends = queryClient.getQueryData(['friends', session?.user?.id]);
-
-      queryClient.setQueryData(['friends', session?.user?.id], (old: any) => {
-        if (!old) return old;
-        return {
-          ...old,
-          pending: old.pending.filter((p: any) => p.id !== requesterId)
-        };
-      });
-
-      setIncomingFriend(null);
-      return { previousFriends };
-    },
-    onError: (_err, _requesterId, context) => {
-      if (context?.previousFriends) {
-        queryClient.setQueryData(['friends', session?.user?.id], context.previousFriends);
-      }
-    },
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ['friends', session?.user?.id] });
-    },
+        
+      fetchPendingFriends(session.user.id);
+    }
   });
 
   const handleApprove = (id: string) => acceptMutation.mutate(id);
@@ -337,13 +220,7 @@ export function FriendsList({
         
         {/* Friends Cards */}
         <div className="px-5 md:px-0 mt-2 flex flex-col md:grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {isLoading ? (
-            <div className="w-full flex flex-col gap-4 animate-pulse">
-              <div className="w-full bg-[#D9D9D9] dark:bg-zinc-900 rounded-[30px] h-20"></div>
-              <div className="w-full bg-[#D9D9D9] dark:bg-zinc-900 rounded-[30px] h-20"></div>
-              <div className="w-full bg-[#D9D9D9] dark:bg-zinc-900 rounded-[30px] h-20"></div>
-            </div>
-          ) : displayList.length > 0 ? (
+          {displayList.length > 0 ? (
             displayList.map((friend) => (
               <div 
                 key={friend.id}

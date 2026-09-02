@@ -5,11 +5,14 @@ import { api } from '../services/api';
 interface DataContextType {
   bills: any[];
   setBills: React.Dispatch<React.SetStateAction<any[]>>;
+  friends: any[];
+  setFriends: React.Dispatch<React.SetStateAction<any[]>>;
   pendingFriendRequests: any[];
   setPendingFriendRequests: React.Dispatch<React.SetStateAction<any[]>>;
-  isLoadingInitialData: boolean;
   fetchBills: (uid?: string) => Promise<void>;
+  fetchFriends: (uid?: string) => Promise<void>;
   fetchPendingFriends: (uid?: string) => Promise<void>;
+  refreshAll: (uid?: string) => Promise<void>;
 }
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
@@ -23,9 +26,19 @@ export function useData() {
 }
 
 export function DataProvider({ children }: { children: ReactNode }) {
+  // 1. Initial State hydrated synchronously from localStorage cache
   const [bills, setBillsState] = useState<any[]>(() => {
     try {
       const saved = localStorage.getItem('plates_cached_bills');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  const [friends, setFriendsState] = useState<any[]>(() => {
+    try {
+      const saved = localStorage.getItem('plates_cached_friends');
       return saved ? JSON.parse(saved) : [];
     } catch {
       return [];
@@ -41,15 +54,6 @@ export function DataProvider({ children }: { children: ReactNode }) {
     }
   });
 
-  const [isLoadingInitialData, setIsLoadingInitialData] = useState(() => {
-    try {
-      const saved = localStorage.getItem('plates_cached_bills');
-      return !saved;
-    } catch {
-      return true;
-    }
-  });
-
   const [userId, setUserId] = useState<string>(() => {
     try {
       const saved = localStorage.getItem('plates_cached_uid');
@@ -59,11 +63,22 @@ export function DataProvider({ children }: { children: ReactNode }) {
     }
   });
 
+  // State setters that automatically update localStorage cache
   const setBills: React.Dispatch<React.SetStateAction<any[]>> = (updater) => {
     setBillsState((prev) => {
       const next = typeof updater === 'function' ? updater(prev) : updater;
       try {
         localStorage.setItem('plates_cached_bills', JSON.stringify(next));
+      } catch {}
+      return next;
+    });
+  };
+
+  const setFriends: React.Dispatch<React.SetStateAction<any[]>> = (updater) => {
+    setFriendsState((prev) => {
+      const next = typeof updater === 'function' ? updater(prev) : updater;
+      try {
+        localStorage.setItem('plates_cached_friends', JSON.stringify(next));
       } catch {}
       return next;
     });
@@ -98,7 +113,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
     
     try {
       const data = await api.getBills(uid);
-      if (data && Array.isArray(data) && data.length > 0) {
+      if (data && Array.isArray(data)) {
         setBills(data);
         return;
       }
@@ -157,6 +172,41 @@ export function DataProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const fetchFriends = async (currentUid?: string) => {
+    const uid = currentUid || await getActiveUserId();
+    if (!uid) return;
+
+    try {
+      const { data: rawAccepted } = await supabase
+        .from('friends')
+        .select('friend_id, status')
+        .eq('user_id', uid)
+        .or('status.eq.accepted,status.is.null');
+
+      if (rawAccepted && rawAccepted.length > 0) {
+        const friendIds = rawAccepted.map((f: any) => f.friend_id);
+        const { data: profs } = await supabase
+          .from('profiles')
+          .select('id, full_name, avatar_url, username')
+          .in('id', friendIds);
+
+        const accepted = (profs || []).filter((p: any) => p && p.id).map((p: any) => ({
+          id: p.id,
+          name: p.full_name || 'Friend',
+          username: p.username ? `@${p.username}` : '',
+          avatar_url: p.avatar_url,
+          balance: 0,
+          isPendingRequest: false,
+        }));
+        setFriends(accepted);
+      } else {
+        setFriends([]);
+      }
+    } catch (err) {
+      console.error('Error fetching friends:', err);
+    }
+  };
+
   const fetchPendingFriends = async (currentUid?: string) => {
     const uid = currentUid || await getActiveUserId();
     if (!uid) return;
@@ -197,19 +247,21 @@ export function DataProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  useEffect(() => {
-    let isMounted = true;
+  const refreshAll = async (currentUid?: string) => {
+    const uid = currentUid || await getActiveUserId();
+    if (!uid) return;
+    await Promise.allSettled([
+      fetchBills(uid),
+      fetchFriends(uid),
+      fetchPendingFriends(uid)
+    ]);
+  };
 
+  useEffect(() => {
     const initFetch = async () => {
       const uid = await getActiveUserId();
       if (uid) {
-        await Promise.all([
-          fetchBills(uid),
-          fetchPendingFriends(uid)
-        ]);
-        if (isMounted) setIsLoadingInitialData(false);
-      } else {
-        if (isMounted) setIsLoadingInitialData(false);
+        refreshAll(uid);
       }
     };
 
@@ -218,51 +270,35 @@ export function DataProvider({ children }: { children: ReactNode }) {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (event === 'SIGNED_IN' && session?.user) {
         setUserId(session.user.id);
-        setIsLoadingInitialData(true);
-        await Promise.all([
-          fetchBills(session.user.id),
-          fetchPendingFriends(session.user.id)
-        ]);
-        if (isMounted) setIsLoadingInitialData(false);
+        refreshAll(session.user.id);
       } else if (event === 'SIGNED_OUT') {
         setUserId('');
         setBills([]);
+        setFriends([]);
         setPendingFriendRequests([]);
-        setIsLoadingInitialData(false);
         try {
           localStorage.removeItem('plates_cached_bills');
+          localStorage.removeItem('plates_cached_friends');
           localStorage.removeItem('plates_cached_pending_friends');
           localStorage.removeItem('plates_cached_uid');
         } catch {}
       }
     });
 
+    // Real-time Postgres subscriptions for live updates
     const channel = supabase
       .channel('realtime-data-sync')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'bills' }, () => fetchBills())
       .on('postgres_changes', { event: '*', schema: 'public', table: 'participants' }, () => fetchBills())
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'friends' }, () => fetchPendingFriends())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'friends' }, () => {
+        fetchFriends();
+        fetchPendingFriends();
+      })
       .subscribe();
 
-    const interval = setInterval(() => {
-      fetchBills();
-      fetchPendingFriends();
-    }, 3000);
-
-    const handleFocus = () => {
-      fetchBills();
-      fetchPendingFriends();
-    };
-    window.addEventListener('focus', handleFocus);
-    document.addEventListener('visibilitychange', handleFocus);
-
     return () => {
-      isMounted = false;
       subscription.unsubscribe();
       supabase.removeChannel(channel);
-      clearInterval(interval);
-      window.removeEventListener('focus', handleFocus);
-      document.removeEventListener('visibilitychange', handleFocus);
     };
   }, []);
 
@@ -270,11 +306,14 @@ export function DataProvider({ children }: { children: ReactNode }) {
     <DataContext.Provider value={{ 
       bills, 
       setBills,
+      friends,
+      setFriends,
       pendingFriendRequests, 
       setPendingFriendRequests,
-      isLoadingInitialData, 
       fetchBills, 
-      fetchPendingFriends 
+      fetchFriends,
+      fetchPendingFriends,
+      refreshAll
     }}>
       {children}
     </DataContext.Provider>

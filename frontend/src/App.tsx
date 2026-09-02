@@ -291,18 +291,8 @@ function App() {
       .on('postgres_changes', { event: '*', schema: 'public', table: 'participants' }, checkLiveIncoming)
       .subscribe();
 
-    // Fast 1.5s live polling loop when active in app
-    const interval = setInterval(checkLiveIncoming, 1500);
-
-    const handleVisibility = () => checkLiveIncoming();
-    window.addEventListener('focus', handleVisibility);
-    document.addEventListener('visibilitychange', handleVisibility);
-
     return () => {
       supabase.removeChannel(channel);
-      clearInterval(interval);
-      window.removeEventListener('focus', handleVisibility);
-      document.removeEventListener('visibilitychange', handleVisibility);
     };
   }, [session]);
 
