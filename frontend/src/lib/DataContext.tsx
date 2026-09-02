@@ -23,10 +23,61 @@ export function useData() {
 }
 
 export function DataProvider({ children }: { children: ReactNode }) {
-  const [bills, setBills] = useState<any[]>([]);
-  const [pendingFriendRequests, setPendingFriendRequests] = useState<any[]>([]);
-  const [isLoadingInitialData, setIsLoadingInitialData] = useState(true);
-  const [userId, setUserId] = useState<string>('');
+  const [bills, setBillsState] = useState<any[]>(() => {
+    try {
+      const saved = localStorage.getItem('plates_cached_bills');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  const [pendingFriendRequests, setPendingFriendRequestsState] = useState<any[]>(() => {
+    try {
+      const saved = localStorage.getItem('plates_cached_pending_friends');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  const [isLoadingInitialData, setIsLoadingInitialData] = useState(() => {
+    try {
+      const saved = localStorage.getItem('plates_cached_bills');
+      return !saved;
+    } catch {
+      return true;
+    }
+  });
+
+  const [userId, setUserId] = useState<string>(() => {
+    try {
+      const saved = localStorage.getItem('plates_cached_uid');
+      return saved || '';
+    } catch {
+      return '';
+    }
+  });
+
+  const setBills: React.Dispatch<React.SetStateAction<any[]>> = (updater) => {
+    setBillsState((prev) => {
+      const next = typeof updater === 'function' ? updater(prev) : updater;
+      try {
+        localStorage.setItem('plates_cached_bills', JSON.stringify(next));
+      } catch {}
+      return next;
+    });
+  };
+
+  const setPendingFriendRequests: React.Dispatch<React.SetStateAction<any[]>> = (updater) => {
+    setPendingFriendRequestsState((prev) => {
+      const next = typeof updater === 'function' ? updater(prev) : updater;
+      try {
+        localStorage.setItem('plates_cached_pending_friends', JSON.stringify(next));
+      } catch {}
+      return next;
+    });
+  };
 
   const getActiveUserId = async (): Promise<string> => {
     if (userId) return userId;
@@ -34,6 +85,9 @@ export function DataProvider({ children }: { children: ReactNode }) {
     const uid = session?.user?.id || '';
     if (uid && uid !== userId) {
       setUserId(uid);
+      try {
+        localStorage.setItem('plates_cached_uid', uid);
+      } catch {}
     }
     return uid;
   };
@@ -175,6 +229,11 @@ export function DataProvider({ children }: { children: ReactNode }) {
         setBills([]);
         setPendingFriendRequests([]);
         setIsLoadingInitialData(false);
+        try {
+          localStorage.removeItem('plates_cached_bills');
+          localStorage.removeItem('plates_cached_pending_friends');
+          localStorage.removeItem('plates_cached_uid');
+        } catch {}
       }
     });
 

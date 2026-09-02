@@ -400,78 +400,80 @@ function App() {
       {/* Main Content Area */}
       <main className="flex-1 w-full max-w-[480px] md:max-w-full mx-auto md:mx-0 relative md:px-8 lg:px-16 xl:px-24">
         {/* Views */}
-        {currentTab === 'home' && (
-        <Home 
-          session={activeSession}
-          onBillClick={(id) => {
-            setSelectedBillId(id);
-            setCurrentView('detail');
-            setCurrentTab('bills');
-          }}
-          onSearchClick={() => {
-            setFriendsView('search');
-            setCurrentTab('friends');
-          }}
-          onAvatarClick={() => {
-            setSettingsView('account');
-            setCurrentTab('settings');
-          }}
-        />
-      )}
-      
-      {currentTab === 'friends' && (
-        friendsView === 'search' ? (
-          <SearchFriends 
-            session={activeSession}
-            onBack={() => setFriendsView('list')} 
-          />
-        ) : friendsView === 'detail' && selectedFriendId ? (
-          <FriendDetail 
-            friendId={selectedFriendId}
-            onBack={() => {
-              setFriendsView('list');
-              setSelectedFriendId(null);
-            }}
-            onBillClick={(billId) => {
-              setSelectedBillId(billId);
-              setCurrentView('detail');
-              setCurrentTab('bills');
-            }}
-          />
-        ) : (
-          <FriendsList 
-            session={activeSession}
-            onFriendClick={(id) => {
-              setSelectedFriendId(id);
-              setFriendsView('detail');
-            }}
-            onSearchClick={() => setFriendsView('search')}
-          />
-        )
-      )}
-      
-      {currentTab === 'bills' && (
-        currentView === 'list' ? (
-          <BillsList 
+        <div style={{ display: currentTab === 'home' ? undefined : 'none' }}>
+          <Home 
             session={activeSession}
             onBillClick={(id) => {
               setSelectedBillId(id);
               setCurrentView('detail');
+              setCurrentTab('bills');
+            }}
+            onSearchClick={() => {
+              setFriendsView('search');
+              setCurrentTab('friends');
+            }}
+            onAvatarClick={() => {
+              setSettingsView('account');
+              setCurrentTab('settings');
             }}
           />
-        ) : (
-          <BillDetail 
-            billId={selectedBillId}
-            session={activeSession}
-            onBack={() => {
-              setCurrentView('list');
-              setSelectedBillId(null);
-            }}
-          />
-        )
-      )}
+        </div>
+        
+        <div style={{ display: currentTab === 'friends' ? undefined : 'none' }}>
+          {friendsView === 'search' ? (
+            <SearchFriends 
+              session={activeSession}
+              onBack={() => setFriendsView('list')} 
+            />
+          ) : friendsView === 'detail' && selectedFriendId ? (
+            <FriendDetail 
+              friendId={selectedFriendId}
+              onBack={() => {
+                setFriendsView('list');
+                setSelectedFriendId(null);
+              }}
+              onBillClick={(billId) => {
+                setSelectedBillId(billId);
+                setCurrentView('detail');
+                setCurrentTab('bills');
+              }}
+            />
+          ) : (
+            <FriendsList 
+              session={activeSession}
+              onFriendClick={(id) => {
+                setSelectedFriendId(id);
+                setFriendsView('detail');
+              }}
+              onSearchClick={() => setFriendsView('search')}
+            />
+          )}
+        </div>
+        
+        <div style={{ display: currentTab === 'bills' ? undefined : 'none' }}>
+          {currentView === 'list' ? (
+            <BillsList 
+              session={activeSession}
+              onBillClick={(id) => {
+                setSelectedBillId(id);
+                setCurrentView('detail');
+              }}
+            />
+          ) : (
+            <BillDetail 
+              billId={selectedBillId}
+              session={activeSession}
+              onBack={() => {
+                setCurrentView('list');
+                setSelectedBillId(null);
+              }}
+            />
+          )}
+        </div>
 
-      {currentTab === 'settings' && <Settings session={activeSession} initialView={settingsView} isDarkTheme={isDarkTheme} onThemeChange={setIsDarkTheme} />}
+        <div style={{ display: currentTab === 'settings' ? undefined : 'none' }}>
+          <Settings session={activeSession} initialView={settingsView} isDarkTheme={isDarkTheme} onThemeChange={setIsDarkTheme} />
+        </div>
 
       {/* Shared Bottom Navigation */}
       <BottomNav 
