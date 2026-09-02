@@ -5,6 +5,7 @@ import { IncomingFriendRequestModal } from '../components/IncomingFriendRequestM
 import { DeleteConfirmationModal } from '../components/DeleteConfirmationModal';
 import { supabase } from '../lib/supabase';
 import { api } from '../services/api';
+import { useData } from '../lib/DataContext';
 
 interface FriendsListProps {
   session: any;
@@ -17,6 +18,7 @@ export function FriendsList({
   onFriendClick, 
   onSearchClick 
 }: FriendsListProps) {
+  const { bills } = useData();
   const [activeTab, setActiveTab] = useState<'all' | 'pending'>('all');
   const [incomingFriend, setIncomingFriend] = useState<any>(null);
   // Deletion Modal State
@@ -100,8 +102,30 @@ export function FriendsList({
     gcTime: 10 * 60 * 1000 // 10 minutes
   });
 
-  const acceptedFriends = data?.accepted || [];
+  const rawAcceptedFriends = data?.accepted || [];
   const pendingRequests = data?.pending || [];
+  const currentUid = session?.user?.id || '';
+
+  const acceptedFriends = rawAcceptedFriends.map((f: any) => {
+    let bal = 0;
+    if (currentUid && f.id) {
+      (bills || []).forEach((b: any) => {
+        if (b.status === 'Settled') return;
+        const isCreatorMe = b.creator_id === currentUid;
+        const isFriendCreator = b.creator_id === f.id;
+        const parts = b.participants || [];
+        const friendPart = parts.find((p: any) => p.friend_id === f.id || p.friendId === f.id);
+        const myPart = parts.find((p: any) => p.friend_id === currentUid || p.friendId === currentUid);
+
+        if (isCreatorMe && friendPart && !friendPart.paid) {
+          bal += Number(friendPart.share || 0);
+        } else if (isFriendCreator && myPart && !myPart.paid) {
+          bal -= Number(myPart.share || 0);
+        }
+      });
+    }
+    return { ...f, balance: bal };
+  });
 
   const handleInitiateDeleteFriend = async (friend: any, e: React.MouseEvent) => {
     e.stopPropagation();

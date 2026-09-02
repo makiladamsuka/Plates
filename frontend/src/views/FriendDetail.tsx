@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { ArrowUpRight, ArrowDownLeft, ChevronLeft, Plus, Trash2 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { api } from '../services/api';
+import { useData } from '../lib/DataContext';
 import { IncomingBillModal } from '../components/IncomingBillModal';
 import { DeleteConfirmationModal } from '../components/DeleteConfirmationModal';
 
@@ -13,8 +14,8 @@ interface FriendDetailProps {
 }
 
 export function FriendDetail({ session, friendId, onBack, onBillClick }: FriendDetailProps) {
+  const { bills } = useData();
   const [friend, setFriend] = useState<any>(null);
-  const [bills, setBills] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [userId, setUserId] = useState<string>(session?.user?.id || '');
   const [selectedBill, setSelectedBill] = useState<any>(null);
@@ -42,12 +43,6 @@ export function FriendDetail({ session, friendId, onBack, onBillClick }: FriendD
         
         if (friendErr) throw friendErr;
         setFriend(friendProfile);
-
-        // 3. Fetch bills for current user
-        if (currentUid) {
-          const userBills = await api.getBills(currentUid);
-          setBills(userBills || []);
-        }
       } catch (err) {
         console.error('Error in FriendDetail:', err);
       } finally {
