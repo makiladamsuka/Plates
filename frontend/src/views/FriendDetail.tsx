@@ -14,9 +14,16 @@ interface FriendDetailProps {
 }
 
 export function FriendDetail({ session, friendId, onBack, onBillClick }: FriendDetailProps) {
-  const { bills } = useData();
-  const [friend, setFriend] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
+  const { bills, friends } = useData();
+  const cachedFriend = friends.find((f: any) => f.id === friendId);
+
+  const [friend, setFriend] = useState<any>(() => cachedFriend ? {
+    id: cachedFriend.id,
+    full_name: cachedFriend.name,
+    username: cachedFriend.username ? cachedFriend.username.replace('@', '') : '',
+    avatar_url: cachedFriend.avatar_url
+  } : null);
+  const [loading, setLoading] = useState(!cachedFriend);
   const [userId, setUserId] = useState<string>(session?.user?.id || '');
   const [selectedBill, setSelectedBill] = useState<any>(null);
 
@@ -27,7 +34,9 @@ export function FriendDetail({ session, friendId, onBack, onBillClick }: FriendD
 
   useEffect(() => {
     const init = async () => {
-      setLoading(true);
+      if (!friend && !cachedFriend) {
+        setLoading(true);
+      }
       try {
         // 1. Get current user ID
         const { data: { session: s } } = await supabase.auth.getSession();

@@ -5,6 +5,7 @@ import { DeleteConfirmationModal } from '../components/DeleteConfirmationModal';
 import { api } from '../services/api';
 import { supabase } from '../lib/supabase';
 import { MOCK_FRIENDS } from '../data/mockData';
+import { useData } from '../lib/DataContext';
 
 interface BillDetailProps {
   onBack: () => void;
@@ -39,11 +40,26 @@ const formatTime = (ts: any) => {
 };
 
 export function BillDetail({ onBack, billId, session }: BillDetailProps) {
+  const { bills } = useData();
+  const cachedBill = bills.find((b: any) => b.id === billId);
+
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
-  const [bill, setBill] = useState<any>(null);
-  const [creatorName, setCreatorName] = useState<string>('');
-  const [loading, setLoading] = useState(true);
+  const [bill, setBill] = useState<any>(() => cachedBill || null);
+  const [creatorName, setCreatorName] = useState<string>(() => {
+    if (!cachedBill) return '';
+    const creatorPart = (cachedBill.participants || []).find((p: any) => p.friend_id === cachedBill.creator_id);
+    return creatorPart?.full_name || creatorPart?.profile?.full_name || '';
+  });
+  const [loading, setLoading] = useState(!cachedBill);
   const [userId, setUserId] = useState<string>(() => session?.user?.id || '');
+
+  // Keep state in sync if cache populates
+  useEffect(() => {
+    if (cachedBill && !bill) {
+      setBill(cachedBill);
+      setLoading(false);
+    }
+  }, [cachedBill, bill]);
 
   // Bill Deletion State
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -56,7 +72,9 @@ export function BillDetail({ onBack, billId, session }: BillDetailProps) {
       return;
     }
     try {
-      setLoading(true);
+      if (!bill && !cachedBill) {
+        setLoading(true);
+      }
       try {
         const data = await api.getBill(billId);
         if (data && data.id) {

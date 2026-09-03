@@ -40,7 +40,7 @@ interface BillsListProps {
 }
 
 export function BillsList({ onBillClick, session }: BillsListProps) {
-  const { bills, fetchBills } = useData();
+  const { bills, fetchBills, isLoadingBills } = useData();
   const userId = session?.user?.id || '';
   const [isNewBillModalOpen, setIsNewBillModalOpen] = useState(false);
   const [sortKey, setSortKey] = useState<SortKey>('all');
@@ -221,7 +221,29 @@ export function BillsList({ onBillClick, session }: BillsListProps) {
             );
           })}
 
-          {sortedBills.length === 0 && (
+          {/* Loading Skeletons */}
+          {isLoadingBills && sortedBills.length === 0 && (
+            <div className="flex flex-col gap-4 w-full">
+              {[1, 2, 3].map((i) => (
+                <div 
+                  key={`skeleton-${i}`} 
+                  className="w-full bg-zinc-300/40 dark:bg-zinc-900/60 rounded-[30px] p-6 h-[110px] animate-pulse flex flex-col justify-between border border-transparent dark:border-white/5"
+                >
+                  <div className="flex justify-between items-center">
+                    <div className="h-5 w-36 bg-zinc-300 dark:bg-zinc-800 rounded-full" />
+                    <div className="h-6 w-16 bg-zinc-300 dark:bg-zinc-800 rounded-full" />
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <div className="h-4 w-24 bg-zinc-300 dark:bg-zinc-800 rounded-full" />
+                    <div className="h-6 w-20 bg-zinc-300 dark:bg-zinc-800 rounded-full" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Genuine Empty State */}
+          {!isLoadingBills && sortedBills.length === 0 && (
             <div className="text-center mt-10 text-black/50 dark:text-zinc-500 text-sm">No bills found. Create one!</div>
           )}
         </div>
