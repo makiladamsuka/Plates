@@ -36,7 +36,9 @@ const allowedOrigins = [
   'https://plates.live',
   'https://www.plates.live',
   'http://localhost:5173',
-  'http://localhost:3000'
+  'http://localhost:5174',
+  'http://localhost:3000',
+  'http://localhost:3001'
 ].filter(Boolean) as string[];
 
 const corsOptions: cors.CorsOptions = {
