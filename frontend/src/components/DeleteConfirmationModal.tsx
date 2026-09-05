@@ -60,11 +60,11 @@ export function DeleteConfirmationModal({
             {description}
           </p>
 
-          {/* Blocked reason banner */}
-          {isBlocked && blockedReason && (
-            <div className="mt-4 p-3.5 bg-amber-500/10 border border-amber-500/20 rounded-[20px] text-left flex items-start gap-2.5 w-full">
-              <AlertCircle size={16} className="text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
-              <div className="text-xs text-amber-700 dark:text-amber-300 leading-normal">
+          {/* Blocked reason banner (only if distinct extra info is provided) */}
+          {isBlocked && blockedReason && blockedReason.trim() !== description.trim() && (
+            <div className="mt-3.5 p-3 bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/10 rounded-[18px] text-left flex items-start gap-2.5 w-full">
+              <AlertCircle size={15} className="text-black/50 dark:text-zinc-400 shrink-0 mt-0.5" />
+              <div className="text-xs text-black/70 dark:text-zinc-300 leading-normal">
                 {blockedReason}
               </div>
             </div>

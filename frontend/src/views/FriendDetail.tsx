@@ -317,16 +317,14 @@ export function FriendDetail({ session, friendId, onBack, onBillClick }: FriendD
         onConfirm={handleDeleteFriend}
         title={hasUnsettledBills || deleteErrorMessage ? 'Cannot Remove Friend' : 'Remove Friend'}
         description={
-          hasUnsettledBills || deleteErrorMessage
-            ? `You have unsettled bills or an active balance with ${friend.full_name || 'this friend'}.`
+          deleteErrorMessage
+            ? deleteErrorMessage
+            : hasUnsettledBills
+            ? `Active balance: LKR ${Math.abs(friendBalance).toLocaleString()} (${unsettledBills.length} unsettled bill${unsettledBills.length === 1 ? '' : 's'}). Settle all shared bills before removing.`
             : `Are you sure you want to remove ${friend.full_name || 'this friend'} from your friends list?`
         }
         confirmText="Remove"
         isBlocked={hasUnsettledBills || !!deleteErrorMessage}
-        blockedReason={
-          deleteErrorMessage ||
-          `Active unsettled balance: LKR ${Math.abs(friendBalance).toLocaleString()} (${unsettledBills.length} pending bill${unsettledBills.length === 1 ? '' : 's'}). All shared bills must be settled before you can remove a friend.`
-        }
         isLoading={isDeleting}
         itemType="friend"
       />

@@ -337,15 +337,14 @@ export function Settings({ session, initialView = 'main', isDarkTheme = false, o
           isOpen={isDeleteModalOpen}
           onClose={() => setIsDeleteModalOpen(false)}
           onConfirm={handleConfirmDeleteAccount}
-          title="Delete Account"
+          title={unsettledBillsCount > 0 ? "Cannot Delete Account" : "Delete Account"}
           description={
             unsettledBillsCount > 0
-              ? `You cannot delete your account while you have ${unsettledBillsCount} active unsettled bill(s). Please settle or leave all bills first.`
-              : 'Are you sure you want to delete your account? This action is permanent and will delete all your bills, friend connections, and profile data.'
+              ? `You have ${unsettledBillsCount} unsettled bill${unsettledBillsCount === 1 ? '' : 's'}. Settle all balances before deleting your account.`
+              : 'Are you sure you want to permanently delete your account? All your bills, friend connections, and profile data will be removed.'
           }
           confirmText="Delete Account"
           isBlocked={unsettledBillsCount > 0}
-          blockedReason={`You have ${unsettledBillsCount} unsettled bill(s). All payments and debts with every friend must be 0 before deleting your account.`}
           isLoading={isDeleting}
           itemType="friend"
         />
