@@ -135,7 +135,7 @@ export function FriendsList({
       <div className="max-w-[480px] md:max-w-6xl mx-auto md:px-10">
         
         {/* Friends Cards */}
-        <div className="px-5 md:px-0 mt-2 flex flex-col md:grid md:grid-cols-2 xl:grid-cols-3 gap-4">
+        <div className="px-5 md:px-0 mt-2 flex flex-col md:grid md:grid-cols-2 gap-5 md:gap-6">
           {displayList.length > 0 ? (
             displayList.map((friend) => (
               <div 
@@ -147,20 +147,20 @@ export function FriendsList({
                     onFriendClick?.(friend.id);
                   }
                 }}
-                className="w-full bg-[#D9D9D9] dark:bg-zinc-900 rounded-[28px] px-5 py-4 relative flex items-center justify-between shadow-sm cursor-pointer hover:bg-zinc-300/80 dark:hover:bg-zinc-800 transition-colors border border-transparent dark:border-white/5 gap-3"
+                className="w-full bg-[#D9D9D9] dark:bg-zinc-900 rounded-[32px] p-5 sm:p-6 min-h-[96px] relative flex items-center justify-between shadow-sm cursor-pointer hover:bg-zinc-300/80 dark:hover:bg-zinc-800 transition-colors border border-transparent dark:border-white/5 gap-4"
               >
                 {/* Left Side: Avatar & Details */}
-                <div className="flex items-center gap-3.5 min-w-0 flex-1">
+                <div className="flex items-center gap-4 min-w-0 flex-1">
                   <Avatar 
                     src={friend.avatar_url} 
                     name={friend.name} 
-                    className="w-[44px] h-[44px]"
+                    className="w-[52px] h-[52px]"
                   />
                   <div className="flex flex-col min-w-0 flex-1">
-                    <span className="text-[#1A1A1A] dark:text-zinc-100 text-base sm:text-lg font-bold leading-tight truncate">
+                    <span className="text-[#1A1A1A] dark:text-zinc-100 text-lg sm:text-xl font-bold leading-snug truncate">
                       {friend.name}
                     </span>
-                    <span className="text-black/50 dark:text-zinc-400 text-xs font-normal mt-0.5 truncate">
+                    <span className="text-black/50 dark:text-zinc-400 text-xs sm:text-sm font-normal mt-0.5 truncate">
                       {friend.username}
                     </span>
                   </div>
@@ -172,14 +172,14 @@ export function FriendsList({
                     <button 
                       onClick={() => handleApprove(friend.id)}
                       title="Accept Request"
-                      className="w-[32px] h-[32px] flex items-center justify-center rounded-full active:scale-95 transition-transform bg-[#EDEDF1] dark:bg-zinc-800 border border-black/10 dark:border-white/10 shadow-sm cursor-pointer hover:bg-[#4C8C3C] dark:hover:bg-[#4C8C3C] hover:text-white group"
+                      className="w-[36px] h-[36px] flex items-center justify-center rounded-full active:scale-95 transition-transform bg-[#EDEDF1] dark:bg-zinc-800 border border-black/10 dark:border-white/10 shadow-sm cursor-pointer hover:bg-[#4C8C3C] dark:hover:bg-[#4C8C3C] hover:text-white group"
                     >
                       <Check size={18} strokeWidth={3} className="text-[#4C8C3C] dark:text-[#5FAD4B] group-hover:text-white" />
                     </button>
                     <button 
                       onClick={() => handleDecline(friend.id)}
                       title="Decline Request"
-                      className="w-[32px] h-[32px] flex items-center justify-center rounded-full active:scale-95 transition-transform bg-[#EDEDF1] dark:bg-zinc-800 border border-black/10 dark:border-white/10 shadow-sm cursor-pointer hover:bg-[#F6D6DA] dark:hover:bg-red-900/50 group"
+                      className="w-[36px] h-[36px] flex items-center justify-center rounded-full active:scale-95 transition-transform bg-[#EDEDF1] dark:bg-zinc-800 border border-black/10 dark:border-white/10 shadow-sm cursor-pointer hover:bg-[#F6D6DA] dark:hover:bg-red-900/50 group"
                     >
                       <X size={16} strokeWidth={3} className="text-[#F6D6DA] dark:text-red-400 group-hover:text-red-600 dark:group-hover:text-red-300" />
                     </button>
@@ -187,18 +187,18 @@ export function FriendsList({
                 ) : (
                   <div className="flex items-center gap-3 shrink-0">
                     {friend.balance !== 0 ? (
-                      <div className="flex items-center gap-1.5 shrink-0">
+                      <div className="flex items-center gap-2 shrink-0">
                         {friend.balance > 0 ? (
-                          <ArrowDownLeft size={20} strokeWidth={2.5} className="text-[#4C8C3C] dark:text-[#5FAD4B]" />
+                          <ArrowDownLeft size={22} strokeWidth={2.5} className="text-[#4C8C3C] dark:text-[#5FAD4B]" />
                         ) : (
-                          <ArrowUpRight size={20} strokeWidth={2.5} className="text-red-500" />
+                          <ArrowUpRight size={22} strokeWidth={2.5} className="text-red-500" />
                         )}
-                        <span className="text-[#1A1A1A] dark:text-zinc-100 text-lg font-semibold whitespace-nowrap">
+                        <span className="text-[#1A1A1A] dark:text-zinc-100 text-xl sm:text-2xl font-extrabold whitespace-nowrap">
                           LKR {Math.abs(friend.balance).toLocaleString()}
                         </span>
                       </div>
                     ) : (
-                      <span className="text-xs font-semibold px-3 py-1 rounded-full bg-black/5 dark:bg-white/10 text-black/40 dark:text-zinc-400">
+                      <span className="text-xs sm:text-sm font-semibold px-4 py-1.5 rounded-full bg-black/5 dark:bg-white/10 text-black/50 dark:text-zinc-400">
                         Settled
                       </span>
                     )}

@@ -291,7 +291,7 @@ export function Home({
           </div>
 
           <div
-            className="-mx-5 md:mx-0 px-5 md:px-0 flex gap-3.5 overflow-x-auto no-scrollbar pb-4 pt-1 snap-x snap-mandatory md:snap-none md:grid md:grid-cols-2 xl:grid-cols-3 md:gap-4 md:auto-rows-fr"
+            className="-mx-5 md:mx-0 px-5 md:px-0 flex gap-3.5 overflow-x-auto no-scrollbar pb-4 pt-1 snap-x snap-mandatory md:snap-none md:grid md:grid-cols-2 gap-5 md:gap-6 md:auto-rows-fr"
           >
             {[...bills]
               .sort((a, b) => {
@@ -316,9 +316,9 @@ export function Home({
                 <div
                   key={`carousel-${bill.id}`}
                   onClick={() => onBillClick?.(bill.id)}
-                  className="w-[200px] md:w-full h-[205px] shrink-0 bg-[#D9D9D9] dark:bg-zinc-900 rounded-[28px] flex flex-col justify-between shadow-sm snap-start cursor-pointer active:scale-[0.98] hover:bg-zinc-300/80 dark:hover:bg-zinc-800 transition-all border border-transparent dark:border-white/5 p-4 sm:p-4.5"
+                  className="w-[200px] md:w-full h-[220px] shrink-0 bg-[#D9D9D9] dark:bg-zinc-900 rounded-[32px] flex flex-col justify-between shadow-sm snap-start cursor-pointer active:scale-[0.98] hover:bg-zinc-300/80 dark:hover:bg-zinc-800 transition-all border border-transparent dark:border-white/5 p-5 sm:p-6"
                 >
-                  <h3 className="text-[#1A1A1A] dark:text-zinc-100 text-lg md:text-xl font-bold leading-snug line-clamp-2">
+                  <h3 className="text-[#1A1A1A] dark:text-zinc-100 text-xl sm:text-2xl font-bold leading-snug line-clamp-2">
                     {bill.title}
                   </h3>
 
