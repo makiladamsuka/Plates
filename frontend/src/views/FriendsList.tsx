@@ -147,20 +147,20 @@ export function FriendsList({
                     onFriendClick?.(friend.id);
                   }
                 }}
-                className="w-full bg-[#D9D9D9] dark:bg-zinc-900 rounded-[32px] p-5 sm:p-6 min-h-[96px] relative flex items-center justify-between shadow-sm cursor-pointer hover:bg-zinc-300/80 dark:hover:bg-zinc-800 transition-colors border border-transparent dark:border-white/5 gap-4"
+                className="w-full bg-[#D9D9D9] dark:bg-zinc-900 rounded-[28px] px-4.5 sm:px-5 py-3.5 sm:py-4 relative flex items-center justify-between shadow-sm cursor-pointer hover:bg-zinc-300/80 dark:hover:bg-zinc-800 transition-colors border border-transparent dark:border-white/5 gap-3"
               >
                 {/* Left Side: Avatar & Details */}
-                <div className="flex items-center gap-4 min-w-0 flex-1">
+                <div className="flex items-center gap-3 min-w-0 flex-1">
                   <Avatar 
                     src={friend.avatar_url} 
                     name={friend.name} 
-                    className="w-[52px] h-[52px]"
+                    className="w-10 h-10 sm:w-11 sm:h-11"
                   />
                   <div className="flex flex-col min-w-0 flex-1">
-                    <span className="text-[#1A1A1A] dark:text-zinc-100 text-lg sm:text-xl font-bold leading-snug truncate">
+                    <span className="text-[#1A1A1A] dark:text-zinc-100 text-sm sm:text-base font-bold leading-tight break-words line-clamp-1">
                       {friend.name}
                     </span>
-                    <span className="text-black/50 dark:text-zinc-400 text-xs sm:text-sm font-normal mt-0.5 truncate">
+                    <span className="text-black/50 dark:text-zinc-400 text-[11px] sm:text-xs font-normal mt-0.5 truncate">
                       {friend.username}
                     </span>
                   </div>
@@ -168,37 +168,37 @@ export function FriendsList({
 
                 {/* Right Side: Action Icons OR Balances */}
                 {activeTab === 'pending' ? (
-                  <div className="flex items-center gap-3 shrink-0 pr-1" onClick={(e) => e.stopPropagation()}>
+                  <div className="flex items-center gap-2 shrink-0 pr-0.5" onClick={(e) => e.stopPropagation()}>
                     <button 
                       onClick={() => handleApprove(friend.id)}
                       title="Accept Request"
-                      className="w-[36px] h-[36px] flex items-center justify-center rounded-full active:scale-95 transition-transform bg-[#EDEDF1] dark:bg-zinc-800 border border-black/10 dark:border-white/10 shadow-sm cursor-pointer hover:bg-[#4C8C3C] dark:hover:bg-[#4C8C3C] hover:text-white group"
+                      className="w-8 h-8 flex items-center justify-center rounded-full active:scale-95 transition-transform bg-[#EDEDF1] dark:bg-zinc-800 border border-black/10 dark:border-white/10 shadow-sm cursor-pointer hover:bg-[#4C8C3C] dark:hover:bg-[#4C8C3C] hover:text-white group"
                     >
-                      <Check size={18} strokeWidth={3} className="text-[#4C8C3C] dark:text-[#5FAD4B] group-hover:text-white" />
+                      <Check size={16} strokeWidth={3} className="text-[#4C8C3C] dark:text-[#5FAD4B] group-hover:text-white" />
                     </button>
                     <button 
                       onClick={() => handleDecline(friend.id)}
                       title="Decline Request"
-                      className="w-[36px] h-[36px] flex items-center justify-center rounded-full active:scale-95 transition-transform bg-[#EDEDF1] dark:bg-zinc-800 border border-black/10 dark:border-white/10 shadow-sm cursor-pointer hover:bg-[#F6D6DA] dark:hover:bg-red-900/50 group"
+                      className="w-8 h-8 flex items-center justify-center rounded-full active:scale-95 transition-transform bg-[#EDEDF1] dark:bg-zinc-800 border border-black/10 dark:border-white/10 shadow-sm cursor-pointer hover:bg-[#F6D6DA] dark:hover:bg-red-900/50 group"
                     >
-                      <X size={16} strokeWidth={3} className="text-[#F6D6DA] dark:text-red-400 group-hover:text-red-600 dark:group-hover:text-red-300" />
+                      <X size={15} strokeWidth={3} className="text-[#F6D6DA] dark:text-red-400 group-hover:text-red-600 dark:group-hover:text-red-300" />
                     </button>
                   </div>
                 ) : (
-                  <div className="flex items-center gap-3 shrink-0">
+                  <div className="flex items-center gap-2 shrink-0">
                     {friend.balance !== 0 ? (
-                      <div className="flex items-center gap-2 shrink-0">
+                      <div className="flex items-center gap-1.5 shrink-0">
                         {friend.balance > 0 ? (
-                          <ArrowDownLeft size={22} strokeWidth={2.5} className="text-[#4C8C3C] dark:text-[#5FAD4B]" />
+                          <ArrowDownLeft size={18} strokeWidth={2.5} className="text-[#4C8C3C] dark:text-[#5FAD4B]" />
                         ) : (
-                          <ArrowUpRight size={22} strokeWidth={2.5} className="text-red-500" />
+                          <ArrowUpRight size={18} strokeWidth={2.5} className="text-red-500" />
                         )}
-                        <span className="text-[#1A1A1A] dark:text-zinc-100 text-xl sm:text-2xl font-extrabold whitespace-nowrap">
+                        <span className="text-[#1A1A1A] dark:text-zinc-100 text-sm sm:text-base font-bold whitespace-nowrap">
                           LKR {Math.abs(friend.balance).toLocaleString()}
                         </span>
                       </div>
                     ) : (
-                      <span className="text-xs sm:text-sm font-semibold px-4 py-1.5 rounded-full bg-black/5 dark:bg-white/10 text-black/50 dark:text-zinc-400">
+                      <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-black/5 dark:bg-white/10 text-black/50 dark:text-zinc-400">
                         Settled
                       </span>
                     )}

@@ -101,31 +101,31 @@ export function BillsList({ onBillClick, session }: BillsListProps) {
               <div 
                 key={bill.id}
                 onClick={() => onBillClick?.(bill.id)}
-                className="w-full bg-[#D9D9D9] dark:bg-zinc-900 rounded-[32px] p-6 sm:p-7 min-h-[145px] flex flex-col justify-between gap-4 sm:gap-5 shadow-sm cursor-pointer hover:bg-zinc-300/80 dark:hover:bg-zinc-800 transition-colors border border-transparent dark:border-white/5"
+                className="w-full bg-[#D9D9D9] dark:bg-zinc-900 rounded-[28px] p-5 sm:p-5.5 flex flex-col justify-between gap-3.5 shadow-sm cursor-pointer hover:bg-zinc-300/80 dark:hover:bg-zinc-800 transition-colors border border-transparent dark:border-white/5"
               >
                 {/* Top Row: Title + Status Pill */}
                 <div className="flex justify-between items-center gap-3">
-                  <h2 className="text-[#1A1A1A] dark:text-zinc-100 text-xl sm:text-2xl font-bold leading-tight truncate">{bill.title}</h2>
+                  <h2 className="text-[#1A1A1A] dark:text-zinc-100 text-base sm:text-lg font-bold leading-snug break-words line-clamp-1 flex-1 min-w-0">{bill.title}</h2>
                   <div className="flex items-center gap-2 shrink-0">
-                    <div className={`rounded-full px-3.5 py-1 flex items-center justify-center shrink-0 ${
+                    <div className={`rounded-full px-3 py-0.5 flex items-center justify-center shrink-0 ${
                       displayStatus === 'Settled' ? 'bg-[#4C8C3C] text-white' : 'bg-[#F5C744] text-black'
                     }`}>
-                      <span className="text-xs font-semibold">{displayStatus}</span>
+                      <span className="text-[11px] font-semibold">{displayStatus}</span>
                     </div>
                   </div>
                 </div>
 
                 {/* Bottom Row: Category Tag, Date & Amount + Avatars */}
-                <div className="flex items-center justify-between gap-3 pt-3 border-t border-black/5 dark:border-white/5">
-                  <div className="flex items-center gap-2.5 min-w-0 flex-wrap">
-                    <span className={`${getTagColor(bill.category)} text-black dark:text-zinc-100 px-3 py-1 rounded-full font-semibold text-xs shrink-0`}>
+                <div className="flex items-center justify-between gap-3 pt-2.5 border-t border-black/5 dark:border-white/5">
+                  <div className="flex items-center gap-2 min-w-0 flex-wrap">
+                    <span className={`${getTagColor(bill.category)} text-black dark:text-zinc-100 px-2.5 py-0.5 rounded-full font-medium text-xs shrink-0`}>
                       {bill.category}
                     </span>
-                    <span className="text-black/50 dark:text-zinc-400 font-medium text-xs sm:text-sm shrink-0">{formatTime(bill.created_at || bill.createdAt)}</span>
+                    <span className="text-black/50 dark:text-zinc-400 font-normal text-xs shrink-0">{formatTime(bill.created_at || bill.createdAt)}</span>
                   </div>
                   
-                  <div className="flex items-center gap-3 shrink-0">
-                    <div className="flex -space-x-2 shrink-0">
+                  <div className="flex items-center gap-2.5 shrink-0">
+                    <div className="flex -space-x-1.5 shrink-0">
                       {(bill.participants || []).slice(0, 4).map((p: any, i: number) => {
                         const isMe = p.friend_id === userId || p.friendId === userId || p.friendId === 'me';
                         const pAvatar = isMe 
@@ -141,20 +141,20 @@ export function BillsList({ onBillClick, session }: BillsListProps) {
                             alt={pName}
                             title={pName}
                             referrerPolicy="no-referrer"
-                            className="w-7 h-7 sm:w-8 sm:h-8 rounded-full border-2 border-[#D9D9D9] dark:border-zinc-900 object-cover shrink-0"
+                            className="w-6.5 h-6.5 sm:w-7 sm:h-7 rounded-full border border-[#EDEDF1] dark:border-zinc-900 object-cover shrink-0"
                           />
                         ) : (
                           <div
                             key={i}
                             title={pName}
-                            className="w-7 h-7 sm:w-8 sm:h-8 rounded-full border-2 border-[#D9D9D9] dark:border-zinc-900 bg-zinc-400 dark:bg-zinc-700 flex items-center justify-center text-xs font-bold text-white shrink-0"
+                            className="w-6.5 h-6.5 sm:w-7 sm:h-7 rounded-full border border-[#EDEDF1] dark:border-zinc-900 bg-zinc-400 dark:bg-zinc-700 flex items-center justify-center text-[10px] font-bold text-white shrink-0"
                           >
                             {initial}
                           </div>
                         );
                       })}
                     </div>
-                    <span className="text-[#1A1A1A] dark:text-zinc-100 text-xl sm:text-2xl font-extrabold tracking-tight whitespace-nowrap">LKR {bill.total.toLocaleString()}</span>
+                    <span className="text-[#1A1A1A] dark:text-zinc-100 text-base sm:text-lg md:text-xl font-extrabold tracking-tight whitespace-nowrap">LKR {bill.total.toLocaleString()}</span>
                   </div>
                 </div>
               </div>
