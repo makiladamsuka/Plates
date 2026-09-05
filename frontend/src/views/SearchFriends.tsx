@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Search, ChevronLeft, UserPlus, Check, Smartphone, Share2, AlertCircle, RefreshCw } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import { Avatar } from '../components/Avatar';
 import { getDevicePhoneContacts, isDeviceContactsSupported, type CleanContact } from '../services/deviceContacts';
 
 interface SearchFriendsProps {
@@ -252,11 +253,11 @@ export function SearchFriends({ session, onBack }: SearchFriendsProps) {
                   className="w-full h-[54px] px-2 flex items-center justify-between transition-colors"
                 >
                   <div className="flex items-center gap-3 min-w-0">
-                    {user.avatar_url ? (
-                      <img src={user.avatar_url} alt="" className="w-[39px] h-[39px] rounded-full object-cover shrink-0" />
-                    ) : (
-                      <div className="w-[39px] h-[39px] rounded-full bg-[#D9D9D9] dark:bg-zinc-800 opacity-40 shrink-0" />
-                    )}
+                    <Avatar 
+                      src={user.avatar_url} 
+                      name={user.full_name || user.username} 
+                      className="w-[39px] h-[39px]" 
+                    />
                     <div className="flex flex-col truncate">
                       <span className="text-[#1A1A1A] dark:text-zinc-100 text-[13px] font-semibold leading-tight truncate">
                         {user.full_name}

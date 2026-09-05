@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { ArrowUpRight, ArrowDownLeft, Check, X } from 'lucide-react';
 import { IncomingFriendRequestModal } from '../components/IncomingFriendRequestModal';
+import { Avatar } from '../components/Avatar';
 import { supabase } from '../lib/supabase';
 import { api } from '../services/api';
 import { useData } from '../lib/DataContext';
@@ -150,11 +151,11 @@ export function FriendsList({
               >
                 {/* Left Side: Avatar & Details */}
                 <div className="flex items-center gap-3.5 min-w-0 pr-2">
-                  {friend.avatar_url ? (
-                    <img src={friend.avatar_url} alt="" className="w-[44px] h-[44px] rounded-full object-cover shrink-0" />
-                  ) : (
-                    <div className="w-[44px] h-[44px] rounded-full bg-[#E5E7EB] dark:bg-zinc-800 opacity-50 shrink-0" />
-                  )}
+                  <Avatar 
+                    src={friend.avatar_url} 
+                    name={friend.name} 
+                    className="w-[44px] h-[44px]"
+                  />
                   <div className="flex flex-col min-w-0">
                     <span className="text-[#1A1A1A] dark:text-zinc-100 text-xl font-semibold leading-tight truncate">
                       {friend.name}
@@ -165,7 +166,7 @@ export function FriendsList({
                   </div>
                 </div>
 
-                {/* Right Side: Action Icons OR Balances + Quick Delete */}
+                {/* Right Side: Action Icons OR Balances */}
                 {activeTab === 'pending' ? (
                   <div className="flex items-center gap-3 shrink-0 pr-1" onClick={(e) => e.stopPropagation()}>
                     <button 
@@ -185,7 +186,7 @@ export function FriendsList({
                   </div>
                 ) : (
                   <div className="flex items-center gap-3 shrink-0">
-                    {friend.balance !== 0 && (
+                    {friend.balance !== 0 ? (
                       <div className="flex items-center gap-1.5 shrink-0">
                         {friend.balance > 0 ? (
                           <ArrowDownLeft size={20} strokeWidth={2.5} className="text-[#4C8C3C] dark:text-[#5FAD4B]" />
@@ -193,9 +194,13 @@ export function FriendsList({
                           <ArrowUpRight size={20} strokeWidth={2.5} className="text-red-500" />
                         )}
                         <span className="text-[#1A1A1A] dark:text-zinc-100 text-lg font-semibold whitespace-nowrap">
-                          LKR {Math.abs(friend.balance)}
+                          LKR {Math.abs(friend.balance).toLocaleString()}
                         </span>
                       </div>
+                    ) : (
+                      <span className="text-xs font-semibold px-3 py-1 rounded-full bg-black/5 dark:bg-white/10 text-black/40 dark:text-zinc-400">
+                        Settled
+                      </span>
                     )}
                   </div>
                 )}
