@@ -157,11 +157,11 @@ export function FriendsList({
                     className="w-10 h-10 sm:w-11 sm:h-11"
                   />
                   <div className="flex flex-col min-w-0 flex-1">
-                    <span className="text-[#1A1A1A] dark:text-zinc-100 text-sm sm:text-base font-bold leading-tight break-words line-clamp-1">
+                    <span className="text-[#1A1A1A] dark:text-zinc-100 text-sm sm:text-base font-bold leading-tight break-words line-clamp-2">
                       {friend.name}
                     </span>
                     <span className="text-black/50 dark:text-zinc-400 text-[11px] sm:text-xs font-normal mt-0.5 truncate">
-                      {friend.username}
+                      {friend.username || (friend.name ? `@${friend.name.toLowerCase().replace(/[^a-z0-9]/g, '')}` : '')}
                     </span>
                   </div>
                 </div>

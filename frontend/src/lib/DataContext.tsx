@@ -114,14 +114,17 @@ async function fetchFriendsFromSource(uid: string): Promise<any[]> {
       .select('id, full_name, avatar_url, username')
       .in('id', friendIds);
 
-    return (profs || []).filter((p: any) => p && p.id).map((p: any) => ({
-      id: p.id,
-      name: p.full_name || 'Friend',
-      username: p.username ? `@${p.username}` : '',
-      avatar_url: p.avatar_url,
-      balance: 0,
-      isPendingRequest: false,
-    }));
+    return (profs || []).filter((p: any) => p && p.id).map((p: any) => {
+      const fallbackUser = p.full_name ? p.full_name.toLowerCase().replace(/[^a-z0-9]/g, '') : 'user';
+      return {
+        id: p.id,
+        name: p.full_name || 'Friend',
+        username: p.username ? `@${p.username}` : `@${fallbackUser}`,
+        avatar_url: p.avatar_url,
+        balance: 0,
+        isPendingRequest: false,
+      };
+    });
   } catch (err) {
     console.error('Error fetching friends:', err);
     return [];
@@ -146,14 +149,17 @@ async function fetchPendingFriendsFromSource(uid: string): Promise<any[]> {
       .select('id, full_name, avatar_url, username')
       .in('id', requesterIds);
 
-    return (profs || []).filter((p: any) => p && p.id).map((p: any) => ({
-      id: p.id,
-      name: p.full_name || 'Friend',
-      username: p.username ? `@${p.username}` : '',
-      avatar_url: p.avatar_url,
-      color: '#4C8C3C',
-      isPendingRequest: true,
-    }));
+    return (profs || []).filter((p: any) => p && p.id).map((p: any) => {
+      const fallbackUser = p.full_name ? p.full_name.toLowerCase().replace(/[^a-z0-9]/g, '') : 'user';
+      return {
+        id: p.id,
+        name: p.full_name || 'Friend',
+        username: p.username ? `@${p.username}` : `@${fallbackUser}`,
+        avatar_url: p.avatar_url,
+        color: '#4C8C3C',
+        isPendingRequest: true,
+      };
+    });
   } catch (err) {
     console.error('Error loading friend requests:', err);
     return [];

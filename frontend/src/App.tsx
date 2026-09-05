@@ -204,7 +204,7 @@ function App() {
                 const friendData = {
                   id: prof?.id || f.user_id,
                   name: prof?.full_name || 'Friend',
-                  username: prof?.username ? `@${prof.username}` : '',
+                  username: prof?.username ? `@${prof.username}` : `@${prof?.full_name ? prof.full_name.toLowerCase().replace(/[^a-z0-9]/g, '') : 'user'}`,
                   avatar_url: prof?.avatar_url,
                   isPendingRequest: true,
                 };

@@ -212,7 +212,9 @@ export function FriendDetail({ session, friendId, onBack, onBillClick }: FriendD
                   name={friend.full_name || friend.username} 
                   className="w-[50px] h-[50px]"
                 />
-                <span className="text-black/70 dark:text-zinc-400 text-[15px] font-normal">{friend.username ? `@${friend.username}` : ''}</span>
+                <span className="text-black/70 dark:text-zinc-400 text-[15px] font-normal">
+                  {friend.username ? `@${friend.username}` : (friend.full_name ? `@${friend.full_name.toLowerCase().replace(/[^a-z0-9]/g, '')}` : '')}
+                </span>
               </div>
             </div>
 
