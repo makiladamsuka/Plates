@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase } from '../lib/supabase';
-import { LogOut, ChevronRight, User as UserIcon, Moon, ChevronLeft, Edit3, Image as ImageIcon, Trash2, AtSign } from 'lucide-react';
+import { LogOut, ChevronRight, User as UserIcon, Moon, ChevronLeft, Edit3, Image as ImageIcon, Trash2, AtSign, MoreVertical } from 'lucide-react';
+import { Avatar } from '../components/Avatar';
 import { ChangeDPModal } from '../components/ChangeDPModal';
 import { ChangeNameModal } from '../components/ChangeNameModal';
 import { SetUsernameModal } from '../components/SetUsernameModal';
@@ -22,6 +23,8 @@ export function Settings({ session, initialView = 'main', isDarkTheme = false, o
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [unsettledBillsCount, setUnsettledBillsCount] = useState(0);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
 
   const user = session?.user;
   const [fullName, setFullName] = useState<string>(() => user?.user_metadata?.full_name || user?.email || 'User');
@@ -32,6 +35,23 @@ export function Settings({ session, initialView = 'main', isDarkTheme = false, o
   useEffect(() => {
     setView(initialView);
   }, [initialView]);
+
+  // Click outside listener for 3-dots dropdown menu
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent | TouchEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setIsMenuOpen(false);
+      }
+    };
+    if (isMenuOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener('touchstart', handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('touchstart', handleClickOutside);
+    };
+  }, [isMenuOpen]);
 
   // Fetch latest profile info from profiles table
   useEffect(() => {
@@ -152,109 +172,134 @@ export function Settings({ session, initialView = 'main', isDarkTheme = false, o
     }
   };
 
-  const initial = (fullName || 'U').trim()[0]?.toUpperCase() || 'U';
-
   if (view === 'account') {
     return (
       <div className="min-h-screen bg-[#EDEDF1] dark:bg-zinc-950 pb-32 pt-0 md:pt-6 transition-colors font-['Sora']">
         
-        {/* Top Header Container */}
-        <div className="px-6 pt-10 pb-4 h-[88px] flex items-center gap-2 max-w-[480px] md:max-w-2xl mx-auto md:px-0 md:hidden">
-          <button onClick={() => setView('main')} className="flex items-center justify-center w-8 h-8 -ml-2 shrink-0 cursor-pointer text-[#1A1A1A] dark:text-zinc-100 hover:text-black dark:hover:text-white transition-colors">
-            <ChevronLeft size={32} strokeWidth={2.5} />
-          </button>
-          <h1 className="text-black dark:text-zinc-100 text-4xl md:text-5xl font-bold font-display tracking-tight leading-none">Your Account</h1>
-        </div>
+        {/* Top Header Container with Back Button & 3-Dots Menu */}
+        <div className="max-w-[480px] md:max-w-2xl mx-auto px-6 md:px-10 pt-6 pb-2">
+          <div className="flex items-center justify-between w-full mb-3">
+            <div className="flex items-center gap-2">
+              <button 
+                onClick={() => setView('main')} 
+                className="w-8 h-8 flex items-center justify-center -ml-2 cursor-pointer text-[#1A1A1A] dark:text-zinc-100 hover:text-black dark:hover:text-white transition-colors"
+                title="Go back"
+              >
+                <ChevronLeft size={32} strokeWidth={2.5} />
+              </button>
+              <h1 className="text-[#1A1A1A] dark:text-zinc-100 text-2xl md:text-3xl font-bold font-display tracking-tight leading-none">Your Account</h1>
+            </div>
 
-        <div className="max-w-[480px] md:max-w-2xl mx-auto px-5 md:px-10 flex flex-col gap-3 mt-2 md:pt-10">
-          <div className="bg-white dark:bg-zinc-900 rounded-[35px] p-8 flex flex-col items-center shadow-sm relative">
-            <div className="relative mb-4">
-              {avatarUrl ? (
-                <img src={avatarUrl} alt="Profile" className="w-24 h-24 rounded-full object-cover shadow-sm border border-black/10 dark:border-white/10" />
-              ) : (
-                <div className="w-24 h-24 bg-gradient-to-br from-amber-400 to-orange-500 rounded-full flex items-center justify-center shadow-sm">
-                  <span className="text-white text-3xl font-bold">{initial}</span>
+            {/* 3-Dots Options Menu */}
+            <div className="relative" ref={menuRef}>
+              <button
+                onClick={() => setIsMenuOpen((prev) => !prev)}
+                title="Options"
+                className={`w-9 h-9 rounded-full flex items-center justify-center cursor-pointer transition-all active:scale-95 ${
+                  isMenuOpen 
+                    ? 'bg-black/15 dark:bg-white/20 text-black dark:text-white' 
+                    : 'bg-black/5 dark:bg-zinc-800 text-black/70 dark:text-zinc-300 hover:bg-black/10 dark:hover:bg-zinc-700'
+                }`}
+              >
+                <MoreVertical size={18} strokeWidth={2.3} />
+              </button>
+
+              {/* Animated Dropdown Menu Popup */}
+              {isMenuOpen && (
+                <div className="absolute right-0 top-full mt-2 w-48 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-md rounded-2xl shadow-2xl border border-black/10 dark:border-white/10 p-1.5 z-50 origin-top-right transition-all animate-in fade-in zoom-in-95">
+                  <button
+                    onClick={() => {
+                      setIsMenuOpen(false);
+                      handleOpenDeleteModal();
+                    }}
+                    className="w-full flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 active:scale-[0.98] transition-all cursor-pointer text-left"
+                  >
+                    <Trash2 size={15} strokeWidth={2.2} />
+                    <span>Delete Account</span>
+                  </button>
                 </div>
               )}
+            </div>
+          </div>
+        </div>
+
+        <div className="max-w-[480px] md:max-w-2xl mx-auto px-5 md:px-10 flex flex-col gap-3 mt-1">
+          {/* Profile Card */}
+          <div className="bg-white dark:bg-zinc-900 rounded-[35px] p-8 flex flex-col items-center shadow-sm relative border border-black/5 dark:border-white/5">
+            <div className="relative mb-4">
+              <Avatar 
+                src={avatarUrl} 
+                name={fullName} 
+                className="w-24 h-24 text-3xl font-bold" 
+              />
               <button
                 onClick={() => setIsChangeDPOpen(true)}
                 title="Change Photo"
-                className="absolute bottom-0 right-0 bg-[#1A1A1A] dark:bg-zinc-100 text-white dark:text-zinc-900 p-2 rounded-full shadow-md hover:scale-105 active:scale-95 transition-transform cursor-pointer"
+                className="absolute bottom-0 right-0 bg-[#1A1A1A] dark:bg-zinc-100 text-white dark:text-zinc-950 p-2 rounded-full shadow-md hover:scale-105 active:scale-95 transition-transform cursor-pointer border-2 border-white dark:border-zinc-900"
               >
                 <ImageIcon size={14} />
               </button>
             </div>
             
-            <h2 className="text-zinc-900 dark:text-zinc-100 text-2xl font-bold font-display mb-0.5 text-center">{fullName}</h2>
+            <h2 className="text-[#1A1A1A] dark:text-zinc-100 text-2xl font-bold mb-1 text-center font-['Sora']">{fullName}</h2>
             {username && (
-              <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-amber-400/20 dark:bg-amber-400/15 text-amber-700 dark:text-amber-400 mb-1">
-                @{username}
+              <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-black/5 dark:bg-white/10 text-black/60 dark:text-zinc-400 mb-1.5">
+                @{username.replace(/^@/, '')}
               </span>
             )}
-            <p className="text-gray-500 dark:text-zinc-400 text-sm">{user?.email}</p>
+            <p className="text-black/50 dark:text-zinc-400 text-xs sm:text-sm font-normal">{user?.email}</p>
           </div>
 
-        <div className="bg-white dark:bg-zinc-900 rounded-[35px] p-4 mb-6 flex flex-col gap-2">
-          <button 
-            onClick={() => setIsChangeNameOpen(true)}
-            className="w-full flex items-center justify-between p-4 hover:bg-gray-50 dark:hover:bg-zinc-800 rounded-[24px] transition-colors cursor-pointer"
-          >
-            <div className="flex items-center gap-4">
-              <div className="w-10 h-10 rounded-full bg-gray-100 dark:bg-zinc-800 flex items-center justify-center">
-                <Edit3 size={18} className="text-gray-700 dark:text-zinc-300" />
+          {/* Options Card */}
+          <div className="bg-white dark:bg-zinc-900 rounded-[35px] p-4 mb-3 flex flex-col gap-1 border border-black/5 dark:border-white/5 shadow-sm">
+            <button 
+              onClick={() => setIsChangeNameOpen(true)}
+              className="w-full flex items-center justify-between p-3.5 sm:p-4 hover:bg-black/5 dark:hover:bg-zinc-800/60 rounded-[24px] transition-colors cursor-pointer"
+            >
+              <div className="flex items-center gap-3.5 sm:gap-4">
+                <div className="w-10 h-10 rounded-full bg-black/5 dark:bg-zinc-800 flex items-center justify-center text-[#1A1A1A] dark:text-zinc-300">
+                  <Edit3 size={18} />
+                </div>
+                <span className="text-sm sm:text-base font-semibold text-[#1A1A1A] dark:text-zinc-100">Change Name</span>
               </div>
-              <span className="text-base font-semibold text-zinc-900 dark:text-zinc-100">Change Name</span>
-            </div>
-            <ChevronRight size={18} className="text-gray-400 dark:text-zinc-600" />
-          </button>
+              <ChevronRight size={18} className="text-black/30 dark:text-zinc-600" />
+            </button>
 
-          <button 
-            onClick={() => setIsChangeUsernameOpen(true)}
-            className="w-full flex items-center justify-between p-4 hover:bg-gray-50 dark:hover:bg-zinc-800 rounded-[24px] transition-colors cursor-pointer"
-          >
-            <div className="flex items-center gap-4">
-              <div className="w-10 h-10 rounded-full bg-gray-100 dark:bg-zinc-800 flex items-center justify-center">
-                <AtSign size={18} className="text-gray-700 dark:text-zinc-300" />
+            <button 
+              onClick={() => setIsChangeUsernameOpen(true)}
+              className="w-full flex items-center justify-between p-3.5 sm:p-4 hover:bg-black/5 dark:hover:bg-zinc-800/60 rounded-[24px] transition-colors cursor-pointer"
+            >
+              <div className="flex items-center gap-3.5 sm:gap-4">
+                <div className="w-10 h-10 rounded-full bg-black/5 dark:bg-zinc-800 flex items-center justify-center text-[#1A1A1A] dark:text-zinc-300">
+                  <AtSign size={18} />
+                </div>
+                <span className="text-sm sm:text-base font-semibold text-[#1A1A1A] dark:text-zinc-100">Change Username</span>
               </div>
-              <span className="text-base font-semibold text-zinc-900 dark:text-zinc-100">Change Username</span>
-            </div>
-            <ChevronRight size={18} className="text-gray-400 dark:text-zinc-600" />
-          </button>
-          
-          <button 
-            onClick={() => setIsChangeDPOpen(true)}
-            className="w-full flex items-center justify-between p-4 hover:bg-gray-50 dark:hover:bg-zinc-800 rounded-[24px] transition-colors cursor-pointer"
-          >
-            <div className="flex items-center gap-4">
-              <div className="w-10 h-10 rounded-full bg-gray-100 dark:bg-zinc-800 flex items-center justify-center">
-                <ImageIcon size={18} className="text-gray-700 dark:text-zinc-300" />
+              <ChevronRight size={18} className="text-black/30 dark:text-zinc-600" />
+            </button>
+            
+            <button 
+              onClick={() => setIsChangeDPOpen(true)}
+              className="w-full flex items-center justify-between p-3.5 sm:p-4 hover:bg-black/5 dark:hover:bg-zinc-800/60 rounded-[24px] transition-colors cursor-pointer"
+            >
+              <div className="flex items-center gap-3.5 sm:gap-4">
+                <div className="w-10 h-10 rounded-full bg-black/5 dark:bg-zinc-800 flex items-center justify-center text-[#1A1A1A] dark:text-zinc-300">
+                  <ImageIcon size={18} />
+                </div>
+                <span className="text-sm sm:text-base font-semibold text-[#1A1A1A] dark:text-zinc-100">Change DP</span>
               </div>
-              <span className="text-base font-semibold text-zinc-900 dark:text-zinc-100">Change DP</span>
-            </div>
-            <ChevronRight size={18} className="text-gray-400 dark:text-zinc-600" />
-          </button>
-          
-          <button 
-            onClick={handleOpenDeleteModal}
-            className="w-full flex items-center justify-between p-4 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-[24px] transition-colors group cursor-pointer"
-          >
-            <div className="flex items-center gap-4">
-              <div className="w-10 h-10 rounded-full bg-red-50 dark:bg-red-900/30 group-hover:bg-red-100 dark:group-hover:bg-red-900/50 transition-colors flex items-center justify-center">
-                <Trash2 size={18} className="text-red-500 dark:text-red-400" />
-              </div>
-              <span className="text-base font-semibold text-red-500 dark:text-red-400">Delete Account</span>
-            </div>
-            <ChevronRight size={18} className="text-gray-400 dark:text-zinc-600" />
-          </button>
-        </div>
+              <ChevronRight size={18} className="text-black/30 dark:text-zinc-600" />
+            </button>
+          </div>
 
-        <button 
-          onClick={handleLogout}
-          className="w-full flex items-center justify-center gap-3 bg-white dark:bg-zinc-900 text-red-600 dark:text-red-500 hover:bg-gray-50 dark:hover:bg-zinc-800 transition-colors py-4 rounded-[35px] cursor-pointer"
-        >
-          <LogOut size={18} />
-          <span className="text-base font-semibold">Log Out</span>
-        </button>
+          {/* Log Out Button */}
+          <button 
+            onClick={handleLogout}
+            className="w-full flex items-center justify-center gap-2.5 bg-white dark:bg-zinc-900 text-red-600 dark:text-red-500 hover:bg-red-50/50 dark:hover:bg-zinc-800/60 transition-colors py-4 rounded-[35px] cursor-pointer border border-black/5 dark:border-white/5 shadow-sm active:scale-[0.99]"
+          >
+            <LogOut size={18} />
+            <span className="text-sm sm:text-base font-semibold">Log Out</span>
+          </button>
         </div>
 
         {/* Change DP Modal */}
@@ -287,7 +332,7 @@ export function Settings({ session, initialView = 'main', isDarkTheme = false, o
           }}
         />
 
-        {/* Delete Account Modal */}
+        {/* Delete Account Confirmation Modal */}
         <DeleteConfirmationModal
           isOpen={isDeleteModalOpen}
           onClose={() => setIsDeleteModalOpen(false)}
@@ -295,8 +340,8 @@ export function Settings({ session, initialView = 'main', isDarkTheme = false, o
           title="Delete Account"
           description={
             unsettledBillsCount > 0
-              ? "You cannot delete your account while you have active, unsettled bills or balances with friends. Please settle all bills first."
-              : "Are you sure you want to permanently delete your Plates account? All your profile data, friendships, and bill records will be permanently removed."
+              ? `You cannot delete your account while you have ${unsettledBillsCount} active unsettled bill(s). Please settle or leave all bills first.`
+              : 'Are you sure you want to delete your account? This action is permanent and will delete all your bills, friend connections, and profile data.'
           }
           confirmText="Delete Account"
           isBlocked={unsettledBillsCount > 0}
@@ -309,38 +354,38 @@ export function Settings({ session, initialView = 'main', isDarkTheme = false, o
   }
 
   return (
-    <div className="min-h-screen bg-[#EDEDF1] dark:bg-zinc-950 pb-32 pt-0 md:pt-6 transition-colors">
+    <div className="min-h-screen bg-[#EDEDF1] dark:bg-zinc-950 pb-32 pt-0 md:pt-6 transition-colors font-['Sora']">
       
       {/* Top Header Container */}
-      <div className="px-6 pt-10 pb-4 h-[88px] flex justify-between items-center max-w-[480px] md:max-w-2xl mx-auto md:px-0 md:hidden">
-        <h1 className="text-black dark:text-zinc-100 text-5xl font-bold font-display tracking-tight leading-none">Settings</h1>
+      <div className="px-6 pt-10 pb-4 h-[88px] flex justify-between items-center max-w-[480px] md:max-w-2xl mx-auto md:px-0">
+        <h1 className="text-black dark:text-zinc-100 text-4xl md:text-5xl font-bold font-display tracking-tight leading-none">Settings</h1>
       </div>
       
-      <div className="max-w-[480px] md:max-w-2xl mx-auto px-5 md:px-10 md:pt-10">
-        <div className="bg-white dark:bg-zinc-900 rounded-[35px] p-4 flex flex-col gap-2 mt-2 shadow-sm">
+      <div className="max-w-[480px] md:max-w-2xl mx-auto px-5 md:px-10">
+        <div className="bg-white dark:bg-zinc-900 rounded-[35px] p-4 flex flex-col gap-2 mt-2 shadow-sm border border-black/5 dark:border-white/5">
         <button 
           onClick={() => setView('account')}
-          className="w-full flex items-center justify-between p-4 hover:bg-gray-50 dark:hover:bg-zinc-800 rounded-[24px] transition-colors"
+          className="w-full flex items-center justify-between p-4 hover:bg-black/5 dark:hover:bg-zinc-800/60 rounded-[24px] transition-colors cursor-pointer"
         >
           <div className="flex items-center gap-4">
-            <div className="w-10 h-10 rounded-full bg-gray-100 dark:bg-zinc-800 flex items-center justify-center">
-              <UserIcon size={18} className="text-gray-700 dark:text-zinc-300" />
+            <div className="w-10 h-10 rounded-full bg-black/5 dark:bg-zinc-800 flex items-center justify-center">
+              <UserIcon size={18} className="text-black/80 dark:text-zinc-300" />
             </div>
             <span className="text-base font-semibold text-zinc-900 dark:text-zinc-100">Your Account</span>
           </div>
-          <ChevronRight size={18} className="text-gray-400 dark:text-zinc-600" />
+          <ChevronRight size={18} className="text-black/30 dark:text-zinc-600" />
         </button>
         
         <div className="w-full flex items-center justify-between p-4 bg-transparent rounded-[24px]">
           <div className="flex items-center gap-4">
-            <div className="w-10 h-10 rounded-full bg-gray-100 dark:bg-zinc-800 flex items-center justify-center">
-              <Moon size={18} className="text-gray-700 dark:text-zinc-300" />
+            <div className="w-10 h-10 rounded-full bg-black/5 dark:bg-zinc-800 flex items-center justify-center">
+              <Moon size={18} className="text-black/80 dark:text-zinc-300" />
             </div>
             <span className="text-base font-semibold text-zinc-900 dark:text-zinc-100">Dark Mode</span>
           </div>
           <button 
             onClick={() => onThemeChange?.(!isDarkTheme)}
-            className={`w-12 h-7 rounded-full p-1 transition-colors duration-300 ease-in-out flex items-center ${isDarkTheme ? 'bg-[#1A1A1A] dark:bg-zinc-600' : 'bg-gray-300'}`}
+            className={`w-12 h-7 rounded-full p-1 transition-colors duration-300 ease-in-out flex items-center cursor-pointer ${isDarkTheme ? 'bg-[#1A1A1A] dark:bg-zinc-600' : 'bg-zinc-300'}`}
           >
             <div className={`w-5 h-5 rounded-full bg-white transition-transform duration-300 ease-in-out ${isDarkTheme ? 'translate-x-[20px]' : 'translate-x-0'}`} />
           </button>
