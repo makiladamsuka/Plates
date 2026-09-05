@@ -93,7 +93,7 @@ export function BillsList({ onBillClick, session }: BillsListProps) {
       <div className="max-w-[480px] md:max-w-6xl mx-auto md:px-10">
         
         {/* Bills Cards */}
-        <div className="px-5 md:px-0 mt-2 flex flex-col md:grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="px-5 md:px-0 mt-2 flex flex-col md:grid md:grid-cols-2 xl:grid-cols-3 gap-4">
           {sortedBills.map(bill => {
             const displayStatus = bill.status === 'Settled' ? 'Settled' : 'Pending';
 
@@ -101,31 +101,31 @@ export function BillsList({ onBillClick, session }: BillsListProps) {
               <div 
                 key={bill.id}
                 onClick={() => onBillClick?.(bill.id)}
-                className="w-full bg-[#D9D9D9] dark:bg-zinc-900 rounded-[30px] px-6 py-4.5 flex flex-col gap-3 shadow-sm cursor-pointer hover:bg-zinc-300/80 dark:hover:bg-zinc-800 transition-colors border border-transparent dark:border-white/5"
+                className="w-full bg-[#D9D9D9] dark:bg-zinc-900 rounded-[28px] p-5 sm:p-5.5 flex flex-col justify-between gap-3 shadow-sm cursor-pointer hover:bg-zinc-300/80 dark:hover:bg-zinc-800 transition-colors border border-transparent dark:border-white/5"
               >
-                {/* Top Row: Title + Status Pill + Quick Delete */}
+                {/* Top Row: Title + Status Pill */}
                 <div className="flex justify-between items-center gap-3">
-                  <h2 className="text-[#1A1A1A] dark:text-zinc-100 text-xl font-semibold leading-tight truncate">{bill.title}</h2>
+                  <h2 className="text-[#1A1A1A] dark:text-zinc-100 text-lg sm:text-xl font-bold leading-snug truncate">{bill.title}</h2>
                   <div className="flex items-center gap-2 shrink-0">
-                    <div className={`rounded-full px-3.5 py-1 flex items-center justify-center shrink-0 ${
+                    <div className={`rounded-full px-3 py-0.5 flex items-center justify-center shrink-0 ${
                       displayStatus === 'Settled' ? 'bg-[#4C8C3C] text-white' : 'bg-[#F5C744] text-black'
                     }`}>
-                      <span className="text-[12px] font-semibold">{displayStatus}</span>
+                      <span className="text-[11px] font-semibold">{displayStatus}</span>
                     </div>
                   </div>
                 </div>
 
                 {/* Bottom Row: Category Tag, Date & Amount + Avatars */}
-                <div className="flex items-center justify-between mt-0.5">
-                  <div className="flex items-center gap-2.5">
-                    <span className={`${getTagColor(bill.category)} text-black dark:text-zinc-100 px-3 py-1 rounded-full font-medium text-xs`}>
+                <div className="flex items-center justify-between gap-3 pt-2 border-t border-black/5 dark:border-white/5">
+                  <div className="flex items-center gap-2 min-w-0 flex-wrap">
+                    <span className={`${getTagColor(bill.category)} text-black dark:text-zinc-100 px-2.5 py-0.5 rounded-full font-medium text-xs shrink-0`}>
                       {bill.category}
                     </span>
-                    <span className="text-black/60 dark:text-zinc-400 font-normal text-xs">{formatTime(bill.created_at || bill.createdAt)}</span>
+                    <span className="text-black/50 dark:text-zinc-400 font-normal text-xs shrink-0">{formatTime(bill.created_at || bill.createdAt)}</span>
                   </div>
                   
-                  <div className="flex items-center gap-3">
-                    <div className="flex -space-x-1.5">
+                  <div className="flex items-center gap-2.5 shrink-0">
+                    <div className="flex -space-x-1.5 shrink-0">
                       {(bill.participants || []).slice(0, 3).map((p: any, i: number) => {
                         const isMe = p.friend_id === userId || p.friendId === userId || p.friendId === 'me';
                         const pAvatar = isMe 
@@ -140,6 +140,7 @@ export function BillsList({ onBillClick, session }: BillsListProps) {
                             src={pAvatar}
                             alt={pName}
                             title={pName}
+                            referrerPolicy="no-referrer"
                             className="w-6 h-6 rounded-full border border-[#EDEDF1] dark:border-zinc-900 object-cover shrink-0"
                           />
                         ) : (
@@ -153,7 +154,7 @@ export function BillsList({ onBillClick, session }: BillsListProps) {
                         );
                       })}
                     </div>
-                    <span className="text-[#1A1A1A] dark:text-zinc-100 text-2xl font-semibold whitespace-nowrap">LKR&nbsp;{bill.total}</span>
+                    <span className="text-[#1A1A1A] dark:text-zinc-100 text-lg sm:text-xl font-bold tracking-tight whitespace-nowrap">LKR {bill.total.toLocaleString()}</span>
                   </div>
                 </div>
               </div>

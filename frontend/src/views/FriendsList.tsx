@@ -135,7 +135,7 @@ export function FriendsList({
       <div className="max-w-[480px] md:max-w-6xl mx-auto md:px-10">
         
         {/* Friends Cards */}
-        <div className="px-5 md:px-0 mt-2 flex flex-col md:grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="px-5 md:px-0 mt-2 flex flex-col md:grid md:grid-cols-2 xl:grid-cols-3 gap-4">
           {displayList.length > 0 ? (
             displayList.map((friend) => (
               <div 
@@ -147,20 +147,20 @@ export function FriendsList({
                     onFriendClick?.(friend.id);
                   }
                 }}
-                className="w-full bg-[#D9D9D9] dark:bg-zinc-900 rounded-[30px] px-6 py-4.5 relative flex items-center justify-between shadow-sm cursor-pointer hover:bg-zinc-300/80 dark:hover:bg-zinc-800 transition-colors border border-transparent dark:border-white/5"
+                className="w-full bg-[#D9D9D9] dark:bg-zinc-900 rounded-[28px] px-5 py-4 relative flex items-center justify-between shadow-sm cursor-pointer hover:bg-zinc-300/80 dark:hover:bg-zinc-800 transition-colors border border-transparent dark:border-white/5 gap-3"
               >
                 {/* Left Side: Avatar & Details */}
-                <div className="flex items-center gap-3.5 min-w-0 pr-2">
+                <div className="flex items-center gap-3.5 min-w-0 flex-1">
                   <Avatar 
                     src={friend.avatar_url} 
                     name={friend.name} 
                     className="w-[44px] h-[44px]"
                   />
-                  <div className="flex flex-col min-w-0">
-                    <span className="text-[#1A1A1A] dark:text-zinc-100 text-xl font-semibold leading-tight truncate">
+                  <div className="flex flex-col min-w-0 flex-1">
+                    <span className="text-[#1A1A1A] dark:text-zinc-100 text-base sm:text-lg font-bold leading-tight truncate">
                       {friend.name}
                     </span>
-                    <span className="text-black/60 dark:text-zinc-400 text-xs font-normal mt-0.5 truncate">
+                    <span className="text-black/50 dark:text-zinc-400 text-xs font-normal mt-0.5 truncate">
                       {friend.username}
                     </span>
                   </div>
