@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { ArrowUpRight, ArrowDownLeft, ChevronLeft, Plus, Trash2, MoreVertical } from 'lucide-react';
+import { ArrowUpRight, ArrowDownLeft, ChevronLeft, Trash2, MoreVertical } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { api } from '../services/api';
 import { useData } from '../lib/DataContext';
@@ -152,86 +152,117 @@ export function FriendDetail({ session, friendId, onBack, onBillClick }: FriendD
   };
 
   return (
-    <div className="min-h-screen bg-[#EDEDF1] dark:bg-zinc-950 pb-32 relative overflow-hidden font-['Sora'] transition-colors">
+    <div className="min-h-screen bg-[#EDEDF1] dark:bg-zinc-950 pb-32 font-['Sora'] transition-colors">
       <div className="max-w-[480px] md:max-w-4xl mx-auto md:px-10 md:pt-6">
         
-        {/* Header Area */}
-        <div className="pt-6 px-6 md:px-0 relative">
-          <div className="flex items-center justify-between mb-4">
+        {/* Header Section - Exactly matches BillDetail layout & 3-dots position */}
+        <div className="pt-6 pb-2 relative">
+          <div className="flex justify-between items-center w-full px-6 md:px-0 gap-2">
+            {/* Back Button */}
             <button 
-              onClick={onBack}
-              className="w-8 h-8 flex items-center justify-center -ml-2 cursor-pointer text-[#1A1A1A] dark:text-zinc-100"
+              onClick={onBack} 
+              className="w-8 h-8 flex items-center justify-center cursor-pointer text-[#1A1A1A] dark:text-zinc-100 shrink-0"
+              title="Go Back"
             >
-              <ChevronLeft size={32} strokeWidth={2.5} />
+              <ChevronLeft size={28} strokeWidth={2.5} />
             </button>
+            
+            {/* Friend Name Title */}
+            <h1 className="text-[#1A1A1A] dark:text-zinc-100 text-[24px] md:text-[28px] font-bold font-display leading-tight break-words flex-1 truncate mx-2">
+              {friend.full_name || friend.username || 'Friend'}
+            </h1>
+            
+            {/* Status Pill & 3-Dots Menu */}
+            <div className="flex items-center gap-2 shrink-0">
+              <div className={`rounded-[30px] px-3.5 py-1.5 flex items-center justify-center shrink-0 ${
+                friendBalance === 0 
+                  ? 'bg-black/5 dark:bg-white/10 text-black/60 dark:text-zinc-400' 
+                  : friendBalance > 0 
+                  ? 'bg-[#4C8C3C] text-white' 
+                  : 'bg-[#F6D6DA] dark:bg-red-900/50 text-red-600 dark:text-red-300'
+              }`}>
+                <span className="text-[12px] font-semibold">
+                  {friendBalance === 0 
+                    ? 'Settled' 
+                    : friendBalance > 0 
+                    ? `+LKR ${Math.abs(friendBalance).toLocaleString()}` 
+                    : `-LKR ${Math.abs(friendBalance).toLocaleString()}`}
+                </span>
+              </div>
 
-            {/* 3-Dots Options Menu */}
-            <div className="relative" ref={menuRef}>
-              <button
-                onClick={() => setIsMenuOpen((prev) => !prev)}
-                title="Options"
-                className={`w-9 h-9 rounded-full flex items-center justify-center cursor-pointer transition-all active:scale-95 ${
-                  isMenuOpen 
-                    ? 'bg-black/15 dark:bg-white/20 text-black dark:text-white' 
-                    : 'bg-black/5 dark:bg-zinc-800 text-black/70 dark:text-zinc-300 hover:bg-black/10 dark:hover:bg-zinc-700'
-                }`}
-              >
-                <MoreVertical size={18} strokeWidth={2.3} />
-              </button>
+              {/* 3-Dots Options Menu */}
+              <div className="relative" ref={menuRef}>
+                <button
+                  onClick={() => setIsMenuOpen((prev) => !prev)}
+                  title="Options"
+                  className={`w-9 h-9 rounded-full flex items-center justify-center cursor-pointer transition-all active:scale-95 ${
+                    isMenuOpen 
+                      ? 'bg-black/15 dark:bg-white/20 text-black dark:text-white' 
+                      : 'bg-black/5 dark:bg-zinc-800 text-black/70 dark:text-zinc-300 hover:bg-black/10 dark:hover:bg-zinc-700'
+                  }`}
+                >
+                  <MoreVertical size={18} strokeWidth={2.3} />
+                </button>
 
-              {/* Animated Dropdown Menu Popup */}
-              {isMenuOpen && (
-                <div className="absolute right-0 top-full mt-2 w-52 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-md rounded-2xl shadow-2xl border border-black/10 dark:border-white/10 p-1.5 z-50 origin-top-right transition-all animate-in fade-in zoom-in-95">
-                  <button
-                    onClick={() => {
-                      setIsMenuOpen(false);
-                      setDeleteErrorMessage(null);
-                      setIsDeleteModalOpen(true);
-                    }}
-                    disabled={hasUnsettledBills}
-                    className={`w-full flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all text-left ${
-                      hasUnsettledBills
-                        ? 'text-black/30 dark:text-zinc-600 cursor-not-allowed'
-                        : 'text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 active:scale-[0.98] cursor-pointer'
-                    }`}
-                  >
-                    <Trash2 size={15} strokeWidth={2.2} />
-                    <span>{hasUnsettledBills ? 'Unsettled Bills Pending' : 'Remove Friend'}</span>
-                  </button>
-                </div>
-              )}
+                {/* Animated Dropdown Menu Popup */}
+                {isMenuOpen && (
+                  <div className="absolute right-0 top-full mt-2 w-52 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-md rounded-2xl shadow-2xl border border-black/10 dark:border-white/10 p-1.5 z-50 origin-top-right transition-all animate-in fade-in zoom-in-95">
+                    <button
+                      onClick={() => {
+                        setIsMenuOpen(false);
+                        setDeleteErrorMessage(null);
+                        setIsDeleteModalOpen(true);
+                      }}
+                      disabled={hasUnsettledBills}
+                      className={`w-full flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all text-left ${
+                        hasUnsettledBills
+                          ? 'text-black/30 dark:text-zinc-600 cursor-not-allowed'
+                          : 'text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 active:scale-[0.98] cursor-pointer'
+                      }`}
+                    >
+                      <Trash2 size={15} strokeWidth={2.2} />
+                      <span>{hasUnsettledBills ? 'Unsettled Bills Pending' : 'Remove Friend'}</span>
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
+        </div>
 
-          <div className="flex justify-between items-start">
-            <div className="flex flex-col">
-              <h1 className="text-[#1A1A1A] dark:text-zinc-100 text-2xl md:text-3xl font-bold font-display">{friend.full_name || friend.username || 'Friend'}</h1>
-              <div className="flex items-center gap-4 mt-2">
-                <Avatar 
-                  src={friend.avatar_url} 
-                  name={friend.full_name || friend.username} 
-                  className="w-[50px] h-[50px]"
-                />
-                <span className="text-black/70 dark:text-zinc-400 text-[15px] font-normal">
+        {/* Friend Profile Card */}
+        <div className="px-6 md:px-0 mt-3">
+          <div className="bg-white dark:bg-zinc-900 rounded-[28px] p-5 shadow-sm border border-transparent dark:border-white/5 flex items-center justify-between">
+            <div className="flex items-center gap-3.5 min-w-0">
+              <Avatar 
+                src={friend.avatar_url} 
+                name={friend.full_name || friend.username} 
+                className="w-12 h-12 text-lg font-bold shrink-0"
+              />
+              <div className="flex flex-col min-w-0">
+                <span className="text-[#1A1A1A] dark:text-zinc-100 font-bold text-base truncate">
+                  {friend.full_name || 'Friend'}
+                </span>
+                <span className="text-black/50 dark:text-zinc-400 text-xs mt-0.5 truncate">
                   {friend.username ? `@${friend.username}` : (friend.full_name ? `@${friend.full_name.toLowerCase().replace(/[^a-z0-9]/g, '')}` : '')}
                 </span>
               </div>
             </div>
 
-            <div className="flex items-center gap-2 mt-1">
+            <div className="flex items-center gap-1.5 shrink-0 ml-3">
               {friendBalance !== 0 ? (
-                <>
+                <div className="flex items-center gap-1">
                   {friendBalance > 0 ? (
-                    <ArrowDownLeft size={24} strokeWidth={2.5} className="text-[#4C8C3C] dark:text-[#5FAD4B]" />
+                    <ArrowDownLeft size={20} strokeWidth={2.5} className="text-[#4C8C3C] dark:text-[#5FAD4B]" />
                   ) : (
-                    <ArrowUpRight size={24} strokeWidth={2.5} className="text-red-500" />
+                    <ArrowUpRight size={20} strokeWidth={2.5} className="text-red-500" />
                   )}
-                  <span className={`text-xl font-semibold ${friendBalance > 0 ? 'text-[#4C8C3C] dark:text-[#5FAD4B]' : 'text-red-500'}`}>
+                  <span className={`text-base sm:text-lg font-bold ${friendBalance > 0 ? 'text-[#4C8C3C] dark:text-[#5FAD4B]' : 'text-red-500'}`}>
                     LKR {Math.abs(friendBalance).toLocaleString()}
                   </span>
-                </>
+                </div>
               ) : (
-                <span className="text-sm font-semibold px-3.5 py-1 rounded-full bg-black/5 dark:bg-white/10 text-black/50 dark:text-zinc-400">
+                <span className="text-xs font-semibold px-3 py-1 rounded-full bg-black/5 dark:bg-white/10 text-black/50 dark:text-zinc-400">
                   Settled
                 </span>
               )}
@@ -240,7 +271,7 @@ export function FriendDetail({ session, friendId, onBack, onBillClick }: FriendD
         </div>
 
         {/* Shared Bills List */}
-        <div className="px-5 md:px-0 mt-8 flex flex-col gap-3">
+        <div className="px-6 md:px-0 mt-6 flex flex-col gap-3">
           {sharedBills.map(bill => {
             const isCreatorMe = bill.creator_id === userId;
             const friendPart = (bill.participants || []).find((p: any) => p.friend_id === friendId || p.friendId === friendId);
@@ -284,17 +315,6 @@ export function FriendDetail({ session, friendId, onBack, onBillClick }: FriendD
               No shared bills with {friend.full_name?.split(' ')[0] || 'this friend'}
             </div>
           )}
-        </div>
-      </div>
-
-      {/* Floating Action Button */}
-      <div className="fixed bottom-[140px] md:bottom-10 left-0 md:left-auto md:right-10 w-full md:w-auto z-40 pointer-events-none flex justify-center">
-        <div className="w-full max-w-[480px] md:w-auto relative">
-          <button 
-            className="absolute bottom-0 right-6 md:static w-20 h-20 md:w-16 md:h-16 bg-[#1A1A1A] dark:bg-zinc-100 rounded-full flex items-center justify-center shadow-lg pointer-events-auto active:scale-95 transition-transform cursor-pointer"
-          >
-            <Plus size={32} strokeWidth={2.5} className="text-[#EDEDF1] dark:text-zinc-950" />
-          </button>
         </div>
       </div>
 

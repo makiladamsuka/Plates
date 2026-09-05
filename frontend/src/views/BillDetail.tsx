@@ -364,7 +364,7 @@ export function BillDetail({ onBack, billId, session }: BillDetailProps) {
   };
 
   return (
-    <div className="min-h-screen bg-[#EDEDF1] dark:bg-zinc-950 pb-40 font-['Sora'] relative overflow-hidden transition-colors">
+    <div className="min-h-screen bg-[#EDEDF1] dark:bg-zinc-950 pb-32 font-['Sora'] transition-colors">
       <div className="max-w-[480px] md:max-w-4xl mx-auto md:px-10 md:pt-6">
         
         {/* Header Section */}
@@ -513,7 +513,7 @@ export function BillDetail({ onBack, billId, session }: BillDetailProps) {
 
       {/* Floating Action Bar - Only show if not paid and not settled */}
       {!isMySharePaid && !isFullySettled && (
-        <div className="fixed bottom-[130px] left-0 w-full z-[55] flex justify-center px-4 pointer-events-none">
+        <div className="fixed bottom-[110px] md:bottom-10 left-0 w-full z-[55] flex justify-center px-4 pointer-events-none">
           {isMyPaymentSent ? (
             <div className="w-full max-w-[365px] bg-[#1A1A1A] dark:bg-zinc-900 border border-transparent dark:border-white/10 text-[#EDEDF1] rounded-[50px] p-4 text-center pointer-events-auto shadow-lg flex flex-col items-center gap-0.5">
               <span className="text-base font-semibold text-[#F5C744]">✓ Payment Sent (LKR {myShare.toFixed(0)})</span>

@@ -465,22 +465,6 @@ function App() {
           <Settings session={activeSession} initialView={settingsView} isDarkTheme={isDarkTheme} onThemeChange={setIsDarkTheme} />
         </div>
 
-      {/* Shared Bottom Navigation */}
-      <BottomNav 
-        currentTab={currentTab} 
-        onTabChange={(tab) => {
-          setCurrentTab(tab);
-          if (tab === 'bills') setCurrentView('list');
-          if (tab === 'friends') {
-            setFriendsView('list');
-            setSelectedFriendId(null);
-          }
-          if (tab === 'settings') {
-            setSettingsView('main');
-          }
-        }} 
-      />
-      
       {/* Live In-App Notification Pop-up */}
       <LiveNotificationPopup
         alert={activeLiveAlert}
@@ -536,6 +520,22 @@ function App() {
         }}
       />
       </main>
+
+      {/* Shared Bottom Navigation Dock (fixed to viewport across all pages) */}
+      <BottomNav 
+        currentTab={currentTab} 
+        onTabChange={(tab) => {
+          setCurrentTab(tab);
+          if (tab === 'bills') setCurrentView('list');
+          if (tab === 'friends') {
+            setFriendsView('list');
+            setSelectedFriendId(null);
+          }
+          if (tab === 'settings') {
+            setSettingsView('main');
+          }
+        }} 
+      />
     </div>
   );
 }
