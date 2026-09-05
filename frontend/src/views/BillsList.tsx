@@ -190,8 +190,8 @@ export function BillsList({ onBillClick, session }: BillsListProps) {
       </div>
 
       {/* Floating Action Button */}
-      <div className="fixed bottom-[115px] md:bottom-10 left-0 md:left-auto md:right-10 w-full md:w-auto z-40 pointer-events-none flex justify-center">
-        <div className="w-full max-w-[480px] md:w-auto relative">
+      <div className="fixed bottom-[115px] md:bottom-10 left-1/2 -translate-x-1/2 w-full max-w-[480px] md:w-auto md:left-auto md:right-10 md:translate-x-0 z-40 pointer-events-none">
+        <div className="w-full relative">
           <button 
             onClick={() => setIsNewBillModalOpen(true)}
             className="absolute bottom-0 right-6 md:static w-16 h-16 md:w-16 md:h-16 bg-[#1A1A1A] dark:bg-zinc-100 rounded-full flex items-center justify-center shadow-lg pointer-events-auto active:scale-95 transition-transform cursor-pointer hover:bg-black/80 dark:hover:bg-zinc-300"
