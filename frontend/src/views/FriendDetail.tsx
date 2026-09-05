@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { ArrowUpRight, ArrowDownLeft, ChevronLeft, Plus, Trash2 } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { ArrowUpRight, ArrowDownLeft, ChevronLeft, Plus, Trash2, MoreVertical } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { api } from '../services/api';
 import { useData } from '../lib/DataContext';
@@ -27,10 +27,30 @@ export function FriendDetail({ session, friendId, onBack, onBillClick }: FriendD
   const [userId, setUserId] = useState<string>(session?.user?.id || '');
   const [selectedBill, setSelectedBill] = useState<any>(null);
 
+  // 3-Dots Menu State
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
   // Deletion Modal State
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteErrorMessage, setDeleteErrorMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent | TouchEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setIsMenuOpen(false);
+      }
+    };
+    if (isMenuOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener('touchstart', handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('touchstart', handleClickOutside);
+    };
+  }, [isMenuOpen]);
 
   useEffect(() => {
     const init = async () => {
@@ -144,20 +164,42 @@ export function FriendDetail({ session, friendId, onBack, onBillClick }: FriendD
               <ChevronLeft size={32} strokeWidth={2.5} />
             </button>
 
-            {/* Delete Friend Action Button in Header - Only show if all bills settled */}
-            {!hasUnsettledBills && (
+            {/* 3-Dots Options Menu */}
+            <div className="relative" ref={menuRef}>
               <button
-                onClick={() => {
-                  setDeleteErrorMessage(null);
-                  setIsDeleteModalOpen(true);
-                }}
-                title="Remove Friend"
-                className="h-9 px-3.5 rounded-[30px] bg-red-500/10 hover:bg-red-600 text-red-600 hover:text-white dark:bg-red-950/40 dark:hover:bg-red-600 dark:text-red-400 dark:hover:text-white border border-red-500/30 flex items-center gap-1.5 text-xs font-semibold active:scale-95 transition-all shadow-xs cursor-pointer"
+                onClick={() => setIsMenuOpen((prev) => !prev)}
+                title="Options"
+                className={`w-9 h-9 rounded-full flex items-center justify-center cursor-pointer transition-all active:scale-95 ${
+                  isMenuOpen 
+                    ? 'bg-black/15 dark:bg-white/20 text-black dark:text-white' 
+                    : 'bg-black/5 dark:bg-zinc-800 text-black/70 dark:text-zinc-300 hover:bg-black/10 dark:hover:bg-zinc-700'
+                }`}
               >
-                <Trash2 size={15} strokeWidth={2.2} />
-                <span>Remove Friend</span>
+                <MoreVertical size={18} strokeWidth={2.3} />
               </button>
-            )}
+
+              {/* Animated Dropdown Menu Popup */}
+              {isMenuOpen && (
+                <div className="absolute right-0 top-full mt-2 w-52 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-md rounded-2xl shadow-2xl border border-black/10 dark:border-white/10 p-1.5 z-50 origin-top-right transition-all animate-in fade-in zoom-in-95">
+                  <button
+                    onClick={() => {
+                      setIsMenuOpen(false);
+                      setDeleteErrorMessage(null);
+                      setIsDeleteModalOpen(true);
+                    }}
+                    disabled={hasUnsettledBills}
+                    className={`w-full flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all text-left ${
+                      hasUnsettledBills
+                        ? 'text-black/30 dark:text-zinc-600 cursor-not-allowed'
+                        : 'text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 active:scale-[0.98] cursor-pointer'
+                    }`}
+                  >
+                    <Trash2 size={15} strokeWidth={2.2} />
+                    <span>{hasUnsettledBills ? 'Unsettled Bills Pending' : 'Remove Friend'}</span>
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
 
           <div className="flex justify-between items-start">
@@ -238,23 +280,6 @@ export function FriendDetail({ session, friendId, onBack, onBillClick }: FriendD
             </div>
           )}
         </div>
-
-        {/* Remove Friend Button at Bottom - Only show if all bills settled */}
-        {!hasUnsettledBills && (
-          <div className="px-6 md:px-0 mt-12 mb-6 flex flex-col items-center">
-            <button
-              onClick={() => {
-                setDeleteErrorMessage(null);
-                setIsDeleteModalOpen(true);
-              }}
-              className="w-full max-w-sm py-3.5 px-6 rounded-[25px] font-semibold text-sm flex items-center justify-center gap-2 cursor-pointer active:scale-95 transition-all shadow-sm bg-red-50 dark:bg-red-950/30 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800/50 hover:bg-red-600 hover:text-white dark:hover:bg-red-600 dark:hover:text-white"
-            >
-              <Trash2 size={16} />
-              <span>Remove Friend</span>
-            </button>
-          </div>
-        )}
-
       </div>
 
       {/* Floating Action Button */}
@@ -291,7 +316,7 @@ export function FriendDetail({ session, friendId, onBack, onBillClick }: FriendD
             ? `You have unsettled bills or an active balance with ${friend.full_name || 'this friend'}.`
             : `Are you sure you want to remove ${friend.full_name || 'this friend'} from your friends list?`
         }
-        confirmText="Remove Friend"
+        confirmText="Remove"
         isBlocked={hasUnsettledBills || !!deleteErrorMessage}
         blockedReason={
           deleteErrorMessage ||

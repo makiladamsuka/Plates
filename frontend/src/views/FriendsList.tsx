@@ -1,8 +1,7 @@
 import { useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
-import { ArrowUpRight, ArrowDownLeft, Check, X, Trash2 } from 'lucide-react';
+import { ArrowUpRight, ArrowDownLeft, Check, X } from 'lucide-react';
 import { IncomingFriendRequestModal } from '../components/IncomingFriendRequestModal';
-import { DeleteConfirmationModal } from '../components/DeleteConfirmationModal';
 import { supabase } from '../lib/supabase';
 import { api } from '../services/api';
 import { useData } from '../lib/DataContext';
@@ -21,12 +20,6 @@ export function FriendsList({
   const { bills, friends, setFriends, pendingFriendRequests, setPendingFriendRequests, fetchFriends, fetchPendingFriends } = useData();
   const [activeTab, setActiveTab] = useState<'all' | 'pending'>('all');
   const [incomingFriend, setIncomingFriend] = useState<any>(null);
-
-  // Deletion Modal State
-  const [selectedDeleteFriend, setSelectedDeleteFriend] = useState<any>(null);
-  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [isDeletingFriend, setIsDeletingFriend] = useState(false);
-  const [deleteBlockedReason, setDeleteBlockedReason] = useState<string | null>(null);
 
   const currentUid = session?.user?.id || '';
 
@@ -53,84 +46,6 @@ export function FriendsList({
   });
 
   const pendingRequests = pendingFriendRequests || [];
-
-  const handleInitiateDeleteFriend = async (friend: any, e: React.MouseEvent) => {
-    e.stopPropagation();
-    let uid = session?.user?.id;
-    if (!uid) {
-      const { data: { session: s } } = await supabase.auth.getSession();
-      uid = s?.user?.id;
-    }
-    if (!uid) return;
-
-    setSelectedDeleteFriend(friend);
-    setIsDeleteModalOpen(true);
-    setDeleteBlockedReason(null);
-
-    // Query shared bills to verify if deletion is allowed
-    try {
-      const { data: rawBills } = await supabase
-        .from('bills')
-        .select('id, title, status, creator_id, participants(*)');
-
-      const sharedBills = (rawBills || []).filter((b: any) => {
-        const parts = b.participants || [];
-        const isMeInvolved = b.creator_id === uid || parts.some((p: any) => p.friend_id === uid);
-        const isFriendInvolved = b.creator_id === friend.id || parts.some((p: any) => p.friend_id === friend.id);
-        return isMeInvolved && isFriendInvolved;
-      });
-
-      const unsettled = sharedBills.filter((b: any) => {
-        if (b.status === 'Settled') return false;
-        const isMeCreator = b.creator_id === uid;
-        const isFriendCreator = b.creator_id === friend.id;
-        const friendPart = (b.participants || []).find((p: any) => p.friend_id === friend.id);
-        const myPart = (b.participants || []).find((p: any) => p.friend_id === uid);
-
-        if (isMeCreator && friendPart && !friendPart.paid) return true;
-        if (isFriendCreator && myPart && !myPart.paid) return true;
-        if (!b.status || b.status !== 'Settled') {
-          if ((friendPart && !friendPart.paid) || (myPart && !myPart.paid)) return true;
-        }
-        return false;
-      });
-
-      if (unsettled.length > 0) {
-        setDeleteBlockedReason(
-          `You have ${unsettled.length} unsettled bill(s) with ${friend.name || 'this friend'}. Please settle all bills before deleting.`
-        );
-      }
-    } catch (err) {
-      console.error('Error checking bills:', err);
-    }
-  };
-
-  const handleConfirmDeleteFriend = async () => {
-    if (!selectedDeleteFriend) return;
-    let uid = session?.user?.id;
-    if (!uid) {
-      const { data: { session: s } } = await supabase.auth.getSession();
-      uid = s?.user?.id;
-    }
-    if (!uid) return;
-
-    setIsDeletingFriend(true);
-    try {
-      await api.deleteFriend(uid, selectedDeleteFriend.id);
-      await Promise.allSettled([
-        supabase.from('friends').delete().eq('user_id', uid).eq('friend_id', selectedDeleteFriend.id),
-        supabase.from('friends').delete().eq('user_id', selectedDeleteFriend.id).eq('friend_id', uid)
-      ]);
-      setFriends(prev => prev.filter(f => f.id !== selectedDeleteFriend.id));
-      setIsDeleteModalOpen(false);
-      setSelectedDeleteFriend(null);
-      fetchFriends(uid);
-    } catch (err: any) {
-      setDeleteBlockedReason(err.message || 'Failed to remove friend.');
-    } finally {
-      setIsDeletingFriend(false);
-    }
-  };
 
   const acceptMutation = useMutation({
     mutationFn: async (requesterId: string) => {
@@ -269,7 +184,7 @@ export function FriendsList({
                     </button>
                   </div>
                 ) : (
-                  <div className="flex items-center gap-3 shrink-0" onClick={(e) => e.stopPropagation()}>
+                  <div className="flex items-center gap-3 shrink-0">
                     {friend.balance !== 0 && (
                       <div className="flex items-center gap-1.5 shrink-0">
                         {friend.balance > 0 ? (
@@ -282,15 +197,6 @@ export function FriendsList({
                         </span>
                       </div>
                     )}
-                    
-                    {/* Quick Delete Friend Button */}
-                    <button
-                      onClick={(e) => handleInitiateDeleteFriend(friend, e)}
-                      title="Remove Friend"
-                      className="w-8 h-8 rounded-full bg-[#EDEDF1] dark:bg-zinc-800 flex items-center justify-center text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40 active:scale-95 transition-all shadow-xs cursor-pointer"
-                    >
-                      <Trash2 size={15} strokeWidth={2.2} />
-                    </button>
                   </div>
                 )}
               </div>
@@ -324,28 +230,6 @@ export function FriendsList({
         onClose={() => setIncomingFriend(null)}
         onApprove={() => incomingFriend && handleApprove(incomingFriend.id)}
         friend={incomingFriend || undefined}
-      />
-
-      {/* Delete Friend Confirmation / Blocked Modal */}
-      <DeleteConfirmationModal
-        isOpen={isDeleteModalOpen}
-        onClose={() => {
-          setIsDeleteModalOpen(false);
-          setSelectedDeleteFriend(null);
-          setDeleteBlockedReason(null);
-        }}
-        onConfirm={handleConfirmDeleteFriend}
-        title={deleteBlockedReason ? 'Cannot Remove Friend' : 'Remove Friend'}
-        description={
-          deleteBlockedReason
-            ? deleteBlockedReason
-            : `Are you sure you want to remove ${selectedDeleteFriend?.name || 'this friend'} from your friends list?`
-        }
-        confirmText="Remove Friend"
-        isBlocked={!!deleteBlockedReason}
-        blockedReason={deleteBlockedReason || undefined}
-        isLoading={isDeletingFriend}
-        itemType="friend"
       />
 
     </div>

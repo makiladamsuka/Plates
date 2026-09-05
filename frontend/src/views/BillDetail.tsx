@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { ChevronLeft, Trash2 } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { ChevronLeft, Trash2, MoreVertical } from 'lucide-react';
 import { ConfirmTransferModal } from '../components/ConfirmTransferModal';
 import { DeleteConfirmationModal } from '../components/DeleteConfirmationModal';
 import { api } from '../services/api';
@@ -52,6 +52,27 @@ export function BillDetail({ onBack, billId, session }: BillDetailProps) {
   });
   const [loading, setLoading] = useState(!cachedBill);
   const [userId, setUserId] = useState<string>(() => session?.user?.id || '');
+
+  // 3-Dots Dropdown Menu State
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  // Click outside to dismiss menu
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent | TouchEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setIsMenuOpen(false);
+      }
+    };
+    if (isMenuOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener('touchstart', handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('touchstart', handleClickOutside);
+    };
+  }, [isMenuOpen]);
 
   // Keep state in sync if cache populates
   useEffect(() => {
@@ -365,19 +386,38 @@ export function BillDetail({ onBack, billId, session }: BillDetailProps) {
                 <span className="text-[12px] font-semibold">{isFullySettled ? 'Settled' : 'Pending'}</span>
               </div>
 
-              {/* Delete / Remove Action Button - Only show if creator or fully settled */}
+              {/* 3-Dots Options Menu - Only show if creator or fully settled */}
               {(isCreator || isFullySettled) && (
-                <button
-                  onClick={() => {
-                    setDeleteErrorMessage(null);
-                    setIsDeleteModalOpen(true);
-                  }}
-                  title={isCreator ? "Delete Bill" : "Remove Bill"}
-                  className="h-9 px-3 rounded-[30px] bg-red-500/10 hover:bg-red-600 text-red-600 hover:text-white dark:bg-red-950/40 dark:hover:bg-red-600 dark:text-red-400 dark:hover:text-white border border-red-500/30 flex items-center gap-1.5 text-xs font-semibold active:scale-95 transition-all shadow-xs cursor-pointer"
-                >
-                  <Trash2 size={15} strokeWidth={2.2} />
-                  <span>{isCreator ? "Delete" : "Remove"}</span>
-                </button>
+                <div className="relative" ref={menuRef}>
+                  <button
+                    onClick={() => setIsMenuOpen((prev) => !prev)}
+                    title="Options"
+                    className={`w-9 h-9 rounded-full flex items-center justify-center cursor-pointer transition-all active:scale-95 ${
+                      isMenuOpen 
+                        ? 'bg-black/15 dark:bg-white/20 text-black dark:text-white' 
+                        : 'bg-black/5 dark:bg-zinc-800 text-black/70 dark:text-zinc-300 hover:bg-black/10 dark:hover:bg-zinc-700'
+                    }`}
+                  >
+                    <MoreVertical size={18} strokeWidth={2.3} />
+                  </button>
+
+                  {/* Animated Dropdown Menu Popup */}
+                  {isMenuOpen && (
+                    <div className="absolute right-0 top-full mt-2 w-48 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-md rounded-2xl shadow-2xl border border-black/10 dark:border-white/10 p-1.5 z-50 origin-top-right transition-all animate-in fade-in zoom-in-95">
+                      <button
+                        onClick={() => {
+                          setIsMenuOpen(false);
+                          setDeleteErrorMessage(null);
+                          setIsDeleteModalOpen(true);
+                        }}
+                        className="w-full flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 active:scale-[0.98] transition-all cursor-pointer text-left"
+                      >
+                        <Trash2 size={15} strokeWidth={2.2} />
+                        <span>{isCreator ? "Delete Bill" : "Remove Bill"}</span>
+                      </button>
+                    </div>
+                  )}
+                </div>
               )}
             </div>
           </div>
@@ -469,22 +509,6 @@ export function BillDetail({ onBack, billId, session }: BillDetailProps) {
            <div className="text-[#1A1A1A] dark:text-zinc-100 text-[28px] font-bold font-display">LKR {bill.total}</div>
         </div>
 
-        {/* Delete / Remove Bill Button at Bottom - Only show if creator or fully settled */}
-        {(isCreator || isFullySettled) && (
-          <div className="px-6 md:px-0 mt-12 mb-6 flex flex-col items-center">
-            <button
-              onClick={() => {
-                setDeleteErrorMessage(null);
-                setIsDeleteModalOpen(true);
-              }}
-              className="w-full max-w-sm py-3.5 px-6 rounded-[25px] font-semibold text-sm flex items-center justify-center gap-2 cursor-pointer active:scale-95 transition-all shadow-sm bg-red-50 dark:bg-red-950/30 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800/50 hover:bg-red-600 hover:text-white dark:hover:bg-red-600 dark:hover:text-white"
-            >
-              <Trash2 size={16} />
-              <span>{isCreator ? 'Delete Bill' : 'Remove Settled Bill'}</span>
-            </button>
-          </div>
-        )}
-
       </div>
 
       {/* Floating Action Bar - Only show if not paid and not settled */}
@@ -541,7 +565,7 @@ export function BillDetail({ onBack, billId, session }: BillDetailProps) {
             ? 'Are you sure you want to permanently delete this bill? This will remove it for all participants.'
             : 'Are you sure you want to remove this settled bill from your history?'
         }
-        confirmText={isCreator ? 'Delete Bill' : 'Remove from List'}
+        confirmText={isCreator ? 'Delete' : 'Remove'}
         isBlocked={isBlockedFromDeleting || !!deleteErrorMessage}
         blockedReason={
           deleteErrorMessage ||

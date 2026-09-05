@@ -1,4 +1,4 @@
-import { Trash2, AlertCircle, AlertTriangle, X } from 'lucide-react';
+import { X, AlertCircle } from 'lucide-react';
 
 interface DeleteConfirmationModalProps {
   isOpen: boolean;
@@ -37,7 +37,7 @@ export function DeleteConfirmationModal({
       />
 
       {/* Modal Dialog */}
-      <div className="relative w-full max-w-[380px] bg-white dark:bg-zinc-900 rounded-[35px] p-6 shadow-2xl z-10 font-['Sora'] animate-in zoom-in-95 duration-200 border border-black/5 dark:border-white/10">
+      <div className="relative w-full max-w-[360px] bg-white dark:bg-zinc-900 rounded-[32px] p-7 shadow-2xl z-10 font-['Sora'] animate-in zoom-in-95 duration-150 border border-black/5 dark:border-white/10">
         
         {/* Close Button */}
         <button 
@@ -45,36 +45,26 @@ export function DeleteConfirmationModal({
           disabled={isLoading}
           className="absolute top-5 right-5 w-8 h-8 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-zinc-500 hover:text-black dark:hover:text-white transition-colors cursor-pointer"
         >
-          <X size={16} />
+          <X size={15} />
         </button>
 
-        {/* Icon Header */}
-        <div className="flex flex-col items-center text-center mt-2">
-          {isBlocked ? (
-            <div className="w-16 h-16 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center mb-4 text-amber-600 dark:text-amber-400">
-              <AlertTriangle size={30} strokeWidth={2.2} />
-            </div>
-          ) : (
-            <div className="w-16 h-16 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center mb-4 text-red-600 dark:text-red-400">
-              <Trash2 size={28} strokeWidth={2.2} />
-            </div>
-          )}
-
-          {/* Title */}
-          <h3 className="text-xl font-bold text-zinc-900 dark:text-zinc-100 font-display">
+        {/* Content */}
+        <div className="flex flex-col text-left pt-1">
+          {/* Title in app display serif */}
+          <h3 className="text-2xl font-bold text-[#1A1A1A] dark:text-zinc-100 font-display tracking-tight pr-6">
             {title}
           </h3>
 
-          {/* Description */}
-          <p className="text-sm text-zinc-600 dark:text-zinc-400 mt-2 leading-relaxed">
+          {/* Clean Description */}
+          <p className="text-[13.5px] text-black/60 dark:text-zinc-400 mt-2.5 leading-relaxed">
             {description}
           </p>
 
           {/* Blocked reason banner */}
           {isBlocked && blockedReason && (
-            <div className="mt-4 p-3.5 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 rounded-[20px] text-left flex items-start gap-2.5 w-full">
-              <AlertCircle size={18} className="text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
-              <div className="text-xs text-amber-800 dark:text-amber-300 leading-normal">
+            <div className="mt-4 p-3.5 bg-amber-500/10 border border-amber-500/20 rounded-[20px] text-left flex items-start gap-2.5 w-full">
+              <AlertCircle size={16} className="text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+              <div className="text-xs text-amber-700 dark:text-amber-300 leading-normal">
                 {blockedReason}
               </div>
             </div>
@@ -82,37 +72,34 @@ export function DeleteConfirmationModal({
         </div>
 
         {/* Action Buttons */}
-        <div className="mt-6 flex flex-col gap-2.5">
+        <div className="mt-7 flex items-center gap-2.5">
           {isBlocked ? (
             <button
               onClick={onClose}
-              className="w-full py-3.5 px-5 bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 rounded-[25px] font-semibold text-sm hover:bg-black dark:hover:bg-white active:scale-98 transition-all cursor-pointer shadow-md"
+              className="w-full py-3.5 px-5 bg-[#1A1A1A] dark:bg-zinc-100 text-white dark:text-zinc-900 rounded-[22px] font-semibold text-sm active:scale-98 transition-all cursor-pointer"
             >
               Got it
             </button>
           ) : (
             <>
               <button
+                onClick={onClose}
+                disabled={isLoading}
+                className="flex-1 py-3.5 px-4 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-800 dark:text-zinc-200 rounded-[22px] font-semibold text-sm active:scale-98 transition-all cursor-pointer text-center"
+              >
+                Cancel
+              </button>
+
+              <button
                 onClick={onConfirm}
                 disabled={isLoading}
-                className="w-full py-3.5 px-5 bg-red-600 hover:bg-red-700 text-white rounded-[25px] font-semibold text-sm active:scale-98 transition-all cursor-pointer shadow-md flex items-center justify-center gap-2 disabled:opacity-50"
+                className="flex-1 py-3.5 px-4 bg-red-600 hover:bg-red-700 text-white rounded-[22px] font-semibold text-sm active:scale-98 transition-all cursor-pointer shadow-sm text-center flex items-center justify-center disabled:opacity-50"
               >
                 {isLoading ? (
                   <span className="inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
                 ) : (
-                  <>
-                    <Trash2 size={16} />
-                    <span>{confirmText}</span>
-                  </>
+                  <span>{confirmText}</span>
                 )}
-              </button>
-
-              <button
-                onClick={onClose}
-                disabled={isLoading}
-                className="w-full py-3.5 px-5 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-800 dark:text-zinc-200 rounded-[25px] font-semibold text-sm active:scale-98 transition-all cursor-pointer"
-              >
-                Cancel
               </button>
             </>
           )}
