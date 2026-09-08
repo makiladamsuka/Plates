@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
-import { Search, ChevronLeft, UserPlus, Check, Smartphone, Share2, AlertCircle, RefreshCw } from 'lucide-react';
+import { Search, ChevronLeft, UserPlus, Check, Smartphone, Share2, AlertCircle, RefreshCw, QrCode } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { Avatar } from '../components/Avatar';
 import { getDevicePhoneContacts, isDeviceContactsSupported, type CleanContact } from '../services/deviceContacts';
+import { FriendQrModal } from '../components/FriendQrModal';
 
 interface SearchFriendsProps {
   session: any;
@@ -25,6 +26,20 @@ export function SearchFriends({ session, onBack }: SearchFriendsProps) {
   const [addedIds, setAddedIds] = useState<string[]>([]);
   const [isSearching, setIsSearching] = useState(false);
 
+  // QR Modal State & Current User Profile
+  const [isQrModalOpen, setIsQrModalOpen] = useState(false);
+  const [currentUserProfile, setCurrentUserProfile] = useState<{
+    id: string;
+    full_name?: string;
+    username?: string;
+    avatar_url?: string;
+  }>({
+    id: session?.user?.id || '',
+    full_name: session?.user?.user_metadata?.full_name || session?.user?.user_metadata?.name || '',
+    avatar_url: session?.user?.user_metadata?.avatar_url || '',
+    username: session?.user?.user_metadata?.username || '',
+  });
+
   // Phone Contacts State
   const [phoneContacts, setPhoneContacts] = useState<MatchedContact[]>([]);
   const [isLoadingContacts, setIsLoadingContacts] = useState(false);
@@ -35,6 +50,8 @@ export function SearchFriends({ session, onBack }: SearchFriendsProps) {
 
   useEffect(() => {
     if (!session?.user) return;
+    
+    // Fetch user's friends
     supabase
       .from('friends')
       .select('friend_id')
@@ -42,6 +59,18 @@ export function SearchFriends({ session, onBack }: SearchFriendsProps) {
       .then(({ data }) => {
         if (data) {
           setAddedIds(data.map(d => d.friend_id));
+        }
+      });
+
+    // Fetch user's detailed profile
+    supabase
+      .from('profiles')
+      .select('id, full_name, username, avatar_url')
+      .eq('id', session.user.id)
+      .single()
+      .then(({ data }) => {
+        if (data) {
+          setCurrentUserProfile(prev => ({ ...prev, ...data }));
         }
       });
   }, [session]);
@@ -188,13 +217,24 @@ export function SearchFriends({ session, onBack }: SearchFriendsProps) {
       
       {/* Top Header */}
       <div className="px-6 pt-6 pb-2">
-        {/* Back Button */}
-        <button 
-          onClick={onBack}
-          className="w-8 h-8 flex items-center justify-center -ml-2 mb-3 active:scale-95 transition-transform cursor-pointer"
-        >
-          <ChevronLeft size={30} strokeWidth={2.5} className="text-[#1A1A1A] dark:text-zinc-100" />
-        </button>
+        {/* Top Header Row: Back Button (Left) & QR Code Button (Right) */}
+        <div className="flex items-center justify-between -ml-2 mb-3">
+          <button 
+            onClick={onBack}
+            className="w-8 h-8 flex items-center justify-center active:scale-95 transition-transform cursor-pointer"
+            title="Go back"
+          >
+            <ChevronLeft size={30} strokeWidth={2.5} className="text-[#1A1A1A] dark:text-zinc-100" />
+          </button>
+
+          <button
+            onClick={() => setIsQrModalOpen(true)}
+            className="w-9 h-9 rounded-full bg-[#D9D9D9]/80 dark:bg-zinc-800/80 hover:bg-[#1A1A1A] hover:text-white dark:hover:bg-zinc-100 dark:hover:text-zinc-950 flex items-center justify-center transition-all cursor-pointer shadow-xs border border-transparent dark:border-white/5 active:scale-95 text-[#1A1A1A] dark:text-zinc-200"
+            title="QR Code & Camera Scanner"
+          >
+            <QrCode size={19} strokeWidth={2.2} />
+          </button>
+        </div>
 
         {/* Tab Toggle: Username Search vs Phone Contacts */}
         <div className="flex bg-[#D9D9D9]/70 dark:bg-zinc-900/70 p-1 rounded-[25px] mb-3 border border-transparent dark:border-white/5">
@@ -444,6 +484,15 @@ export function SearchFriends({ session, onBack }: SearchFriendsProps) {
           )}
         </div>
       )}
+
+      {/* Centered QR Modal (My QR Code & Camera Scanner) */}
+      <FriendQrModal
+        isOpen={isQrModalOpen}
+        onClose={() => setIsQrModalOpen(false)}
+        currentUser={currentUserProfile}
+        addedFriendIds={addedIds}
+        onSendFriendRequest={handleSendRequest}
+      />
 
     </div>
   );
