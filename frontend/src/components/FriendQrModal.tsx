@@ -53,10 +53,13 @@ export function FriendQrModal({
   const [isLoadingProfile, setIsLoadingProfile] = useState(false);
   const [isSendingRequest, setIsSendingRequest] = useState(false);
   const [requestSentSuccess, setRequestSentSuccess] = useState(false);
+  const [showDesktopShare, setShowDesktopShare] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const scannerManagerRef = useRef<QrScannerManager | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const qrContainerRef = useRef<HTMLDivElement>(null);
 
   // Deep-link / Shareable Invite URL
   const origin = typeof window !== 'undefined' ? window.location.origin : 'https://plates.live';
@@ -71,6 +74,7 @@ export function FriendQrModal({
       setScannedResult(null);
       setScannedProfile(null);
       setRequestSentSuccess(false);
+      setShowDesktopShare(false);
       return;
     }
 
@@ -211,9 +215,92 @@ export function FriendQrModal({
     }
   };
 
+  const handleShareWhatsApp = () => {
+    const shareText = `Add me on Plates! My username is @${currentUser.username || currentUser.full_name}: ${qrPayload}`;
+    window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(shareText)}`, '_blank', 'noopener,noreferrer');
+  };
+
+  const handleShareMessages = () => {
+    const shareText = `Add me on Plates! My username is @${currentUser.username || currentUser.full_name}: ${qrPayload}`;
+    window.open(`sms:?&body=${encodeURIComponent(shareText)}`, '_self');
+  };
+
+  const handleShareTelegram = () => {
+    const shareText = `Add me on Plates! @${currentUser.username || currentUser.full_name}`;
+    window.open(`https://t.me/share/url?url=${encodeURIComponent(qrPayload)}&text=${encodeURIComponent(shareText)}`, '_blank', 'noopener,noreferrer');
+  };
+
+  const handleShareEmail = () => {
+    const subject = `Add me on Plates (@${currentUser.username || currentUser.full_name})`;
+    const body = `Hey! Add me on Plates to split and settle bills together easily:\n\n${qrPayload}`;
+    window.open(`mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`, '_self');
+  };
+
+  const handleDownloadQr = () => {
+    if (!qrContainerRef.current) return;
+    const svg = qrContainerRef.current.querySelector('svg');
+    if (!svg) return;
+
+    setIsDownloading(true);
+    try {
+      const svgData = new XMLSerializer().serializeToString(svg);
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      const img = new Image();
+
+      const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
+      const url = URL.createObjectURL(svgBlob);
+
+      img.onload = () => {
+        // High resolution 3x scale for crisp QR PNG
+        const scale = 3;
+        canvas.width = (svg.clientWidth || 240) * scale;
+        canvas.height = (svg.clientHeight || 240) * scale;
+
+        if (ctx) {
+          ctx.fillStyle = '#ffffff';
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+          try {
+            const pngUrl = canvas.toDataURL('image/png');
+            const link = document.createElement('a');
+            link.download = `plates-qr-${currentUser.username || 'user'}.png`;
+            link.href = pngUrl;
+            link.click();
+          } catch {
+            // Fallback to SVG if cross-origin image tainted canvas
+            const link = document.createElement('a');
+            link.download = `plates-qr-${currentUser.username || 'user'}.svg`;
+            link.href = url;
+            link.click();
+          }
+        }
+        URL.revokeObjectURL(url);
+        setIsDownloading(false);
+      };
+
+      img.onerror = () => {
+        const link = document.createElement('a');
+        link.download = `plates-qr-${currentUser.username || 'user'}.svg`;
+        link.href = url;
+        link.click();
+        URL.revokeObjectURL(url);
+        setIsDownloading(false);
+      };
+
+      img.src = url;
+    } catch (err) {
+      console.error('Download QR error:', err);
+      setIsDownloading(false);
+    }
+  };
+
   const handleShare = async () => {
     const shareText = `Add me on Plates! My username is @${currentUser.username || currentUser.full_name}: ${qrPayload}`;
-    if (navigator.share) {
+    
+    // On mobile devices supporting the native Web Share API
+    if (typeof navigator !== 'undefined' && typeof navigator.share === 'function') {
       try {
         await navigator.share({
           title: 'Add me on Plates',
@@ -221,9 +308,15 @@ export function FriendQrModal({
           url: qrPayload,
         });
         return;
-      } catch {}
+      } catch (err: any) {
+        if (err.name === 'AbortError') {
+          return; // User dismissed native share sheet
+        }
+      }
     }
-    handleCopyLink();
+
+    // On desktop browsers (or when native share is unavailable), reveal the Desktop Share Menu!
+    setShowDesktopShare(true);
   };
 
   const handleConfirmAddFriend = async () => {
@@ -324,7 +417,10 @@ export function FriendQrModal({
             </div>
 
             {/* QR Card Container with Center Logo & Bold Black Style */}
-            <div className="p-3.5 bg-white rounded-[26px] shadow-md border border-black/5 flex flex-col items-center mb-4 transition-transform hover:scale-[1.01]">
+            <div 
+              ref={qrContainerRef}
+              className="p-3.5 bg-white rounded-[26px] shadow-md border border-black/5 flex flex-col items-center mb-4 transition-transform hover:scale-[1.01]"
+            >
               <QRCodeSVG 
                 value={qrPayload} 
                 size={225} 
@@ -338,33 +434,141 @@ export function FriendQrModal({
               Ask your friend to point their camera at this code to instantly send a friend request.
             </p>
 
-            {/* Action Buttons: Copy Link & Share */}
-            <div className="w-full flex items-center gap-2">
-              <button
-                onClick={handleCopyLink}
-                className="flex-1 py-2.5 px-3 rounded-full bg-zinc-100 dark:bg-zinc-800 text-[#1A1A1A] dark:text-zinc-100 text-xs font-semibold flex items-center justify-center gap-1.5 hover:bg-zinc-200 dark:hover:bg-zinc-700 active:scale-95 transition-all cursor-pointer"
-              >
-                {isCopied ? (
-                  <>
-                    <Check size={14} className="text-[#4C8C3C]" strokeWidth={2.5} />
-                    <span className="text-[#4C8C3C]">Copied Link!</span>
-                  </>
-                ) : (
-                  <>
-                    <Copy size={14} />
-                    <span>Copy Link</span>
-                  </>
-                )}
-              </button>
+            {/* Action Buttons: Copy Link & Share (or Desktop Share Options Menu) */}
+            {showDesktopShare ? (
+              <div className="w-full bg-zinc-50 dark:bg-zinc-800/80 rounded-[22px] p-3 border border-black/5 dark:border-white/5 flex flex-col gap-2.5 animate-in fade-in zoom-in-95 duration-150">
+                <div className="flex items-center justify-between px-1">
+                  <span className="text-[11px] font-semibold text-black/70 dark:text-zinc-300 uppercase tracking-wider">
+                    Share via
+                  </span>
+                  <button
+                    onClick={() => setShowDesktopShare(false)}
+                    className="text-[11px] font-medium text-black/40 dark:text-zinc-500 hover:text-black dark:hover:text-white transition-colors cursor-pointer"
+                  >
+                    Close
+                  </button>
+                </div>
 
-              <button
-                onClick={handleShare}
-                className="flex-1 py-2.5 px-3 rounded-full bg-[#1A1A1A] dark:bg-zinc-100 text-white dark:text-zinc-950 text-xs font-semibold flex items-center justify-center gap-1.5 hover:bg-[#333] dark:hover:bg-white/90 active:scale-95 transition-all cursor-pointer shadow-sm"
-              >
-                <Share2 size={14} />
-                <span>Share Code</span>
-              </button>
-            </div>
+                {/* 5 Social Media & Action Options with Real Official App Icons */}
+                <div className="grid grid-cols-5 gap-1.5 pt-1.5 pb-1">
+                  {/* WhatsApp */}
+                  <button
+                    onClick={handleShareWhatsApp}
+                    className="flex flex-col items-center justify-center gap-1.5 p-1 rounded-2xl hover:bg-black/5 dark:hover:bg-white/5 active:scale-95 transition-all cursor-pointer group"
+                    title="Share on WhatsApp"
+                  >
+                    <div className="w-12 h-12 rounded-[14px] shadow-md group-hover:scale-105 group-hover:shadow-lg transition-transform flex items-center justify-center overflow-hidden bg-white">
+                      <img src="/icons/share/whatsapp.png" alt="WhatsApp" className="w-full h-full object-cover" />
+                    </div>
+                    <span className="text-[10px] font-medium text-black/80 dark:text-zinc-300 text-center truncate max-w-full">
+                      WhatsApp
+                    </span>
+                  </button>
+
+                  {/* Messages / SMS */}
+                  <button
+                    onClick={handleShareMessages}
+                    className="flex flex-col items-center justify-center gap-1.5 p-1 rounded-2xl hover:bg-black/5 dark:hover:bg-white/5 active:scale-95 transition-all cursor-pointer group"
+                    title="Share via Messages"
+                  >
+                    <div className="w-12 h-12 rounded-[14px] shadow-md group-hover:scale-105 group-hover:shadow-lg transition-transform flex items-center justify-center overflow-hidden bg-white">
+                      <img src="/icons/share/messages.png" alt="Messages" className="w-full h-full object-cover" />
+                    </div>
+                    <span className="text-[10px] font-medium text-black/80 dark:text-zinc-300 text-center truncate max-w-full">
+                      Messages
+                    </span>
+                  </button>
+
+                  {/* Telegram */}
+                  <button
+                    onClick={handleShareTelegram}
+                    className="flex flex-col items-center justify-center gap-1.5 p-1 rounded-2xl hover:bg-black/5 dark:hover:bg-white/5 active:scale-95 transition-all cursor-pointer group"
+                    title="Share on Telegram"
+                  >
+                    <div className="w-12 h-12 rounded-[14px] shadow-md group-hover:scale-105 group-hover:shadow-lg transition-transform flex items-center justify-center overflow-hidden bg-white">
+                      <img src="/icons/share/telegram.png" alt="Telegram" className="w-full h-full object-cover" />
+                    </div>
+                    <span className="text-[10px] font-medium text-black/80 dark:text-zinc-300 text-center truncate max-w-full">
+                      Telegram
+                    </span>
+                  </button>
+
+                  {/* Gmail */}
+                  <button
+                    onClick={handleShareEmail}
+                    className="flex flex-col items-center justify-center gap-1.5 p-1 rounded-2xl hover:bg-black/5 dark:hover:bg-white/5 active:scale-95 transition-all cursor-pointer group"
+                    title="Share via Gmail"
+                  >
+                    <div className="w-12 h-12 rounded-[14px] shadow-md group-hover:scale-105 group-hover:shadow-lg transition-transform flex items-center justify-center overflow-hidden bg-white">
+                      <img src="/icons/share/gmail.svg" alt="Gmail" className="w-full h-full object-cover" />
+                    </div>
+                    <span className="text-[10px] font-medium text-black/80 dark:text-zinc-300 text-center truncate max-w-full">
+                      Gmail
+                    </span>
+                  </button>
+
+                  {/* Save QR Image (Apple Photos) */}
+                  <button
+                    onClick={handleDownloadQr}
+                    disabled={isDownloading}
+                    className="flex flex-col items-center justify-center gap-1.5 p-1 rounded-2xl hover:bg-black/5 dark:hover:bg-white/5 active:scale-95 transition-all cursor-pointer group disabled:opacity-50"
+                    title="Save QR to Photos"
+                  >
+                    <div className="w-12 h-12 rounded-[14px] shadow-md group-hover:scale-105 group-hover:shadow-lg transition-transform flex items-center justify-center overflow-hidden bg-white">
+                      <img src="/icons/share/photos.png" alt="Save to Photos" className="w-full h-full object-cover" />
+                    </div>
+                    <span className="text-[10px] font-medium text-black/80 dark:text-zinc-300 text-center truncate max-w-full">
+                      {isDownloading ? 'Saving...' : 'Save QR'}
+                    </span>
+                  </button>
+                </div>
+
+                {/* Secondary Copy Direct Link */}
+                <button
+                  onClick={handleCopyLink}
+                  className="w-full py-2 px-3 rounded-full bg-white dark:bg-zinc-900 text-black/80 dark:text-zinc-200 text-[11px] font-medium flex items-center justify-center gap-1.5 hover:bg-zinc-50 dark:hover:bg-zinc-800 active:scale-98 transition-all cursor-pointer border border-black/5 dark:border-white/5"
+                >
+                  {isCopied ? (
+                    <>
+                      <Check size={13} className="text-[#4C8C3C]" strokeWidth={2.5} />
+                      <span className="text-[#4C8C3C] font-semibold">Invite Link Copied!</span>
+                    </>
+                  ) : (
+                    <>
+                      <Copy size={13} />
+                      <span>Copy Direct Link</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            ) : (
+              <div className="w-full flex items-center gap-2">
+                <button
+                  onClick={handleCopyLink}
+                  className="flex-1 py-2.5 px-3 rounded-full bg-zinc-100 dark:bg-zinc-800 text-[#1A1A1A] dark:text-zinc-100 text-xs font-semibold flex items-center justify-center gap-1.5 hover:bg-zinc-200 dark:hover:bg-zinc-700 active:scale-95 transition-all cursor-pointer"
+                >
+                  {isCopied ? (
+                    <>
+                      <Check size={14} className="text-[#4C8C3C]" strokeWidth={2.5} />
+                      <span className="text-[#4C8C3C]">Copied Link!</span>
+                    </>
+                  ) : (
+                    <>
+                      <Copy size={14} />
+                      <span>Copy Link</span>
+                    </>
+                  )}
+                </button>
+
+                <button
+                  onClick={handleShare}
+                  className="flex-1 py-2.5 px-3 rounded-full bg-[#1A1A1A] dark:bg-zinc-100 text-white dark:text-zinc-950 text-xs font-semibold flex items-center justify-center gap-1.5 hover:bg-[#333] dark:hover:bg-white/90 active:scale-95 transition-all cursor-pointer shadow-sm"
+                >
+                  <Share2 size={14} />
+                  <span>Share Code</span>
+                </button>
+              </div>
+            )}
           </div>
         )}
 
