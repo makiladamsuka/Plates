@@ -9,7 +9,12 @@ import {
   RotateCcw, 
   Upload, 
   AlertCircle, 
-  UserPlus 
+  UserPlus,
+  MessageCircle,
+  MessageSquare,
+  Send,
+  Mail,
+  Download 
 } from 'lucide-react';
 import { QRCodeSVG } from '../utils/qrCode';
 import { 
@@ -449,7 +454,7 @@ export function FriendQrModal({
                   </button>
                 </div>
 
-                {/* 5 Social Media & Action Options with Real Official App Icons */}
+                {/* 5 Social Media & Action Options with Theme-styled Icons */}
                 <div className="grid grid-cols-5 gap-1.5 pt-1.5 pb-1">
                   {/* WhatsApp */}
                   <button
@@ -457,10 +462,10 @@ export function FriendQrModal({
                     className="flex flex-col items-center justify-center gap-1.5 p-1 rounded-2xl hover:bg-black/5 dark:hover:bg-white/5 active:scale-95 transition-all cursor-pointer group"
                     title="Share on WhatsApp"
                   >
-                    <div className="w-12 h-12 rounded-[14px] shadow-md group-hover:scale-105 group-hover:shadow-lg transition-transform flex items-center justify-center overflow-hidden bg-white">
-                      <img src="/icons/share/whatsapp.png" alt="WhatsApp" className="w-full h-full object-cover" />
+                    <div className="w-11 h-11 rounded-full bg-zinc-100 dark:bg-zinc-800 text-[#1A1A1A] dark:text-zinc-100 border border-black/5 dark:border-white/5 group-hover:bg-zinc-200 dark:group-hover:bg-zinc-700 group-hover:scale-105 active:scale-95 transition-all flex items-center justify-center shadow-xs">
+                      <MessageCircle size={20} strokeWidth={2} />
                     </div>
-                    <span className="text-[10px] font-medium text-black/80 dark:text-zinc-300 text-center truncate max-w-full">
+                    <span className="text-[10px] font-medium text-black/70 dark:text-zinc-400 group-hover:text-black dark:group-hover:text-white transition-colors text-center truncate max-w-full">
                       WhatsApp
                     </span>
                   </button>
@@ -471,10 +476,10 @@ export function FriendQrModal({
                     className="flex flex-col items-center justify-center gap-1.5 p-1 rounded-2xl hover:bg-black/5 dark:hover:bg-white/5 active:scale-95 transition-all cursor-pointer group"
                     title="Share via Messages"
                   >
-                    <div className="w-12 h-12 rounded-[14px] shadow-md group-hover:scale-105 group-hover:shadow-lg transition-transform flex items-center justify-center overflow-hidden bg-white">
-                      <img src="/icons/share/messages.png" alt="Messages" className="w-full h-full object-cover" />
+                    <div className="w-11 h-11 rounded-full bg-zinc-100 dark:bg-zinc-800 text-[#1A1A1A] dark:text-zinc-100 border border-black/5 dark:border-white/5 group-hover:bg-zinc-200 dark:group-hover:bg-zinc-700 group-hover:scale-105 active:scale-95 transition-all flex items-center justify-center shadow-xs">
+                      <MessageSquare size={20} strokeWidth={2} />
                     </div>
-                    <span className="text-[10px] font-medium text-black/80 dark:text-zinc-300 text-center truncate max-w-full">
+                    <span className="text-[10px] font-medium text-black/70 dark:text-zinc-400 group-hover:text-black dark:group-hover:text-white transition-colors text-center truncate max-w-full">
                       Messages
                     </span>
                   </button>
@@ -485,39 +490,39 @@ export function FriendQrModal({
                     className="flex flex-col items-center justify-center gap-1.5 p-1 rounded-2xl hover:bg-black/5 dark:hover:bg-white/5 active:scale-95 transition-all cursor-pointer group"
                     title="Share on Telegram"
                   >
-                    <div className="w-12 h-12 rounded-[14px] shadow-md group-hover:scale-105 group-hover:shadow-lg transition-transform flex items-center justify-center overflow-hidden bg-white">
-                      <img src="/icons/share/telegram.png" alt="Telegram" className="w-full h-full object-cover" />
+                    <div className="w-11 h-11 rounded-full bg-zinc-100 dark:bg-zinc-800 text-[#1A1A1A] dark:text-zinc-100 border border-black/5 dark:border-white/5 group-hover:bg-zinc-200 dark:group-hover:bg-zinc-700 group-hover:scale-105 active:scale-95 transition-all flex items-center justify-center shadow-xs">
+                      <Send size={20} strokeWidth={2} />
                     </div>
-                    <span className="text-[10px] font-medium text-black/80 dark:text-zinc-300 text-center truncate max-w-full">
+                    <span className="text-[10px] font-medium text-black/70 dark:text-zinc-400 group-hover:text-black dark:group-hover:text-white transition-colors text-center truncate max-w-full">
                       Telegram
                     </span>
                   </button>
 
-                  {/* Gmail */}
+                  {/* Gmail / Email */}
                   <button
                     onClick={handleShareEmail}
                     className="flex flex-col items-center justify-center gap-1.5 p-1 rounded-2xl hover:bg-black/5 dark:hover:bg-white/5 active:scale-95 transition-all cursor-pointer group"
-                    title="Share via Gmail"
+                    title="Share via Email"
                   >
-                    <div className="w-12 h-12 rounded-[14px] shadow-md group-hover:scale-105 group-hover:shadow-lg transition-transform flex items-center justify-center overflow-hidden bg-white">
-                      <img src="/icons/share/gmail.svg" alt="Gmail" className="w-full h-full object-cover" />
+                    <div className="w-11 h-11 rounded-full bg-zinc-100 dark:bg-zinc-800 text-[#1A1A1A] dark:text-zinc-100 border border-black/5 dark:border-white/5 group-hover:bg-zinc-200 dark:group-hover:bg-zinc-700 group-hover:scale-105 active:scale-95 transition-all flex items-center justify-center shadow-xs">
+                      <Mail size={20} strokeWidth={2} />
                     </div>
-                    <span className="text-[10px] font-medium text-black/80 dark:text-zinc-300 text-center truncate max-w-full">
-                      Gmail
+                    <span className="text-[10px] font-medium text-black/70 dark:text-zinc-400 group-hover:text-black dark:group-hover:text-white transition-colors text-center truncate max-w-full">
+                      Email
                     </span>
                   </button>
 
-                  {/* Save QR Image (Apple Photos) */}
+                  {/* Save QR Image */}
                   <button
                     onClick={handleDownloadQr}
                     disabled={isDownloading}
                     className="flex flex-col items-center justify-center gap-1.5 p-1 rounded-2xl hover:bg-black/5 dark:hover:bg-white/5 active:scale-95 transition-all cursor-pointer group disabled:opacity-50"
-                    title="Save QR to Photos"
+                    title="Save QR Code as Image"
                   >
-                    <div className="w-12 h-12 rounded-[14px] shadow-md group-hover:scale-105 group-hover:shadow-lg transition-transform flex items-center justify-center overflow-hidden bg-white">
-                      <img src="/icons/share/photos.png" alt="Save to Photos" className="w-full h-full object-cover" />
+                    <div className="w-11 h-11 rounded-full bg-zinc-100 dark:bg-zinc-800 text-[#1A1A1A] dark:text-zinc-100 border border-black/5 dark:border-white/5 group-hover:bg-zinc-200 dark:group-hover:bg-zinc-700 group-hover:scale-105 active:scale-95 transition-all flex items-center justify-center shadow-xs">
+                      <Download size={20} strokeWidth={2} />
                     </div>
-                    <span className="text-[10px] font-medium text-black/80 dark:text-zinc-300 text-center truncate max-w-full">
+                    <span className="text-[10px] font-medium text-black/70 dark:text-zinc-400 group-hover:text-black dark:group-hover:text-white transition-colors text-center truncate max-w-full">
                       {isDownloading ? 'Saving...' : 'Save QR'}
                     </span>
                   </button>
