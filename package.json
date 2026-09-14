@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "private": true,
   "description": "Plates — split-bill dining app.",
+  "engines": {
+    "node": ">=20.0.0"
+  },
   "scripts": {
     "dev": "npm --prefix frontend run dev",
     "dev:frontend": "npm --prefix frontend run dev",
