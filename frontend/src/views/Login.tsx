@@ -55,12 +55,17 @@ export function Login() {
       try {
         const [rawNonce, hashedNonce] = await generateNonce();
         rawNonceRef.current = rawNonce;
+        try {
+          sessionStorage.setItem('raw_nonce', rawNonce);
+        } catch (e) {}
 
         const checkGsi = () => {
           if (!isMounted) return;
 
           if (typeof window !== 'undefined' && (window as any).google?.accounts?.id) {
             const googleAccounts = (window as any).google.accounts.id;
+            const baseUrl = (import.meta.env.VITE_APP_URL || window.location.origin).replace(/\/+$/, '');
+            const loginUri = `${baseUrl}/auth/callback`;
 
             try {
               googleAccounts.initialize({
@@ -87,12 +92,13 @@ export function Login() {
                     setIsSpinning(false);
                   }
                 },
+                ux_mode: 'redirect',
+                login_uri: loginUri,
                 nonce: hashedNonce,
                 use_fedcm_for_prompt: false,
                 auto_select: false,
               });
             } catch (initErr) {
-              // Silently handle GSI init issues; custom button initiates OAuth redirect directly
               console.warn('[auth] GSI initialize notice:', initErr);
             }
           } else {

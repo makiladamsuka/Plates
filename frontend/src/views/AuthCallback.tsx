@@ -22,14 +22,39 @@ export function AuthCallback() {
 
       const code = searchParams.get('code');
       const hasAccessToken = hashParams.has('access_token');
+      const credential = searchParams.get('credential') || searchParams.get('id_token') || hashParams.get('credential') || hashParams.get('id_token');
 
-      // If no OAuth code or token in URL (e.g. after logout or direct load), instantly redirect to home
-      if (!code && !hasAccessToken) {
+      // If no OAuth code, token, or credential in URL, instantly redirect to home
+      if (!code && !hasAccessToken && !credential) {
         if (isMounted) {
           window.history.replaceState({}, document.title, '/');
           navigate('/', { replace: true });
         }
         return;
+      }
+
+      // Check for Google Identity Services redirected ID token credential
+      if (credential) {
+        try {
+          const rawNonce = sessionStorage.getItem('raw_nonce') || undefined;
+          const { data, error: idTokenError } = await supabase.auth.signInWithIdToken({
+            provider: 'google',
+            token: credential,
+            nonce: rawNonce,
+          });
+          if (!idTokenError && data.session) {
+            if (data.session.user) {
+              await syncUserProfile(data.session.user);
+            }
+            if (isMounted) {
+              window.history.replaceState({}, document.title, '/');
+              navigate('/', { replace: true });
+            }
+            return;
+          }
+        } catch (e) {
+          console.warn('[AuthCallback] signInWithIdToken notice:', e);
+        }
       }
 
       // Check for PKCE authorization code in query params
