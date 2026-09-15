@@ -44,8 +44,8 @@ export function DesktopNav({ currentTab, session, onTabChange, onAvatarClick }: 
   ];
 
   return (
-    <div className="hidden md:flex flex-col w-[280px] min-h-screen sticky top-0 bg-[#EDEDF1] dark:bg-zinc-950 border-r border-black/5 dark:border-white/5 z-50 py-10 px-6 font-['Sora'] shrink-0 transition-colors">
-      <div className="flex items-center gap-4 mb-12 px-1">
+    <div className="hidden md:flex flex-col w-[280px] h-screen sticky top-0 bg-[#EDEDF1] dark:bg-zinc-950 border-r border-black/5 dark:border-white/5 z-50 py-10 px-6 font-['Sora'] shrink-0 transition-colors overflow-hidden justify-between">
+      <div className="flex items-center gap-4 mb-10 px-1">
         <img src="/logo.svg" alt="Plates logo" className="w-14 h-14 rounded-[22.5%] shrink-0 shadow-sm" />
         <h1 className="text-black dark:text-zinc-100 text-5xl font-black font-display tracking-tight leading-none">Plates</h1>
       </div>
