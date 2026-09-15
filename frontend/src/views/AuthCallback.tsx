@@ -33,6 +33,29 @@ export function AuthCallback() {
         return;
       }
 
+      const handleAuthSuccess = async (user?: any) => {
+        if (user) {
+          try {
+            await syncUserProfile(user);
+          } catch (e) {
+            console.warn('[AuthCallback] profile sync notice:', e);
+          }
+        }
+        if (window.opener && window.opener !== window) {
+          try {
+            window.opener.postMessage({ type: 'SUPABASE_AUTH_SUCCESS' }, '*');
+          } catch (e) {}
+          setTimeout(() => {
+            window.close();
+          }, 200);
+          return;
+        }
+        if (isMounted) {
+          window.history.replaceState({}, document.title, '/');
+          navigate('/', { replace: true });
+        }
+      };
+
       // Check for Google Identity Services redirected ID token credential
       if (credential) {
         try {
@@ -43,13 +66,7 @@ export function AuthCallback() {
             nonce: rawNonce,
           });
           if (!idTokenError && data.session) {
-            if (data.session.user) {
-              await syncUserProfile(data.session.user);
-            }
-            if (isMounted) {
-              window.history.replaceState({}, document.title, '/');
-              navigate('/', { replace: true });
-            }
+            await handleAuthSuccess(data.session.user);
             return;
           }
         } catch (e) {
@@ -62,13 +79,7 @@ export function AuthCallback() {
         try {
           const { data, error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
           if (!exchangeError && data.session) {
-            if (data.session.user) {
-              await syncUserProfile(data.session.user);
-            }
-            if (isMounted) {
-              window.history.replaceState({}, document.title, '/');
-              navigate('/', { replace: true });
-            }
+            await handleAuthSuccess(data.session.user);
             return;
           }
         } catch (e) {
@@ -79,13 +90,7 @@ export function AuthCallback() {
       // Check for session
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
-        if (session.user) {
-          await syncUserProfile(session.user);
-        }
-        if (isMounted) {
-          window.history.replaceState({}, document.title, '/');
-          navigate('/', { replace: true });
-        }
+        await handleAuthSuccess(session.user);
         return;
       }
     };
@@ -96,7 +101,18 @@ export function AuthCallback() {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if ((event === 'SIGNED_IN' || event === 'INITIAL_SESSION') && session) {
         if (session.user) {
-          await syncUserProfile(session.user);
+          try {
+            await syncUserProfile(session.user);
+          } catch (e) {}
+        }
+        if (window.opener && window.opener !== window) {
+          try {
+            window.opener.postMessage({ type: 'SUPABASE_AUTH_SUCCESS' }, '*');
+          } catch (e) {}
+          setTimeout(() => {
+            window.close();
+          }, 200);
+          return;
         }
         if (isMounted) {
           window.history.replaceState({}, document.title, '/');

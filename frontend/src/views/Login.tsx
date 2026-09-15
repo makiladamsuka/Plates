@@ -25,24 +25,59 @@ export function Login() {
   const [error, setError] = useState<string | null>(null);
   const rawNonceRef = useRef<string>('');
 
-  const initiateOAuthRedirect = async () => {
+  const initiateOAuthPopup = async () => {
     try {
       setIsSpinning(true);
       setError(null);
+
       const baseUrl = (import.meta.env.VITE_APP_URL || window.location.origin).replace(/\/+$/, '');
-      const { error: authError } = await supabase.auth.signInWithOAuth({
+      const redirectUrl = `${baseUrl}/auth/callback`;
+
+      // Center the popup window on the screen
+      const width = 500;
+      const height = 620;
+      const left = window.screenX + Math.max(0, (window.outerWidth - width) / 2);
+      const top = window.screenY + Math.max(0, (window.outerHeight - height) / 2);
+
+      const popup = window.open(
+        'about:blank',
+        'google_oauth_popup',
+        `width=${width},height=${height},left=${left},top=${top},status=no,resizable=yes,scrollbars=yes`
+      );
+
+      const { data, error: authError } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${baseUrl}/auth/callback`,
+          redirectTo: redirectUrl,
+          skipBrowserRedirect: true,
           queryParams: {
             access_type: 'offline',
             prompt: 'consent',
           },
         },
       });
-      if (authError) throw authError;
+
+      if (authError || !data?.url) {
+        if (popup && !popup.closed) popup.close();
+        throw authError || new Error('Failed to get Google sign-in URL.');
+      }
+
+      if (popup) {
+        popup.location.href = data.url;
+
+        // Monitor popup close to cleanly reset loading spinner
+        const timer = setInterval(() => {
+          if (!popup || popup.closed) {
+            clearInterval(timer);
+            setIsSpinning(false);
+          }
+        }, 500);
+      } else {
+        // If popup blocker intervened, fall back to top-level redirect
+        window.location.href = data.url;
+      }
     } catch (err: any) {
-      console.error('[auth] OAuth redirect error:', err);
+      console.error('[auth] OAuth popup error:', err);
       setError(err.message || 'Google sign-in failed. Please try again.');
       setIsSpinning(false);
     }
@@ -87,7 +122,7 @@ export function Login() {
 
                     if (authError) throw authError;
                   } catch (err: any) {
-                    console.error('[auth] Google ID token sign-in error:', err);
+                    console.error('[auth] Google One Tap sign-in error:', err);
                     setError(err.message || 'Google sign-in failed. Please try again.');
                     setIsSpinning(false);
                   }
@@ -95,9 +130,36 @@ export function Login() {
                 ux_mode: 'redirect',
                 login_uri: loginUri,
                 nonce: hashedNonce,
-                use_fedcm_for_prompt: false,
+                use_fedcm_for_prompt: true,
                 auto_select: false,
               });
+
+              // Trigger One Tap / FedCM prompt (Top-right on desktop, bottom-sheet on mobile)
+              try {
+                googleAccounts.prompt((notification: any) => {
+                  if (notification?.isDisplayed?.()) {
+                    console.log('[auth] Google One Tap prompt displayed.');
+                  } else if (notification?.isNotDisplayed?.()) {
+                    console.log(
+                      '[auth] Google One Tap not displayed reason:',
+                      notification.getNotDisplayedReason?.() || 'unknown'
+                    );
+                  } else if (notification?.isSkippedMoment?.()) {
+                    console.log(
+                      '[auth] Google One Tap skipped reason:',
+                      notification.getSkippedReason?.() || 'unknown'
+                    );
+                  } else if (notification?.isDismissedMoment?.()) {
+                    console.log(
+                      '[auth] Google One Tap dismissed reason:',
+                      notification.getDismissedReason?.() || 'unknown'
+                    );
+                  }
+                });
+              } catch (promptErr) {
+                // Silently handle prompt errors so page never crashes
+                console.warn('[auth] GSI prompt notice:', promptErr);
+              }
             } catch (initErr) {
               console.warn('[auth] GSI initialize notice:', initErr);
             }
@@ -115,13 +177,21 @@ export function Login() {
 
     setupGoogleIdentity();
 
+    const handleMessage = (event: MessageEvent) => {
+      if (event.data?.type === 'SUPABASE_AUTH_SUCCESS') {
+        setIsSpinning(false);
+      }
+    };
+    window.addEventListener('message', handleMessage);
+
     return () => {
       isMounted = false;
+      window.removeEventListener('message', handleMessage);
     };
   }, []);
 
   const handleButtonClick = () => {
-    initiateOAuthRedirect();
+    initiateOAuthPopup();
   };
 
   return (
