@@ -1,9 +1,10 @@
 import { useState, useEffect, useRef } from 'react';
 import { supabase } from '../lib/supabase';
 
-const GOOGLE_CLIENT_ID =
+const GOOGLE_CLIENT_ID = (
   import.meta.env.VITE_GOOGLE_CLIENT_ID ||
-  '201004734198-3r780q0v3irrd2cbijaj2onq06dqkpq6.apps.googleusercontent.com';
+  '201004734198-3r780q0v3irrd2cbijaj2onq06dqkpq6.apps.googleusercontent.com'
+).trim();
 
 /**
  * Generates a cryptographic nonce (raw + SHA-256 hex digest)
