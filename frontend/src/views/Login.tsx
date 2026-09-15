@@ -87,19 +87,11 @@ export function Login() {
                   }
                 },
                 nonce: hashedNonce,
-                use_fedcm_for_prompt: true,
+                use_fedcm_for_prompt: false,
                 auto_select: false,
               });
-
-              // Optional One Tap prompt
-              try {
-                googleAccounts.prompt((notification: any) => {
-                  if (notification?.isNotDisplayed?.() || notification?.isSkippedMoment?.()) {
-                    console.log('[auth] One Tap skipped or not displayed');
-                  }
-                });
-              } catch (e) {}
             } catch (initErr) {
+              // Silently handle GSI init issues; custom button initiates OAuth redirect directly
               console.warn('[auth] GSI initialize notice:', initErr);
             }
           } else {
@@ -109,7 +101,8 @@ export function Login() {
 
         checkGsi();
       } catch (err: any) {
-        console.error('[auth] GSI setup error:', err);
+        // Defensive catch for subtle crypto / nonce generation issues
+        console.warn('[auth] GSI setup notice:', err);
       }
     };
 
