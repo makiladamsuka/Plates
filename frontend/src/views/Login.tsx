@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { supabase } from '../lib/supabase';
+import { Play, Cast, Disc3 } from 'lucide-react';
 
 const GOOGLE_CLIENT_ID = (
   import.meta.env.VITE_GOOGLE_CLIENT_ID ||
@@ -102,6 +103,7 @@ export function Login() {
             const baseUrl = (import.meta.env.VITE_APP_URL || window.location.origin).replace(/\/+$/, '');
             const loginUri = `${baseUrl}/auth/callback`;
 
+
             try {
               googleAccounts.initialize({
                 client_id: GOOGLE_CLIENT_ID,
@@ -195,107 +197,155 @@ export function Login() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-0 sm:p-4 md:p-8 lg:p-12 selection:bg-[#F5C744]/30 bg-gradient-to-br from-[#F5C744]/20 via-[#EDEDF1] to-[#1A1A1A]/80 relative overflow-hidden bg-[#EDEDF1]">
-      
-      {/* Decorative ambient blurred blobs behind the card */}
-      <div className="absolute top-0 left-0 w-[600px] h-[600px] bg-[#F5C744]/30 rounded-full blur-[100px] pointer-events-none -translate-x-1/4 -translate-y-1/4 hidden md:block" />
-      <div className="absolute bottom-0 right-0 w-[600px] h-[600px] bg-[#4C8C3C]/20 rounded-full blur-[100px] pointer-events-none translate-x-1/4 translate-y-1/4 hidden md:block" />
+    <div className="h-[100dvh] bg-[#FFFDF8] flex flex-col font-sans-app relative overflow-hidden text-[#1A1A1A]">
+      {/* Background radial gradient glow similar to the reference */}
+      <div className="absolute top-0 left-0 w-[800px] h-[800px] bg-purple-200/20 rounded-full blur-[120px] -translate-x-1/2 -translate-y-1/2 pointer-events-none" />
+      <div className="absolute bottom-0 right-0 w-[600px] h-[600px] bg-yellow-200/20 rounded-full blur-[100px] translate-x-1/4 translate-y-1/4 pointer-events-none" />
 
-      {/* Main Card Container */}
-      <div className="relative w-full max-w-[1200px] bg-[#EDEDF1] md:bg-white rounded-none sm:rounded-3xl md:rounded-[32px] shadow-2xl overflow-hidden flex flex-col md:flex-row min-h-screen sm:min-h-0 md:h-[720px] z-10">
+      {/* Navbar */}
+      <header className="w-full flex items-center justify-between px-6 py-6 md:px-12 md:py-8 z-20 relative max-w-[1440px] mx-auto shrink-0">
+        <div className="flex items-center gap-3">
+          <img src="/logo.svg" alt="Plates logo" className="w-8 h-8 rounded-[22.5%] shadow-sm" />
+          <span className="text-2xl font-extrabold font-display tracking-tight text-[#1A1A1A]">Plates</span>
+        </div>
         
-        {/* ── Left Panel: Desktop Only (Logo & Illustration) ── */}
-        <div className="hidden md:flex w-full md:w-[50%] p-6 pt-10 md:p-16 flex-col bg-[#EDEDF1]">
-          {/* Brand Logo */}
-          <div className="flex items-center gap-3 md:gap-4 mb-4 md:mb-8 justify-center md:justify-start">
-            <img src="/logo.svg" alt="Plates logo" className="w-10 h-10 md:w-14 md:h-14 rounded-[22.5%] shrink-0 shadow-sm" />
-            <span className="text-3xl md:text-4xl font-bold font-display tracking-tight text-[#1A1A1A]">Plates</span>
+        {/* Nav Links Removed per single-page focus */}
+        
+        <div className="flex items-center gap-6">
+          <button onClick={handleButtonClick} className="hidden sm:block text-[13px] font-bold tracking-widest text-gray-500 hover:text-black uppercase transition-colors font-sans-app">
+            Login
+          </button>
+          <button onClick={handleButtonClick} className="bg-[#8A2BE2] hover:bg-[#7a22cc] text-white text-[13px] tracking-widest uppercase font-bold py-3 px-8 rounded-full shadow-lg transition-all hover:shadow-xl hover:-translate-y-0.5 font-sans-app">
+            Sign Up
+          </button>
+        </div>
+      </header>
+
+      {/* Main Content */}
+      <main className="flex-1 w-full max-w-[1440px] mx-auto flex flex-col md:flex-row relative z-10 px-6 md:px-12 lg:px-24">
+        
+        {/* SVG Decorative Lines (Absolute, behind content) */}
+        <svg className="absolute inset-0 w-full h-full pointer-events-none z-0 hidden lg:block" style={{ strokeDasharray: "5 7" }}>
+          {/* Top curve */}
+          <path d="M 400 120 Q 550 -20, 800 120 T 1100 100" fill="transparent" stroke="#1A1A1A" strokeWidth="1.5" strokeLinecap="round" className="opacity-[0.15]" />
+          <polygon points="1090,95 1105,100 1090,105" fill="#8A2BE2" className="opacity-70" />
+          
+          {/* Bottom curve */}
+          <path d="M 300 520 Q 500 700, 750 480" fill="transparent" stroke="#1A1A1A" strokeWidth="1.5" strokeLinecap="round" className="opacity-[0.15]" />
+          <polygon points="305,510 295,520 310,525" fill="#8A2BE2" className="opacity-70" />
+        </svg>
+
+        {/* Left Column (Text & Input) */}
+        <div className="w-full md:w-[45%] flex flex-col justify-center py-10 z-20 relative">
+          <p className="text-[#8A2BE2] font-extrabold text-[13px] tracking-[0.2em] mb-6 uppercase">Settle up smoothly</p>
+          
+          <h1 className="text-[52px] lg:text-[80px] leading-[1.05] font-display font-extrabold text-[#1a202c] mb-8 tracking-tight">
+            Eat together.<br/>
+            Settle{' '}
+            <span className="relative inline-block mt-2">
+              <span className="relative z-10 text-[#8A2BE2]">later</span>
+              {/* Hand-drawn ellipse effect */}
+              <svg className="absolute -inset-2 w-[120%] h-[140%] z-0 text-[#f59e0b] opacity-60" viewBox="0 0 100 50" preserveAspectRatio="none">
+                <ellipse cx="50" cy="25" rx="45" ry="20" fill="none" stroke="currentColor" strokeWidth="1.5" strokeDasharray="3 3" className="rotate-[-3deg] origin-center" />
+              </svg>
+            </span>.
+          </h1>
+          
+          <p className="text-gray-500 font-sans-app font-medium text-lg lg:text-xl max-w-[420px] mb-12 leading-relaxed">
+            The easiest way to track shared meals, split food tabs in real-time, and settle balances without the math headaches.
+          </p>
+          
+          {/* Action Container (Mimics the email input + button in reference) */}
+          <div className="bg-white rounded-full p-2.5 pl-8 shadow-2xl shadow-purple-900/5 flex items-center justify-between w-full max-w-[540px] h-[88px] relative border border-white/60 backdrop-blur-xl">
+             <div className="flex flex-col flex-1 h-full justify-center">
+               <span className="text-[10px] font-bold text-gray-400 tracking-[0.15em] uppercase mb-1">Your Account</span>
+               <div className="flex items-center -ml-1">
+                 <div ref={googleBtnRef} className="min-h-[40px] transform-gpu origin-left scale-[0.85]" />
+                 {!isGsiReady && (
+                   <span className="text-sm font-semibold text-gray-800 py-2">Loading Google Login...</span>
+                 )}
+               </div>
+             </div>
+             
+             {/* Fake 'Sign Up' purple pill to match aesthetic */}
+             <button onClick={handleButtonClick} className="hidden sm:flex items-center justify-center bg-[#8A2BE2] hover:bg-[#7a22cc] text-white text-[15px] font-bold h-full px-10 rounded-full transition-all shadow-md active:scale-95 font-sans-app">
+               Sign Up
+             </button>
           </div>
           
-          {/* Illustration */}
-          <div className="flex-1 flex items-center justify-center p-2 md:p-4 mt-4 md:mt-0">
-            <img
-              src="/welcom-hero.jpeg"
-              alt="Plates Welcome Graphic"
-              className="w-full max-w-[260px] sm:max-w-[320px] md:max-w-[520px] h-auto object-contain"
-              loading="eager"
+          {isSpinning && (
+            <p className="text-sm text-[#8A2BE2] mt-6 animate-pulse font-semibold">Signing in with Google...</p>
+          )}
+          {error && <p className="text-red-500 text-sm mt-6 font-medium">{error}</p>}
+        </div>
+
+        {/* Right Column (3D Graphic & Floaties) */}
+        <div className="w-full md:w-[55%] flex items-center justify-center relative z-10 min-h-[500px] mt-12 md:mt-0">
+          
+          {/* The generated 3D image with a large circular background container */}
+          <div className="relative w-full max-w-[650px] aspect-square flex items-center justify-center">
+            
+            {/* The actual image */}
+            <img 
+              src="/rock_on_hand.jpg" 
+              alt="Rock on 3D hand"
+              className="w-[110%] h-[110%] max-w-none object-contain mix-blend-multiply drop-shadow-2xl z-10" 
             />
-          </div>
-        </div>
 
-        {/* ── Right Panel: Form + Mobile Full Layout ── */}
-        <div className="w-full md:w-[50%] px-6 py-10 md:p-16 flex flex-col items-center justify-center md:items-start bg-transparent md:bg-gray-50/80 relative flex-1">
+            {/* Floatie 1: Yellow square with cast icon */}
+            <div className="absolute top-[15%] left-[10%] w-[72px] h-[72px] bg-[#f2bc3a] rounded-[24px] shadow-2xl flex items-center justify-center z-20 animate-[bounce_4s_infinite]" style={{ boxShadow: '0 20px 40px -10px rgba(242, 188, 58, 0.5)' }}>
+               <div className="w-4 h-4 rounded-full bg-white/40 ring-4 ring-white" />
+            </div>
+
+            {/* Floatie 2: Yellow square with cast icon on right */}
+            <div className="absolute right-[5%] top-[45%] w-[72px] h-[72px] bg-[#f2bc3a] rounded-[24px] shadow-2xl flex items-center justify-center z-20 animate-[bounce_5s_infinite_1s]" style={{ boxShadow: '0 20px 40px -10px rgba(242, 188, 58, 0.5)' }}>
+               <Cast className="w-8 h-8 text-white" strokeWidth={2.5} />
+            </div>
+
+            {/* Floatie 3: Purple circle with play icon */}
+            <div className="absolute bottom-[8%] left-[25%] w-20 h-20 bg-[#8A2BE2] rounded-full shadow-2xl flex items-center justify-center z-20 animate-[bounce_6s_infinite_0.5s]" style={{ boxShadow: '0 20px 40px -10px rgba(138, 43, 226, 0.5)' }}>
+               <Play className="w-8 h-8 text-white ml-1" fill="currentColor" />
+            </div>
+
+            {/* Floatie 4: Mini Player Card */}
+            <div className="absolute bottom-[10%] right-[0%] bg-white/90 backdrop-blur-xl rounded-[28px] p-4 pr-6 shadow-2xl flex items-center gap-5 z-30 min-w-[260px] border border-white">
+              <div className="w-[52px] h-[52px] bg-gray-50 rounded-full flex items-center justify-center p-2 shadow-inner">
+                <div className="w-full h-full bg-[#8A2BE2] rounded-full flex items-center justify-center shadow-sm">
+                  <div className="w-3 h-3 bg-white rounded-full" />
+                </div>
+              </div>
+              <div className="flex-1">
+                <p className="font-extrabold text-[#1a202c] text-[15px] mb-0.5">Top Spenders</p>
+                <p className="text-gray-400 font-medium text-[13px]">Last 7 days</p>
+              </div>
+              <div className="w-12 h-12 bg-[#8A2BE2] rounded-[18px] flex items-center justify-center shadow-lg shadow-purple-500/30">
+                 <div className="flex gap-[3px] items-end h-[14px]">
+                   <div className="w-1.5 h-[8px] bg-white rounded-full" />
+                   <div className="w-1.5 h-[14px] bg-white rounded-full" />
+                 </div>
+              </div>
+            </div>
+            
+          </div>
           
-          {/* Mobile Only: Top Logo */}
-          <div className="md:hidden flex items-center gap-3 mb-10 w-full justify-center">
-            <img src="/logo.svg" alt="Plates logo" className="w-16 h-16 rounded-[22.5%] shadow-md" />
-            <span className="text-[56px] leading-none font-extrabold font-display tracking-tight text-[#1A1A1A]">Plates</span>
-          </div>
-
-          <div className="max-w-md mx-auto md:mx-0 w-full flex flex-col items-center md:items-start">
-            
-            {/* Desktop Only: "Login" Title */}
-            <h2 className="hidden md:block text-3xl md:text-[44px] font-bold text-gray-900 mb-6 md:mb-8 font-display text-center md:text-left">Login</h2>
-            
-            {/* Slogan (Mobile Headline) */}
-            <h3 className="text-[28px] sm:text-3xl md:text-4xl font-bold font-display tracking-tight text-[#1A1A1A] leading-[1.25] mb-3 md:mb-5 text-center md:text-left">
-              Eat together.<br className="hidden md:block"/> Settle later.
-            </h3>
-
-            {/* Description */}
-            <p className="text-gray-500 text-[15px] sm:text-base md:text-lg font-sans-app leading-relaxed mb-6 md:mb-12 max-w-[420px] text-center md:text-left mx-auto md:mx-0">
-              The easiest way to track shared meals, split food tabs in real-time, and settle balances without the math headaches.
-            </p>
-
-            {/* Mobile Only: Illustration */}
-            <div className="md:hidden w-full flex items-center justify-center p-2 mb-8 mt-2">
-              <img
-                src="/welcom-hero.jpeg"
-                alt="Plates Welcome Graphic"
-                className="w-full max-w-[280px] sm:max-w-[320px] h-auto object-contain"
-                loading="eager"
-              />
-            </div>
-
-            {/* Google Sign In Button */}
-            <div className="w-full max-w-[400px] mx-auto md:mx-0 flex flex-col items-center md:items-start">
-              <button
-                type="button"
-                onClick={handleButtonClick}
-                disabled={isSpinning}
-                className="relative overflow-hidden w-full h-[56px] md:h-[64px] bg-[#1A1A1A] hover:bg-[#262626] active:scale-[0.98] text-white rounded-full flex items-center transition-all duration-300 hover:shadow-xl hover:shadow-black/15 cursor-pointer font-sans-app p-1.5 md:p-2 select-none touch-manipulation border border-white/5 disabled:opacity-75 disabled:cursor-not-allowed"
-              >
-                <div className="w-[42px] h-[42px] md:w-[48px] md:h-[48px] bg-white rounded-full flex items-center justify-center shadow-md shrink-0">
-                  <svg width="22" height="22" className="md:w-6 md:h-6" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
-                    <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" />
-                    <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05" />
-                    <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" />
-                  </svg>
-                </div>
-                <div className="flex-1 flex items-center justify-center pr-[42px] md:pr-[48px]">
-                  <span className="text-[16px] md:text-[18px] font-semibold tracking-wide text-white/95">
-                    Continue with Google
-                  </span>
-                </div>
-              </button>
-
-              {isSpinning && (
-                <div className="flex items-center justify-center gap-2 mt-3 text-xs text-gray-600 dark:text-gray-400">
-                  <div className="w-4 h-4 border-2 border-[#1A1A1A] border-t-transparent rounded-full animate-spin" />
-                  <span>Signing in with Google...</span>
-                </div>
-              )}
-
-              {error && (
-                <p className="text-red-500 text-sm font-medium font-sans-app mt-3 text-center md:text-left">{error}</p>
-              )}
+          {/* Floatie 5: Bottom left Profile/Album */}
+          <div className="absolute bottom-[2%] left-[-5%] lg:left-[-15%] z-20 hidden md:block">
+            <div className="flex flex-col items-center gap-6">
+              <div className="w-[140px] h-[140px] rounded-full border-[8px] border-white shadow-2xl overflow-hidden relative bg-[#8A2BE2] group cursor-pointer hover:scale-105 transition-transform duration-300">
+                 <div className="absolute inset-0 flex items-center justify-center">
+                   <Disc3 className="w-16 h-16 text-white/90 group-hover:rotate-180 transition-transform duration-1000 ease-out" strokeWidth={1.5} />
+                   <div className="absolute w-8 h-8 bg-white rounded-full z-10 shadow-inner" />
+                 </div>
+              </div>
+              <div className="bg-white/90 backdrop-blur-xl rounded-2xl px-8 py-4 shadow-xl border border-white text-center">
+                 <p className="text-[10px] font-bold text-gray-400 tracking-[0.15em] uppercase mb-1.5">Featured</p>
+                 <p className="font-extrabold text-gray-900 text-[15px] leading-snug">New groups<br/>for you</p>
+              </div>
             </div>
           </div>
         </div>
 
-      </div>
-
+      </main>
     </div>
   );
 }
