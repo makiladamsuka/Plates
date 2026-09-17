@@ -199,7 +199,7 @@ export function Login() {
   return (
     <div className="h-[100dvh] bg-[#FFFDF8] flex flex-col font-sans-app relative overflow-hidden text-[#1A1A1A]">
       {/* Background radial gradient glow similar to the reference */}
-      <div className="absolute top-0 left-0 w-[800px] h-[800px] bg-purple-200/20 rounded-full blur-[120px] -translate-x-1/2 -translate-y-1/2 pointer-events-none" />
+      <div className="absolute top-0 left-0 w-[800px] h-[800px] bg-gray-200/20 rounded-full blur-[120px] -translate-x-1/2 -translate-y-1/2 pointer-events-none" />
       <div className="absolute bottom-0 right-0 w-[600px] h-[600px] bg-yellow-200/20 rounded-full blur-[100px] translate-x-1/4 translate-y-1/4 pointer-events-none" />
 
       {/* Navbar */}
@@ -215,7 +215,7 @@ export function Login() {
           <button onClick={handleButtonClick} className="hidden sm:block text-[13px] font-bold tracking-widest text-gray-500 hover:text-black uppercase transition-colors font-sans-app">
             Login
           </button>
-          <button onClick={handleButtonClick} className="bg-[#8A2BE2] hover:bg-[#7a22cc] text-white text-[13px] tracking-widest uppercase font-bold py-3 px-8 rounded-full shadow-lg transition-all hover:shadow-xl hover:-translate-y-0.5 font-sans-app">
+          <button onClick={handleButtonClick} className="bg-[#1A1A1A] hover:bg-black text-white text-[13px] tracking-widest uppercase font-bold py-3 px-8 rounded-full shadow-lg transition-all hover:shadow-xl hover:-translate-y-0.5 font-sans-app">
             Sign Up
           </button>
         </div>
@@ -228,22 +228,22 @@ export function Login() {
         <svg className="absolute inset-0 w-full h-full pointer-events-none z-0 hidden lg:block" style={{ strokeDasharray: "5 7" }}>
           {/* Top curve */}
           <path d="M 400 120 Q 550 -20, 800 120 T 1100 100" fill="transparent" stroke="#1A1A1A" strokeWidth="1.5" strokeLinecap="round" className="opacity-[0.15]" />
-          <polygon points="1090,95 1105,100 1090,105" fill="#8A2BE2" className="opacity-70" />
+          <polygon points="1090,95 1105,100 1090,105" fill="#1A1A1A" className="opacity-70" />
           
           {/* Bottom curve */}
           <path d="M 300 520 Q 500 700, 750 480" fill="transparent" stroke="#1A1A1A" strokeWidth="1.5" strokeLinecap="round" className="opacity-[0.15]" />
-          <polygon points="305,510 295,520 310,525" fill="#8A2BE2" className="opacity-70" />
+          <polygon points="305,510 295,520 310,525" fill="#1A1A1A" className="opacity-70" />
         </svg>
 
         {/* Left Column (Text & Input) */}
         <div className="w-full md:w-[45%] flex flex-col justify-center py-10 z-20 relative">
-          <p className="text-[#8A2BE2] font-extrabold text-[13px] tracking-[0.2em] mb-6 uppercase">Settle up smoothly</p>
+          <p className="text-[#1A1A1A] font-extrabold text-[13px] tracking-[0.2em] mb-6 uppercase">Settle up smoothly</p>
           
           <h1 className="text-[52px] lg:text-[80px] leading-[1.05] font-display font-extrabold text-[#1a202c] mb-8 tracking-tight">
             Eat together.<br/>
             Settle{' '}
             <span className="relative inline-block mt-2">
-              <span className="relative z-10 text-[#8A2BE2]">later</span>
+              <span className="relative z-10 text-[#1A1A1A]">later</span>
               {/* Hand-drawn ellipse effect */}
               <svg className="absolute -inset-2 w-[120%] h-[140%] z-0 text-[#f59e0b] opacity-60" viewBox="0 0 100 50" preserveAspectRatio="none">
                 <ellipse cx="50" cy="25" rx="45" ry="20" fill="none" stroke="currentColor" strokeWidth="1.5" strokeDasharray="3 3" className="rotate-[-3deg] origin-center" />
@@ -256,7 +256,7 @@ export function Login() {
           </p>
           
           {/* Action Container (Mimics the email input + button in reference) */}
-          <div className="bg-white rounded-full p-2.5 pl-8 shadow-2xl shadow-purple-900/5 flex items-center justify-between w-full max-w-[540px] h-[88px] relative border border-white/60 backdrop-blur-xl">
+          <div className="bg-white rounded-full p-2.5 pl-8 shadow-2xl shadow-black/5 flex items-center justify-between w-full max-w-[540px] h-[88px] relative border border-white/60 backdrop-blur-xl">
              <div className="flex flex-col flex-1 h-full justify-center">
                <span className="text-[10px] font-bold text-gray-400 tracking-[0.15em] uppercase mb-1">Your Account</span>
                <div className="flex items-center -ml-1">
@@ -268,13 +268,17 @@ export function Login() {
              </div>
              
              {/* Fake 'Sign Up' purple pill to match aesthetic */}
+<<<<<<< HEAD
              <button onClick={handleButtonClick} className="hidden sm:flex items-center justify-center bg-[#8A2BE2] hover:bg-[#7a22cc] text-white text-[15px] font-bold h-full px-10 rounded-full transition-all shadow-md active:scale-95 font-sans-app">
+=======
+             <button onClick={handleCustomButtonClick} className="hidden sm:flex items-center justify-center bg-[#1A1A1A] hover:bg-black text-white text-[15px] font-bold h-full px-10 rounded-full transition-all shadow-md active:scale-95 font-sans-app">
+>>>>>>> 4ff7ce2 (Swap purple elements for black theme and ensure auth bindings)
                Sign Up
              </button>
           </div>
           
           {isSpinning && (
-            <p className="text-sm text-[#8A2BE2] mt-6 animate-pulse font-semibold">Signing in with Google...</p>
+            <p className="text-sm text-[#1A1A1A] mt-6 animate-pulse font-semibold">Signing in with Google...</p>
           )}
           {error && <p className="text-red-500 text-sm mt-6 font-medium">{error}</p>}
         </div>
@@ -303,14 +307,14 @@ export function Login() {
             </div>
 
             {/* Floatie 3: Purple circle with play icon */}
-            <div className="absolute bottom-[8%] left-[25%] w-20 h-20 bg-[#8A2BE2] rounded-full shadow-2xl flex items-center justify-center z-20 animate-[bounce_6s_infinite_0.5s]" style={{ boxShadow: '0 20px 40px -10px rgba(138, 43, 226, 0.5)' }}>
+            <div className="absolute bottom-[8%] left-[25%] w-20 h-20 bg-[#1A1A1A] rounded-full shadow-2xl flex items-center justify-center z-20 animate-[bounce_6s_infinite_0.5s]" style={{ boxShadow: '0 20px 40px -10px rgba(0, 0, 0, 0.5)' }}>
                <Play className="w-8 h-8 text-white ml-1" fill="currentColor" />
             </div>
 
             {/* Floatie 4: Mini Player Card */}
             <div className="absolute bottom-[10%] right-[0%] bg-white/90 backdrop-blur-xl rounded-[28px] p-4 pr-6 shadow-2xl flex items-center gap-5 z-30 min-w-[260px] border border-white">
               <div className="w-[52px] h-[52px] bg-gray-50 rounded-full flex items-center justify-center p-2 shadow-inner">
-                <div className="w-full h-full bg-[#8A2BE2] rounded-full flex items-center justify-center shadow-sm">
+                <div className="w-full h-full bg-[#1A1A1A] rounded-full flex items-center justify-center shadow-sm">
                   <div className="w-3 h-3 bg-white rounded-full" />
                 </div>
               </div>
@@ -318,7 +322,7 @@ export function Login() {
                 <p className="font-extrabold text-[#1a202c] text-[15px] mb-0.5">Top Spenders</p>
                 <p className="text-gray-400 font-medium text-[13px]">Last 7 days</p>
               </div>
-              <div className="w-12 h-12 bg-[#8A2BE2] rounded-[18px] flex items-center justify-center shadow-lg shadow-purple-500/30">
+              <div className="w-12 h-12 bg-[#1A1A1A] rounded-[18px] flex items-center justify-center shadow-lg shadow-black/30">
                  <div className="flex gap-[3px] items-end h-[14px]">
                    <div className="w-1.5 h-[8px] bg-white rounded-full" />
                    <div className="w-1.5 h-[14px] bg-white rounded-full" />
@@ -331,7 +335,7 @@ export function Login() {
           {/* Floatie 5: Bottom left Profile/Album */}
           <div className="absolute bottom-[2%] left-[-5%] lg:left-[-15%] z-20 hidden md:block">
             <div className="flex flex-col items-center gap-6">
-              <div className="w-[140px] h-[140px] rounded-full border-[8px] border-white shadow-2xl overflow-hidden relative bg-[#8A2BE2] group cursor-pointer hover:scale-105 transition-transform duration-300">
+              <div className="w-[140px] h-[140px] rounded-full border-[8px] border-white shadow-2xl overflow-hidden relative bg-[#1A1A1A] group cursor-pointer hover:scale-105 transition-transform duration-300">
                  <div className="absolute inset-0 flex items-center justify-center">
                    <Disc3 className="w-16 h-16 text-white/90 group-hover:rotate-180 transition-transform duration-1000 ease-out" strokeWidth={1.5} />
                    <div className="absolute w-8 h-8 bg-white rounded-full z-10 shadow-inner" />
