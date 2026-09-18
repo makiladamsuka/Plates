@@ -243,15 +243,13 @@ export function Login() {
       <main className="flex-1 flex flex-col items-center justify-center px-4 sm:px-6 py-2 z-10 relative shrink min-h-0">
         <div className="max-w-2xl w-full text-center space-y-6 md:space-y-8">
           
-          {/* Logo Mark (Fixed in place, no float or bounce) */}
+          {/* Logo Mark */}
           <div className="flex justify-center">
-            <div className="w-20 h-20 md:w-24 md:h-24 bg-[#1A1A1C] border border-[#2A2A2E] rounded-[22.5%] p-2.5 shadow-2xl flex items-center justify-center">
-              <img 
-                src="/logo.svg" 
-                alt="Plates" 
-                className="w-full h-full rounded-[22.5%] object-contain"
-              />
-            </div>
+            <img 
+              src="/logo.svg" 
+              alt="Plates" 
+              className="w-20 h-20 md:w-24 md:h-24 rounded-[22.5%] shadow-2xl object-contain"
+            />
           </div>
 
           {/* Typography & Copy */}
