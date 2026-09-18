@@ -15,6 +15,7 @@ import { LiveNotificationPopup, type LiveAlert } from './components/LiveNotifica
 import { IncomingBillModal } from './components/IncomingBillModal';
 import { IncomingFriendRequestModal } from './components/IncomingFriendRequestModal';
 import { SetUsernameModal } from './components/SetUsernameModal';
+import { InstallAppBanner } from './components/InstallAppBanner';
 import { supabase } from './lib/supabase';
 import { api } from './services/api';
 
@@ -519,6 +520,9 @@ function App() {
           setIsSetUsernameOpen(false);
         }}
       />
+
+      {/* PWA Mobile Install Prompt Banner */}
+      <InstallAppBanner />
       </main>
 
       {/* Shared Bottom Navigation Dock (fixed to viewport across all pages) */}
