@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { supabase } from '../lib/supabase';
-import { Play, Cast, Disc3 } from 'lucide-react';
+import { ShieldCheck, Zap, Loader2 } from 'lucide-react';
 
 const GOOGLE_CLIENT_ID = (
   import.meta.env.VITE_GOOGLE_CLIENT_ID ||
@@ -24,9 +24,9 @@ async function generateNonce(): Promise<[string, string]> {
 export function Login() {
   const [isSpinning, setIsSpinning] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [isGsiReady, setIsGsiReady] = useState(false);
   const rawNonceRef = useRef<string>('');
-  const googleBtnRef = useRef<HTMLDivElement>(null);
+  const plate1Ref = useRef<HTMLDivElement>(null);
+  const plate2Ref = useRef<HTMLDivElement>(null);
 
   const initiateOAuthPopup = async () => {
     try {
@@ -89,6 +89,21 @@ export function Login() {
   useEffect(() => {
     let isMounted = true;
 
+    // Subtle parallax effect on macro-plate backgrounds
+    const handleMouseMove = (e: MouseEvent) => {
+      const x = e.clientX / window.innerWidth;
+      const y = e.clientY / window.innerHeight;
+
+      if (plate1Ref.current) {
+        plate1Ref.current.style.transform = `translate(${x * -20}px, ${y * -20}px)`;
+      }
+      if (plate2Ref.current) {
+        plate2Ref.current.style.transform = `translate(${x * 25}px, ${y * 25}px)`;
+      }
+    };
+
+    window.addEventListener('mousemove', handleMouseMove);
+
     const setupGoogleIdentity = async () => {
       try {
         const [rawNonce, hashedNonce] = await generateNonce();
@@ -104,7 +119,6 @@ export function Login() {
             const googleAccounts = (window as any).google.accounts.id;
             const baseUrl = (import.meta.env.VITE_APP_URL || window.location.origin).replace(/\/+$/, '');
             const loginUri = `${baseUrl}/auth/callback`;
-
 
             try {
               googleAccounts.initialize({
@@ -138,42 +152,10 @@ export function Login() {
                 auto_select: false,
               });
 
-              if (googleBtnRef.current) {
-                googleAccounts.renderButton(googleBtnRef.current, {
-                  type: 'standard',
-                  theme: 'outline',
-                  size: 'large',
-                  text: 'continue_with',
-                  shape: 'pill',
-                  logo_alignment: 'left',
-                });
-              }
-              setIsGsiReady(true);
-
-              // Trigger One Tap / FedCM prompt (Top-right on desktop, bottom-sheet on mobile)
+              // Prompt One Tap / FedCM prompt
               try {
-                googleAccounts.prompt((notification: any) => {
-                  if (notification?.isDisplayed?.()) {
-                    console.log('[auth] Google One Tap prompt displayed.');
-                  } else if (notification?.isNotDisplayed?.()) {
-                    console.log(
-                      '[auth] Google One Tap not displayed reason:',
-                      notification.getNotDisplayedReason?.() || 'unknown'
-                    );
-                  } else if (notification?.isSkippedMoment?.()) {
-                    console.log(
-                      '[auth] Google One Tap skipped reason:',
-                      notification.getSkippedReason?.() || 'unknown'
-                    );
-                  } else if (notification?.isDismissedMoment?.()) {
-                    console.log(
-                      '[auth] Google One Tap dismissed reason:',
-                      notification.getDismissedReason?.() || 'unknown'
-                    );
-                  }
-                });
+                googleAccounts.prompt();
               } catch (promptErr) {
-                // Silently handle prompt errors so page never crashes
                 console.warn('[auth] GSI prompt notice:', promptErr);
               }
             } catch (initErr) {
@@ -186,7 +168,6 @@ export function Login() {
 
         checkGsi();
       } catch (err: any) {
-        // Defensive catch for subtle crypto / nonce generation issues
         console.warn('[auth] GSI setup notice:', err);
       }
     };
@@ -202,164 +183,138 @@ export function Login() {
 
     return () => {
       isMounted = false;
+      window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('message', handleMessage);
     };
   }, []);
 
-  const handleButtonClick = () => {
-    initiateOAuthPopup();
-  };
-
   return (
-    <div className="h-[100dvh] bg-[#FFFDF8] flex flex-col font-sans-app relative overflow-hidden text-[#1A1A1A]">
-      {/* Background radial gradient glow similar to the reference */}
-      <div className="absolute top-0 left-0 w-[800px] h-[800px] bg-gray-200/20 rounded-full blur-[120px] -translate-x-1/2 -translate-y-1/2 pointer-events-none" />
-      <div className="absolute bottom-0 right-0 w-[600px] h-[600px] bg-yellow-200/20 rounded-full blur-[100px] translate-x-1/4 translate-y-1/4 pointer-events-none" />
+    <div className="h-[100dvh] max-h-screen bg-[#0F0F11] text-[#F3F4F6] flex flex-col justify-between font-['Plus_Jakarta_Sans',sans-serif] selection:bg-white selection:text-black relative overflow-hidden select-none">
+      {/* Subtle Noise Texture Overlay */}
+      <div 
+        className="fixed inset-0 pointer-events-none opacity-[0.03] z-0"
+        style={{
+          backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")`
+        }}
+      />
 
-      {/* Navbar */}
-      <header className="w-full flex items-center justify-between px-6 py-6 md:px-12 md:py-8 z-20 relative max-w-[1440px] mx-auto shrink-0">
+      {/* Macro Plate Glowing Background 1 (Top-Right) */}
+      <div 
+        ref={plate1Ref}
+        className="fixed -top-[20vh] -right-[20vw] w-[80vw] h-[80vw] rounded-full pointer-events-none z-0 transition-transform duration-300 ease-out"
+        style={{
+          background: 'radial-gradient(circle, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0) 70%)',
+          border: '1px solid rgba(255,255,255,0.03)',
+          boxShadow: 'inset 0 0 100px rgba(0,0,0,0.5)',
+        }}
+      />
+
+      {/* Macro Plate Glowing Background 2 (Bottom-Left) */}
+      <div 
+        ref={plate2Ref}
+        className="fixed -bottom-[30vh] -left-[10vw] w-[60vw] h-[60vw] rounded-full pointer-events-none z-0 transition-transform duration-300 ease-out"
+        style={{
+          background: 'radial-gradient(circle, rgba(255,255,255,0.025) 0%, rgba(255,255,255,0) 70%)',
+          border: '1px solid rgba(255,255,255,0.015)',
+        }}
+      />
+
+      {/* Navigation Header */}
+      <header className="w-full px-6 py-4 md:px-12 md:py-6 flex justify-between items-center z-10 relative max-w-7xl mx-auto shrink-0">
         <div className="flex items-center gap-2.5">
-          <img src="/logo.svg" alt="Plates logo" className="w-12 h-12 rounded-[22.5%] shadow-sm" />
-          <span className="text-3xl font-extrabold font-display tracking-tight text-[#1A1A1A]">Plates</span>
+          <img 
+            src="/logo.svg" 
+            alt="Plates logo" 
+            className="w-9 h-9 rounded-[22.5%] shadow-sm"
+          />
+          <span className="font-display text-2xl md:text-3xl font-bold tracking-tight text-white">Plates</span>
         </div>
         
-        {/* Nav Links Removed per single-page focus */}
-        
-        <div className="flex items-center gap-6">
-          <button onClick={handleButtonClick} className="hidden sm:block text-[13px] font-bold tracking-widest text-gray-500 hover:text-black uppercase transition-colors font-sans-app">
-            Login
-          </button>
-          <button onClick={handleButtonClick} className="bg-[#1A1A1A] hover:bg-black text-white text-[13px] tracking-widest uppercase font-bold py-3 px-8 rounded-full shadow-lg transition-all hover:shadow-xl hover:-translate-y-0.5 font-sans-app">
-            Sign Up
-          </button>
-        </div>
+        <button 
+          onClick={initiateOAuthPopup}
+          disabled={isSpinning}
+          className="text-sm font-medium text-[#9CA3AF] hover:text-white transition-colors duration-200 cursor-pointer disabled:opacity-50"
+        >
+          Sign In
+        </button>
       </header>
 
-      {/* Main Content */}
-      <main className="flex-1 w-full max-w-[1440px] mx-auto flex flex-col md:flex-row relative z-10 px-6 md:px-12 lg:px-24">
-        
-        {/* SVG Decorative Lines (Absolute, behind content) */}
-        <svg className="absolute inset-0 w-full h-full pointer-events-none z-0 hidden lg:block" style={{ strokeDasharray: "5 7" }}>
-          {/* Top curve */}
-          <path d="M 400 120 Q 550 -20, 800 120 T 1100 100" fill="transparent" stroke="#1A1A1A" strokeWidth="1.5" strokeLinecap="round" className="opacity-[0.15]" />
-          <polygon points="1090,95 1105,100 1090,105" fill="#1A1A1A" className="opacity-70" />
+      {/* Main Content Area (Comfortably fits in one viewport without scroll) */}
+      <main className="flex-1 flex flex-col items-center justify-center px-4 sm:px-6 py-2 z-10 relative shrink min-h-0">
+        <div className="max-w-2xl w-full text-center space-y-6 md:space-y-8">
           
-          {/* Bottom curve */}
-          <path d="M 300 520 Q 500 700, 750 480" fill="transparent" stroke="#1A1A1A" strokeWidth="1.5" strokeLinecap="round" className="opacity-[0.15]" />
-          <polygon points="305,510 295,520 310,525" fill="#1A1A1A" className="opacity-70" />
-        </svg>
-
-        {/* Left Column (Text & Input) */}
-        <div className="w-full md:w-[45%] flex flex-col justify-center py-10 z-20 relative">
-          <p className="text-[#1A1A1A] font-extrabold text-[13px] tracking-[0.2em] mb-6 uppercase">Settle up smoothly</p>
-          
-          <h1 className="text-[52px] lg:text-[80px] leading-[1.05] font-display font-extrabold text-[#1a202c] mb-8 tracking-tight">
-            Eat together.<br/>
-            Settle{' '}
-            <span className="relative inline-block mt-2">
-              <span className="relative z-10 text-[#1A1A1A]">later</span>
-              {/* Hand-drawn ellipse effect */}
-              <svg className="absolute -inset-2 w-[120%] h-[140%] z-0 text-[#f59e0b] opacity-60" viewBox="0 0 100 50" preserveAspectRatio="none">
-                <ellipse cx="50" cy="25" rx="45" ry="20" fill="none" stroke="currentColor" strokeWidth="1.5" strokeDasharray="3 3" className="rotate-[-3deg] origin-center" />
-              </svg>
-            </span>.
-          </h1>
-          
-          <p className="text-gray-500 font-sans-app font-medium text-lg lg:text-xl max-w-[420px] mb-12 leading-relaxed">
-            The easiest way to track shared meals, split food tabs in real-time, and settle balances without the math headaches.
-          </p>
-          
-          {/* Action Container (Mimics the email input + button in reference) */}
-          <div className="bg-white rounded-full p-2.5 pl-8 shadow-2xl shadow-black/5 flex items-center justify-between w-full max-w-[540px] h-[88px] relative border border-white/60 backdrop-blur-xl">
-             <div className="flex flex-col flex-1 h-full justify-center">
-               <span className="text-[10px] font-bold text-gray-400 tracking-[0.15em] uppercase mb-1">Your Account</span>
-               <div className="flex items-center -ml-1">
-                 <div ref={googleBtnRef} className="min-h-[40px] transform-gpu origin-left scale-[0.85]" />
-                 {!isGsiReady && (
-                   <span className="text-sm font-semibold text-gray-800 py-2">Loading Google Login...</span>
-                 )}
-               </div>
-             </div>
-             
-             {/* Sign Up pill to match aesthetic */}
-             <button onClick={handleButtonClick} className="hidden sm:flex items-center justify-center bg-[#1A1A1A] hover:bg-black text-white text-[15px] font-bold h-full px-10 rounded-full transition-all shadow-md active:scale-95 font-sans-app">
-               Sign Up
-             </button>
+          {/* Logo Mark (Fixed in place, no float or bounce) */}
+          <div className="flex justify-center">
+            <div className="w-20 h-20 md:w-24 md:h-24 bg-[#1A1A1C] border border-[#2A2A2E] rounded-[22.5%] p-2.5 shadow-2xl flex items-center justify-center">
+              <img 
+                src="/logo.svg" 
+                alt="Plates" 
+                className="w-full h-full rounded-[22.5%] object-contain"
+              />
+            </div>
           </div>
-          
-          {isSpinning && (
-            <p className="text-sm text-[#1A1A1A] mt-6 animate-pulse font-semibold">Signing in with Google...</p>
+
+          {/* Typography & Copy */}
+          <div className="space-y-3">
+            <h1 className="font-display text-4xl sm:text-5xl md:text-6xl font-bold text-white tracking-tight leading-[1.12]">
+              Split the bill,<br/> 
+              <span className="text-[#9CA3AF] italic font-normal">not the friendship.</span>
+            </h1>
+            <p className="text-sm md:text-base text-[#9CA3AF] max-w-md mx-auto font-medium leading-relaxed">
+              The elegant way to divide dining tabs, track shared expenses, and settle up with zero friction.
+            </p>
+          </div>
+
+          {/* Single Google Sign In Button */}
+          <div className="flex justify-center pt-2">
+            <button 
+              onClick={initiateOAuthPopup}
+              disabled={isSpinning}
+              className="w-full sm:w-auto px-8 py-3.5 bg-[#F9F9F9] hover:bg-[#E5E7EB] text-[#0F0F11] font-semibold rounded-full transition-all duration-200 shadow-[0_0_20px_rgba(255,255,255,0.1)] hover:shadow-[0_0_30px_rgba(255,255,255,0.2)] text-sm md:text-base flex items-center justify-center gap-3 cursor-pointer active:scale-95 disabled:opacity-80"
+            >
+              {isSpinning ? (
+                <>
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                  <span>Signing In...</span>
+                </>
+              ) : (
+                <>
+                  <svg className="w-5 h-5 shrink-0" viewBox="0 0 24 24">
+                    <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
+                    <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" />
+                    <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05" />
+                    <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" />
+                  </svg>
+                  <span>Sign in with Google</span>
+                </>
+              )}
+            </button>
+          </div>
+
+          {error && (
+            <p className="text-red-400 text-sm font-medium mt-2">{error}</p>
           )}
-          {error && <p className="text-red-500 text-sm mt-6 font-medium">{error}</p>}
-        </div>
 
-        {/* Right Column (3D Graphic & Floaties) */}
-        <div className="w-full md:w-[55%] flex items-center justify-center relative z-10 min-h-[500px] mt-12 md:mt-0">
-          
-          {/* The generated 3D image with a large circular background container */}
-          <div className="relative w-full max-w-[650px] aspect-square flex items-center justify-center">
-            
-            {/* The actual image */}
-            <img 
-              src="/rock_on_hand.jpg" 
-              alt="Rock on 3D hand"
-              className="w-[110%] h-[110%] max-w-none object-contain mix-blend-multiply drop-shadow-2xl z-10" 
-            />
-
-            {/* Floatie 1: Yellow square with cast icon */}
-            <div className="absolute top-[15%] left-[10%] w-[72px] h-[72px] bg-[#f2bc3a] rounded-[24px] shadow-2xl flex items-center justify-center z-20 animate-[bounce_4s_infinite]" style={{ boxShadow: '0 20px 40px -10px rgba(242, 188, 58, 0.5)' }}>
-               <div className="w-4 h-4 rounded-full bg-white/40 ring-4 ring-white" />
+          {/* Social Proof / Mini Stats */}
+          <div className="pt-4 flex items-center justify-center gap-6 text-xs font-medium text-[#9CA3AF]">
+            <div className="flex items-center gap-2">
+              <ShieldCheck className="w-4 h-4 text-[#2A2A2E]" />
+              <span>Secure & Private</span>
             </div>
-
-            {/* Floatie 2: Yellow square with cast icon on right */}
-            <div className="absolute right-[5%] top-[45%] w-[72px] h-[72px] bg-[#f2bc3a] rounded-[24px] shadow-2xl flex items-center justify-center z-20 animate-[bounce_5s_infinite_1s]" style={{ boxShadow: '0 20px 40px -10px rgba(242, 188, 58, 0.5)' }}>
-               <Cast className="w-8 h-8 text-white" strokeWidth={2.5} />
-            </div>
-
-            {/* Floatie 3: Purple circle with play icon */}
-            <div className="absolute bottom-[8%] left-[25%] w-20 h-20 bg-[#1A1A1A] rounded-full shadow-2xl flex items-center justify-center z-20 animate-[bounce_6s_infinite_0.5s]" style={{ boxShadow: '0 20px 40px -10px rgba(0, 0, 0, 0.5)' }}>
-               <Play className="w-8 h-8 text-white ml-1" fill="currentColor" />
-            </div>
-
-            {/* Floatie 4: Mini Player Card */}
-            <div className="absolute bottom-[10%] right-[0%] bg-white/90 backdrop-blur-xl rounded-[28px] p-4 pr-6 shadow-2xl flex items-center gap-5 z-30 min-w-[260px] border border-white">
-              <div className="w-[52px] h-[52px] bg-gray-50 rounded-full flex items-center justify-center p-2 shadow-inner">
-                <div className="w-full h-full bg-[#1A1A1A] rounded-full flex items-center justify-center shadow-sm">
-                  <div className="w-3 h-3 bg-white rounded-full" />
-                </div>
-              </div>
-              <div className="flex-1">
-                <p className="font-extrabold text-[#1a202c] text-[15px] mb-0.5">Top Spenders</p>
-                <p className="text-gray-400 font-medium text-[13px]">Last 7 days</p>
-              </div>
-              <div className="w-12 h-12 bg-[#1A1A1A] rounded-[18px] flex items-center justify-center shadow-lg shadow-black/30">
-                 <div className="flex gap-[3px] items-end h-[14px]">
-                   <div className="w-1.5 h-[8px] bg-white rounded-full" />
-                   <div className="w-1.5 h-[14px] bg-white rounded-full" />
-                 </div>
-              </div>
-            </div>
-            
-          </div>
-          
-          {/* Floatie 5: Bottom left Profile/Album */}
-          <div className="absolute bottom-[2%] left-[-5%] lg:left-[-15%] z-20 hidden md:block">
-            <div className="flex flex-col items-center gap-6">
-              <div className="w-[140px] h-[140px] rounded-full border-[8px] border-white shadow-2xl overflow-hidden relative bg-[#1A1A1A] group cursor-pointer hover:scale-105 transition-transform duration-300">
-                 <div className="absolute inset-0 flex items-center justify-center">
-                   <Disc3 className="w-16 h-16 text-white/90 group-hover:rotate-180 transition-transform duration-1000 ease-out" strokeWidth={1.5} />
-                   <div className="absolute w-8 h-8 bg-white rounded-full z-10 shadow-inner" />
-                 </div>
-              </div>
-              <div className="bg-white/90 backdrop-blur-xl rounded-2xl px-8 py-4 shadow-xl border border-white text-center">
-                 <p className="text-[10px] font-bold text-gray-400 tracking-[0.15em] uppercase mb-1.5">Featured</p>
-                 <p className="font-extrabold text-gray-900 text-[15px] leading-snug">New groups<br/>for you</p>
-              </div>
+            <div className="w-1 h-1 rounded-full bg-[#2A2A2E]" />
+            <div className="flex items-center gap-2">
+              <Zap className="w-4 h-4 text-[#2A2A2E]" />
+              <span>Instant Settlements</span>
             </div>
           </div>
-        </div>
 
+        </div>
       </main>
+
+      {/* Footer */}
+      <footer className="w-full py-4 text-center text-xs text-[#9CA3AF] z-10 relative shrink-0">
+        <p>&copy; {new Date().getFullYear()} Plates App. All rights reserved.</p>
+      </footer>
     </div>
   );
 }
