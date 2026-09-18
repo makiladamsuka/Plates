@@ -23,13 +23,15 @@ async function generateNonce(): Promise<[string, string]> {
 
 export function Login() {
   const [isSpinning, setIsSpinning] = useState(false);
+  const [authMode, setAuthMode] = useState<'signup' | 'signin'>('signup');
   const [error, setError] = useState<string | null>(null);
   const rawNonceRef = useRef<string>('');
   const plate1Ref = useRef<HTMLDivElement>(null);
   const plate2Ref = useRef<HTMLDivElement>(null);
 
-  const initiateOAuthPopup = async () => {
+  const initiateOAuthPopup = async (mode: 'signup' | 'signin' = 'signup') => {
     try {
+      setAuthMode(mode);
       setIsSpinning(true);
       setError(null);
 
@@ -231,7 +233,7 @@ export function Login() {
         </div>
         
         <button 
-          onClick={initiateOAuthPopup}
+          onClick={() => initiateOAuthPopup('signup')}
           disabled={isSpinning}
           className="text-sm font-medium text-[#9CA3AF] hover:text-white transition-colors duration-200 cursor-pointer disabled:opacity-50"
         >
@@ -263,17 +265,17 @@ export function Login() {
             </p>
           </div>
 
-          {/* Single Google Sign In Button */}
+          {/* Single Google Sign Up Button */}
           <div className="flex justify-center pt-2">
             <button 
-              onClick={initiateOAuthPopup}
+              onClick={() => initiateOAuthPopup('signup')}
               disabled={isSpinning}
               className="w-full sm:w-auto px-8 py-3.5 bg-[#F9F9F9] hover:bg-[#E5E7EB] text-[#0F0F11] font-semibold rounded-full transition-all duration-200 shadow-[0_0_20px_rgba(255,255,255,0.1)] hover:shadow-[0_0_30px_rgba(255,255,255,0.2)] text-sm md:text-base flex items-center justify-center gap-3 cursor-pointer active:scale-95 disabled:opacity-80"
             >
               {isSpinning ? (
                 <>
                   <Loader2 className="w-5 h-5 animate-spin" />
-                  <span>Signing In...</span>
+                  <span>{authMode === 'signup' ? 'Signing Up...' : 'Signing In...'}</span>
                 </>
               ) : (
                 <>
@@ -283,7 +285,7 @@ export function Login() {
                     <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05" />
                     <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" />
                   </svg>
-                  <span>Sign in with Google</span>
+                  <span>Sign up with Google</span>
                 </>
               )}
             </button>
