@@ -248,7 +248,7 @@ export function Login() {
             <img 
               src="/logo.svg" 
               alt="Plates" 
-              className="w-20 h-20 md:w-24 md:h-24 rounded-[22.5%] shadow-2xl object-contain"
+              className="w-28 h-28 md:w-36 md:h-36 rounded-[22.5%] shadow-2xl object-contain"
             />
           </div>
 
