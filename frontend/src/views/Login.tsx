@@ -235,7 +235,7 @@ export function Login() {
           disabled={isSpinning}
           className="text-sm font-medium text-[#9CA3AF] hover:text-white transition-colors duration-200 cursor-pointer disabled:opacity-50"
         >
-          Sign In
+          Sign Up
         </button>
       </header>
 
