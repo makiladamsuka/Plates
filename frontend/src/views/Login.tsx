@@ -24,7 +24,9 @@ async function generateNonce(): Promise<[string, string]> {
 export function Login() {
   const [isSpinning, setIsSpinning] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isGsiReady, setIsGsiReady] = useState(false);
   const rawNonceRef = useRef<string>('');
+  const googleBtnRef = useRef<HTMLDivElement>(null);
 
   const initiateOAuthPopup = async () => {
     try {
@@ -135,6 +137,18 @@ export function Login() {
                 use_fedcm_for_prompt: true,
                 auto_select: false,
               });
+
+              if (googleBtnRef.current) {
+                googleAccounts.renderButton(googleBtnRef.current, {
+                  type: 'standard',
+                  theme: 'outline',
+                  size: 'large',
+                  text: 'continue_with',
+                  shape: 'pill',
+                  logo_alignment: 'left',
+                });
+              }
+              setIsGsiReady(true);
 
               // Trigger One Tap / FedCM prompt (Top-right on desktop, bottom-sheet on mobile)
               try {
@@ -267,12 +281,8 @@ export function Login() {
                </div>
              </div>
              
-             {/* Fake 'Sign Up' purple pill to match aesthetic */}
-<<<<<<< HEAD
-             <button onClick={handleButtonClick} className="hidden sm:flex items-center justify-center bg-[#8A2BE2] hover:bg-[#7a22cc] text-white text-[15px] font-bold h-full px-10 rounded-full transition-all shadow-md active:scale-95 font-sans-app">
-=======
-             <button onClick={handleCustomButtonClick} className="hidden sm:flex items-center justify-center bg-[#1A1A1A] hover:bg-black text-white text-[15px] font-bold h-full px-10 rounded-full transition-all shadow-md active:scale-95 font-sans-app">
->>>>>>> 4ff7ce2 (Swap purple elements for black theme and ensure auth bindings)
+             {/* Sign Up pill to match aesthetic */}
+             <button onClick={handleButtonClick} className="hidden sm:flex items-center justify-center bg-[#1A1A1A] hover:bg-black text-white text-[15px] font-bold h-full px-10 rounded-full transition-all shadow-md active:scale-95 font-sans-app">
                Sign Up
              </button>
           </div>
