@@ -218,9 +218,9 @@ export function Login() {
 
       {/* Navbar */}
       <header className="w-full flex items-center justify-between px-6 py-6 md:px-12 md:py-8 z-20 relative max-w-[1440px] mx-auto shrink-0">
-        <div className="flex items-center gap-3">
-          <img src="/logo.svg" alt="Plates logo" className="w-8 h-8 rounded-[22.5%] shadow-sm" />
-          <span className="text-2xl font-extrabold font-display tracking-tight text-[#1A1A1A]">Plates</span>
+        <div className="flex items-center gap-2.5">
+          <img src="/logo.svg" alt="Plates logo" className="w-12 h-12 rounded-[22.5%] shadow-sm" />
+          <span className="text-3xl font-extrabold font-display tracking-tight text-[#1A1A1A]">Plates</span>
         </div>
         
         {/* Nav Links Removed per single-page focus */}
