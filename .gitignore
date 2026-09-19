@@ -32,8 +32,16 @@ backend/.env.local
 !.vscode/extensions.json
 .idea
 .DS_Store
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-*.sw?
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+backend/venv/
+backend-py/venv/
+.venv/
+env/
+.pytest_cache/
+
