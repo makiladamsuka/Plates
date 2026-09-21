@@ -203,7 +203,8 @@ export function Home({
       {/* Top Header Container */}
       <div className="px-6 pt-10 pb-4 h-[88px] flex justify-between items-center max-w-[480px] md:max-w-6xl md:px-10 mx-auto md:hidden">
         <div className="flex items-center gap-2">
-          <img src="/logo.svg" alt="Plates logo" className="w-16 h-16 rounded-[22.5%] shrink-0 shadow-sm" />
+          <img src="/logo-light.svg" alt="Plates logo" className="w-16 h-16 shrink-0 dark:hidden" />
+          <img src="/logo.svg" alt="Plates logo" className="w-16 h-16 rounded-[22.5%] shrink-0 shadow-sm hidden dark:block" />
           <h1 className="text-black dark:text-zinc-100 text-5xl font-extrabold font-display tracking-tight leading-none">Plates</h1>
         </div>
         <button 
