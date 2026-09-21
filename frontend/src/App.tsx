@@ -16,6 +16,7 @@ import { IncomingBillModal } from './components/IncomingBillModal';
 import { IncomingFriendRequestModal } from './components/IncomingFriendRequestModal';
 import { SetUsernameModal } from './components/SetUsernameModal';
 import { InstallAppBanner } from './components/InstallAppBanner';
+import { LoadingScreen } from './components/LoadingScreen';
 import { supabase } from './lib/supabase';
 import { api } from './services/api';
 
@@ -351,7 +352,7 @@ function App() {
   };
 
   if (isInitializing) {
-    return <div className="min-h-screen bg-[#EDEDF1] dark:bg-zinc-950 flex items-center justify-center"><div className="text-black dark:text-zinc-100 font-['Sora']">Loading...</div></div>;
+    return <LoadingScreen />;
   }
 
   if (!session) {

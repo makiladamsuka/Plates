@@ -106,3 +106,49 @@ html.dark * {
 .animate-shimmer {
   animation: shimmer-sweep 1.8s infinite ease-in-out;
 }
+
+/* Material You Indeterminate Spinner & Animations */
+@keyframes material-spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes material-dash {
+  0% {
+    stroke-dasharray: 1, 280;
+    stroke-dashoffset: 0;
+  }
+  50% {
+    stroke-dasharray: 190, 280;
+    stroke-dashoffset: -40;
+  }
+  100% {
+    stroke-dasharray: 190, 280;
+    stroke-dashoffset: -276;
+  }
+}
+
+@keyframes gentle-breathe {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+}
+
+.animate-material-spin {
+  animation: material-spin 1.8s linear infinite;
+}
+
+.animate-material-dash {
+  animation: material-dash 1.8s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+.animate-gentle-breathe {
+  animation: gentle-breathe 2.4s ease-in-out infinite;
+}
