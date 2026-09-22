@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Search, X } from 'lucide-react';
 import { useData } from '../lib/DataContext';
 import { NewBillModal } from '../components/NewBillModal';
 
@@ -41,6 +42,8 @@ export function BillsList({ onBillClick, session }: BillsListProps) {
   const userId = session?.user?.id || '';
   const [isNewBillModalOpen, setIsNewBillModalOpen] = useState(false);
   const [sortKey, setSortKey] = useState<SortKey>('all');
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
   const sortedBills = [...bills].sort((a, b) => {
     const timeA = new Date(a.created_at || a.createdAt || Date.now()).getTime();
@@ -51,6 +54,20 @@ export function BillsList({ onBillClick, session }: BillsListProps) {
     return timeB - timeA;
   });
 
+  const filteredBills = sortedBills.filter(bill => {
+    if (!searchQuery.trim()) return true;
+    const query = searchQuery.toLowerCase().trim();
+    const matchTitle = (bill.title || '').toLowerCase().includes(query);
+    const matchCategory = (bill.category || '').toLowerCase().includes(query);
+    const matchTotal = bill.total?.toString().includes(query);
+    const matchStatus = (bill.status || '').toLowerCase().includes(query);
+    const matchParticipants = (bill.participants || []).some((p: any) => {
+      const name = (p.full_name || p.profile?.full_name || p.name || '').toLowerCase();
+      return name.includes(query);
+    });
+    return matchTitle || matchCategory || matchTotal || matchStatus || matchParticipants;
+  });
+
   return (
     <div className="min-h-screen bg-[#EDEDF1] dark:bg-zinc-950 pb-32 font-['Sora'] transition-colors">
       
@@ -59,13 +76,45 @@ export function BillsList({ onBillClick, session }: BillsListProps) {
         <div className="max-w-[480px] md:max-w-6xl mx-auto px-5 md:px-10 pt-10 pb-3">
           <div className="flex justify-between items-center h-10 mb-3">
             <h1 className="text-black dark:text-zinc-100 text-4xl sm:text-5xl font-extrabold font-display tracking-tight leading-none">Bills</h1>
-            <div className="w-8 h-8 flex items-center justify-center">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-black dark:text-zinc-100">
-                <circle cx="11" cy="11" r="8" />
-                <path d="M21 21l-4.35-4.35" />
-              </svg>
-            </div>
+            <button 
+              onClick={() => {
+                setIsSearchOpen(prev => !prev);
+                if (isSearchOpen) setSearchQuery('');
+              }}
+              className="w-9 h-9 rounded-full flex items-center justify-center hover:bg-black/5 dark:hover:bg-white/5 transition-colors cursor-pointer text-black dark:text-zinc-100 active:scale-95"
+              title={isSearchOpen ? "Close search" : "Search bills"}
+            >
+              {isSearchOpen ? (
+                <X size={22} strokeWidth={2.5} />
+              ) : (
+                <Search size={22} strokeWidth={2.5} />
+              )}
+            </button>
           </div>
+
+          {/* Search Input Bar */}
+          {isSearchOpen && (
+            <div className="w-full flex items-center bg-[#D9D9D9]/80 dark:bg-zinc-900/80 rounded-[30px] px-4 py-2.5 mb-3 shadow-sm border border-transparent dark:border-white/5 transition-all">
+              <Search size={18} strokeWidth={2.5} className="text-black/60 dark:text-zinc-400 mr-2.5 shrink-0" />
+              <input
+                type="text"
+                placeholder="Search by title, category, friend..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                autoFocus
+                className="bg-transparent text-[#1A1A1A] dark:text-zinc-100 placeholder:text-black/50 dark:placeholder:text-zinc-500 text-sm font-medium outline-none w-full"
+              />
+              {searchQuery && (
+                <button 
+                  onClick={() => setSearchQuery('')}
+                  className="text-black/40 hover:text-black dark:text-zinc-400 dark:hover:text-zinc-100 p-1 cursor-pointer"
+                  title="Clear search"
+                >
+                  <X size={16} />
+                </button>
+              )}
+            </div>
+          )}
 
           {/* Filter Tabs */}
           <div className="flex gap-2 overflow-x-auto no-scrollbar">
@@ -94,7 +143,7 @@ export function BillsList({ onBillClick, session }: BillsListProps) {
         
         {/* Bills Cards */}
         <div className="mt-3 flex flex-col md:grid md:grid-cols-2 gap-4 md:gap-5">
-          {sortedBills.map(bill => {
+          {filteredBills.map(bill => {
             const displayStatus = bill.status === 'Settled' ? 'Settled' : 'Pending';
 
             return (
@@ -183,8 +232,26 @@ export function BillsList({ onBillClick, session }: BillsListProps) {
             </div>
           )}
 
+          {/* Search Empty State */}
+          {!isLoadingBills && bills.length > 0 && filteredBills.length === 0 && (
+            <div className="text-center py-16 flex flex-col items-center gap-3">
+              <div className="w-12 h-12 rounded-full bg-black/5 dark:bg-white/5 flex items-center justify-center text-black/40 dark:text-zinc-500">
+                <Search size={22} />
+              </div>
+              <p className="text-sm font-medium text-black/60 dark:text-zinc-400">
+                No bills found matching &ldquo;{searchQuery}&rdquo;
+              </p>
+              <button
+                onClick={() => setSearchQuery('')}
+                className="text-xs font-semibold text-black dark:text-zinc-100 underline cursor-pointer hover:opacity-80"
+              >
+                Clear search
+              </button>
+            </div>
+          )}
+
           {/* Genuine Empty State */}
-          {!isLoadingBills && sortedBills.length === 0 && (
+          {!isLoadingBills && bills.length === 0 && (
             <div className="text-center mt-10 text-black/50 dark:text-zinc-500 text-sm">No bills found. Create one!</div>
           )}
         </div>
