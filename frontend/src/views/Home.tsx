@@ -292,7 +292,7 @@ export function Home({
           </div>
 
           <div
-              className="px-0 flex gap-3.5 overflow-x-auto no-scrollbar pb-4 pt-1 snap-x snap-mandatory md:snap-none md:grid md:grid-cols-2 gap-5 md:gap-6 md:auto-rows-fr"
+              className="px-0 flex gap-3 overflow-x-auto no-scrollbar pb-4 pt-1 snap-x snap-mandatory md:snap-none md:grid md:grid-cols-2 md:gap-6 md:auto-rows-fr"
           >
             {[...bills]
               .sort((a, b) => {
@@ -317,34 +317,34 @@ export function Home({
                 <div
                   key={`carousel-${bill.id}`}
                   onClick={() => onBillClick?.(bill.id)}
-                  className="w-[200px] md:w-full h-[220px] shrink-0 bg-[#D9D9D9] dark:bg-zinc-900 rounded-[32px] flex flex-col justify-between shadow-sm snap-start cursor-pointer active:scale-[0.98] hover:bg-zinc-300/80 dark:hover:bg-zinc-800 transition-all border border-transparent dark:border-white/5 p-5 sm:p-6"
+                  className="w-[168px] sm:w-[185px] md:w-full h-[215px] md:h-[220px] shrink-0 bg-[#D9D9D9] dark:bg-zinc-900 rounded-[28px] md:rounded-[32px] flex flex-col justify-between shadow-sm snap-start cursor-pointer active:scale-[0.98] hover:bg-zinc-300/80 dark:hover:bg-zinc-800 transition-all border border-transparent dark:border-white/5 p-4 sm:p-5 md:p-6"
                 >
-                  <h3 className="text-[#1A1A1A] dark:text-zinc-100 text-xl sm:text-2xl font-bold leading-snug line-clamp-2">
+                  <h3 className="text-[#1A1A1A] dark:text-zinc-100 text-lg sm:text-xl md:text-2xl font-bold leading-snug line-clamp-2">
                     {bill.title}
                   </h3>
 
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="text-black/50 dark:text-zinc-400 text-xs font-normal">
+                  <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
+                    <span className="text-black/50 dark:text-zinc-400 text-[11px] sm:text-xs font-normal">
                       {new Date(bill.createdAt || bill.created_at || Date.now()).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                     </span>
                     <span
-                      className="text-[11px] font-semibold px-2 py-0.5 rounded-full"
+                      className="text-[10px] sm:text-[11px] font-semibold px-2 py-0.5 rounded-full"
                       style={{ backgroundColor: tagStyle.bg, color: tagStyle.text }}
                     >
                       {bill.category}
                     </span>
                   </div>
 
-                  <div className="flex justify-between items-end border-t border-black/10 dark:border-white/10 pt-2.5 gap-2">
-                    <div className="flex flex-col gap-1 min-w-0">
+                  <div className="flex justify-between items-end border-t border-black/10 dark:border-white/10 pt-2 sm:pt-2.5 gap-1.5 sm:gap-2">
+                    <div className="flex flex-col gap-0.5 sm:gap-1 min-w-0">
                       <span
-                        className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full w-fit ${
+                        className={`text-[9px] sm:text-[10px] font-bold px-2 sm:px-2.5 py-0.5 rounded-full w-fit ${
                           displayStatus === 'Settled' ? 'bg-[#4C8C3C] text-white' : 'bg-[#F5C744] text-black'
                         }`}
                       >
                         {displayStatus}
                       </span>
-                      <span className="text-[#1A1A1A] dark:text-zinc-100 text-base font-extrabold tracking-tight whitespace-nowrap">
+                      <span className="text-[#1A1A1A] dark:text-zinc-100 text-sm sm:text-base font-extrabold tracking-tight whitespace-nowrap">
                         LKR {bill.total.toLocaleString()}
                       </span>
                     </div>
@@ -364,13 +364,13 @@ export function Home({
                             alt={pName}
                             title={pName}
                             referrerPolicy="no-referrer"
-                            className="w-6 h-6 rounded-full border border-[#EDEDF1] dark:border-zinc-900 object-cover shrink-0"
+                            className="w-5 h-5 sm:w-6 sm:h-6 rounded-full border border-[#EDEDF1] dark:border-zinc-900 object-cover shrink-0"
                           />
                         ) : (
                           <div
                             key={i}
                             title={pName}
-                            className="w-6 h-6 rounded-full border border-[#EDEDF1] dark:border-zinc-900 bg-zinc-400 dark:bg-zinc-700 flex items-center justify-center text-[10px] font-bold text-white shrink-0"
+                            className="w-5 h-5 sm:w-6 sm:h-6 rounded-full border border-[#EDEDF1] dark:border-zinc-900 bg-zinc-400 dark:bg-zinc-700 flex items-center justify-center text-[9px] sm:text-[10px] font-bold text-white shrink-0"
                           >
                             {initial}
                           </div>
