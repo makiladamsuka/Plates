@@ -545,22 +545,35 @@ app.get('/api/profiles/search', async (req, res) => {
 app.get('/api/friends/:userId', async (req, res) => {
   try {
     const { userId } = req.params;
-    const { data, error } = await supabase
-      .from('friends')
-      .select(`
-        friend_id,
-        created_at,
-        profiles:friend_id (
-          id,
-          full_name,
-          avatar_url,
-          username
-        )
-      `)
-      .eq('user_id', userId);
-    
+    const [asUser, asFriend] = await Promise.all([
+      supabase
+        .from('friends')
+        .select('friend_id, status')
+        .eq('user_id', userId)
+        .or('status.eq.accepted,status.is.null'),
+      supabase
+        .from('friends')
+        .select('user_id, status')
+        .eq('friend_id', userId)
+        .or('status.eq.accepted,status.is.null')
+    ]);
+
+    const friendIds = Array.from(new Set([
+      ...(asUser.data || []).map((f: any) => f.friend_id),
+      ...(asFriend.data || []).map((f: any) => f.user_id)
+    ])).filter(id => id && id !== userId);
+
+    if (friendIds.length === 0) {
+      return res.json([]);
+    }
+
+    const { data: profs, error } = await supabase
+      .from('profiles')
+      .select('id, full_name, avatar_url, username')
+      .in('id', friendIds);
+
     if (error) throw error;
-    res.json(data?.map((d: any) => d.profiles) || []);
+    res.json(profs || []);
   } catch (err: any) {
     handleError(res, err);
   }

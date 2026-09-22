@@ -52,14 +52,14 @@ export function BillsList({ onBillClick, session }: BillsListProps) {
   });
 
   return (
-    <div className="min-h-screen bg-[#EDEDF1] dark:bg-zinc-950 pb-32 pt-[160px] md:pt-0 font-['Sora'] transition-colors">
+    <div className="min-h-screen bg-[#EDEDF1] dark:bg-zinc-950 pb-32 font-['Sora'] transition-colors">
       
       {/* Header Container */}
-      <div className="fixed top-0 left-1/2 -translate-x-1/2 w-full max-w-[480px] z-30 bg-[#EDEDF1] dark:bg-zinc-950 md:sticky md:left-0 md:translate-x-0 md:max-w-full md:pt-4 transition-colors">
-        <div className="max-w-[480px] md:max-w-6xl mx-auto px-5 md:px-10">
-          <div className="pt-10 pb-4 flex justify-between items-center h-[88px] md:hidden">
-            <h1 className="text-black dark:text-zinc-100 text-5xl font-bold font-display tracking-tight leading-none">Bills</h1>
-            <div className="w-6 h-6 flex items-center justify-center">
+      <div className="sticky top-0 z-30 bg-[#EDEDF1] dark:bg-zinc-950 transition-colors">
+        <div className="max-w-[480px] md:max-w-6xl mx-auto px-5 md:px-10 pt-10 pb-3">
+          <div className="flex justify-between items-center h-10 mb-3">
+            <h1 className="text-black dark:text-zinc-100 text-4xl sm:text-5xl font-extrabold font-display tracking-tight leading-none">Bills</h1>
+            <div className="w-8 h-8 flex items-center justify-center">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-black dark:text-zinc-100">
                 <circle cx="11" cy="11" r="8" />
                 <path d="M21 21l-4.35-4.35" />
@@ -68,7 +68,7 @@ export function BillsList({ onBillClick, session }: BillsListProps) {
           </div>
 
           {/* Filter Tabs */}
-          <div className="pb-4 md:pt-10 flex gap-2 overflow-x-auto no-scrollbar">
+          <div className="flex gap-2 overflow-x-auto no-scrollbar">
             {[
               { key: 'all', label: 'All' },
               { key: 'highest', label: 'Highest' },
@@ -93,7 +93,7 @@ export function BillsList({ onBillClick, session }: BillsListProps) {
       <div className="max-w-[480px] md:max-w-6xl mx-auto px-5 md:px-10">
         
         {/* Bills Cards */}
-        <div className="mt-2 flex flex-col md:grid md:grid-cols-2 gap-5 md:gap-6">
+        <div className="mt-3 flex flex-col md:grid md:grid-cols-2 gap-4 md:gap-5">
           {sortedBills.map(bill => {
             const displayStatus = bill.status === 'Settled' ? 'Settled' : 'Pending';
 
@@ -101,24 +101,24 @@ export function BillsList({ onBillClick, session }: BillsListProps) {
               <div 
                 key={bill.id}
                 onClick={() => onBillClick?.(bill.id)}
-                className="w-full bg-[#D9D9D9] dark:bg-zinc-900 rounded-[28px] p-5 sm:p-5.5 flex flex-col justify-between gap-3.5 shadow-sm cursor-pointer hover:bg-zinc-300/80 dark:hover:bg-zinc-800 transition-colors border border-transparent dark:border-white/5"
+                className="w-full min-h-[142px] sm:min-h-[152px] bg-[#D9D9D9] dark:bg-zinc-900 rounded-[28px] py-6 px-5.5 sm:py-6.5 sm:px-6 flex flex-col justify-between gap-5 shadow-sm cursor-pointer hover:bg-zinc-300/80 dark:hover:bg-zinc-800 transition-colors border border-transparent dark:border-white/5"
               >
                 {/* Top Row: Title + Status Pill */}
                 <div className="flex justify-between items-center gap-3">
-                  <h2 className="text-[#1A1A1A] dark:text-zinc-100 text-base sm:text-lg font-bold leading-snug break-words line-clamp-1 flex-1 min-w-0">{bill.title}</h2>
+                  <h2 className="text-[#1A1A1A] dark:text-zinc-100 text-lg sm:text-xl font-bold leading-snug break-words line-clamp-1 flex-1 min-w-0">{bill.title}</h2>
                   <div className="flex items-center gap-2 shrink-0">
-                    <div className={`rounded-full px-3 py-0.5 flex items-center justify-center shrink-0 ${
+                    <div className={`rounded-full px-3.5 py-1 flex items-center justify-center shrink-0 ${
                       displayStatus === 'Settled' ? 'bg-[#4C8C3C] text-white' : 'bg-[#F5C744] text-black'
                     }`}>
-                      <span className="text-[11px] font-semibold">{displayStatus}</span>
+                      <span className="text-xs font-semibold">{displayStatus}</span>
                     </div>
                   </div>
                 </div>
 
                 {/* Bottom Row: Category Tag, Date & Amount + Avatars */}
-                <div className="flex items-center justify-between gap-3 pt-2.5 border-t border-black/5 dark:border-white/5">
+                <div className="flex items-center justify-between gap-3 pt-3.5 border-t border-black/5 dark:border-white/5">
                   <div className="flex items-center gap-2 min-w-0 flex-wrap">
-                    <span className={`${getTagColor(bill.category)} text-black dark:text-zinc-100 px-2.5 py-0.5 rounded-full font-medium text-xs shrink-0`}>
+                    <span className={`${getTagColor(bill.category)} text-black dark:text-zinc-100 px-3 py-1 rounded-full font-medium text-xs shrink-0`}>
                       {bill.category}
                     </span>
                     <span className="text-black/50 dark:text-zinc-400 font-normal text-xs shrink-0">{formatTime(bill.created_at || bill.createdAt)}</span>
@@ -141,25 +141,26 @@ export function BillsList({ onBillClick, session }: BillsListProps) {
                             alt={pName}
                             title={pName}
                             referrerPolicy="no-referrer"
-                            className="w-6.5 h-6.5 sm:w-7 sm:h-7 rounded-full border border-[#EDEDF1] dark:border-zinc-900 object-cover shrink-0"
+                            className="w-7 h-7 sm:w-8 sm:h-8 rounded-full border border-[#EDEDF1] dark:border-zinc-900 object-cover shrink-0"
                           />
                         ) : (
                           <div
                             key={i}
                             title={pName}
-                            className="w-6.5 h-6.5 sm:w-7 sm:h-7 rounded-full border border-[#EDEDF1] dark:border-zinc-900 bg-zinc-400 dark:bg-zinc-700 flex items-center justify-center text-[10px] font-bold text-white shrink-0"
+                            className="w-7 h-7 sm:w-8 sm:h-8 rounded-full border border-[#EDEDF1] dark:border-zinc-900 bg-zinc-400 dark:bg-zinc-700 flex items-center justify-center text-[11px] font-bold text-white shrink-0"
                           >
                             {initial}
                           </div>
                         );
                       })}
                     </div>
-                    <span className="text-[#1A1A1A] dark:text-zinc-100 text-base sm:text-lg md:text-xl font-extrabold tracking-tight whitespace-nowrap">LKR {bill.total.toLocaleString()}</span>
+                    <span className="text-[#1A1A1A] dark:text-zinc-100 text-lg sm:text-xl font-bold tracking-tight whitespace-nowrap">LKR&nbsp;{bill.total.toLocaleString()}</span>
                   </div>
                 </div>
               </div>
             );
           })}
+        </div>
 
           {/* Loading Skeletons */}
           {isLoadingBills && sortedBills.length === 0 && (
@@ -187,7 +188,6 @@ export function BillsList({ onBillClick, session }: BillsListProps) {
             <div className="text-center mt-10 text-black/50 dark:text-zinc-500 text-sm">No bills found. Create one!</div>
           )}
         </div>
-      </div>
 
       {/* Floating Action Button */}
       <div className="fixed bottom-[115px] md:bottom-10 left-1/2 -translate-x-1/2 w-full max-w-[480px] md:w-auto md:left-auto md:right-10 md:translate-x-0 z-40 pointer-events-none">

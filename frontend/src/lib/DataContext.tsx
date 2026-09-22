@@ -100,21 +100,70 @@ async function fetchFriendsFromSource(uid: string): Promise<any[]> {
   if (!uid) return [];
 
   try {
-    const { data: rawAccepted, error } = await supabase
-      .from('friends')
-      .select('friend_id, status')
-      .eq('user_id', uid)
-      .or('status.eq.accepted,status.is.null');
+    // 1. Fetch from friends table in both directions (user_id = uid OR friend_id = uid)
+    const [asUserRes, asFriendRes] = await Promise.all([
+      supabase
+        .from('friends')
+        .select('friend_id, status')
+        .eq('user_id', uid)
+        .or('status.eq.accepted,status.is.null'),
+      supabase
+        .from('friends')
+        .select('user_id, status')
+        .eq('friend_id', uid)
+        .or('status.eq.accepted,status.is.null')
+    ]);
 
-    if (error || !rawAccepted || rawAccepted.length === 0) return [];
+    const userFriends = (asUserRes.data || []).map((f: any) => f.friend_id);
+    const friendUsers = (asFriendRes.data || []).map((f: any) => f.user_id);
+    let allFriendIds = Array.from(new Set([...userFriends, ...friendUsers])).filter(id => id && id !== uid);
 
-    const friendIds = rawAccepted.map((f: any) => f.friend_id);
-    const { data: profs } = await supabase
+    // 2. If nothing found directly via client Supabase, try backend API as fallback
+    if (allFriendIds.length === 0) {
+      try {
+        const backendRes = await fetch(`/api/friends/${uid}`).then(r => r.json()).catch(() => null);
+        if (Array.isArray(backendRes) && backendRes.length > 0) {
+          const bIds = backendRes.map((p: any) => p.id || p.friend_id).filter(Boolean);
+          allFriendIds = Array.from(new Set([...allFriendIds, ...bIds])).filter(id => id !== uid);
+        }
+      } catch (beErr) {
+        console.warn('Backend friends fallback notice:', beErr);
+      }
+    }
+
+    // 3. Fallback: also include participants from bills where the user is involved
+    if (allFriendIds.length === 0) {
+      try {
+        const { data: myParticipations } = await supabase
+          .from('participants')
+          .select('bill_id')
+          .eq('friend_id', uid);
+        
+        const myBillIds = (myParticipations || []).map((p: any) => p.bill_id);
+        if (myBillIds.length > 0) {
+          const { data: allParts } = await supabase
+            .from('participants')
+            .select('friend_id')
+            .in('bill_id', myBillIds);
+          
+          const coParticipants = (allParts || []).map((p: any) => p.friend_id).filter((id: string) => id && id !== uid);
+          allFriendIds = Array.from(new Set(coParticipants));
+        }
+      } catch (billPartsErr) {
+        console.warn('Co-participants fallback notice:', billPartsErr);
+      }
+    }
+
+    if (allFriendIds.length === 0) return [];
+
+    const { data: profs, error: profsErr } = await supabase
       .from('profiles')
       .select('id, full_name, avatar_url, username')
-      .in('id', friendIds);
+      .in('id', allFriendIds);
 
-    return (profs || []).filter((p: any) => p && p.id).map((p: any) => {
+    if (profsErr || !profs) return [];
+
+    return profs.filter((p: any) => p && p.id).map((p: any) => {
       const fallbackUser = p.full_name ? p.full_name.toLowerCase().replace(/[^a-z0-9]/g, '') : 'user';
       return {
         id: p.id,

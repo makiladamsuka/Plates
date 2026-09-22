@@ -57,14 +57,34 @@ export function NewBillModal({ isOpen, onClose, onSuccess, session: propSession 
     const fetchAcceptedFriends = async () => {
       setIsLoadingLoadingFriends(true);
       try {
-        const { data: friendRows } = await supabase
-          .from('friends')
-          .select('friend_id')
-          .eq('user_id', userId)
-          .or('status.eq.accepted,status.is.null');
+        const [asUserRes, asFriendRes] = await Promise.all([
+          supabase
+            .from('friends')
+            .select('friend_id, status')
+            .eq('user_id', userId)
+            .or('status.eq.accepted,status.is.null'),
+          supabase
+            .from('friends')
+            .select('user_id, status')
+            .eq('friend_id', userId)
+            .or('status.eq.accepted,status.is.null')
+        ]);
 
-        if (friendRows && friendRows.length > 0) {
-          const friendIds = friendRows.map((f: any) => f.friend_id);
+        const userFriends = (asUserRes.data || []).map((f: any) => f.friend_id);
+        const friendUsers = (asFriendRes.data || []).map((f: any) => f.user_id);
+        let friendIds = Array.from(new Set([...userFriends, ...friendUsers])).filter(id => id && id !== userId);
+
+        if (friendIds.length === 0) {
+          try {
+            const backendRes = await fetch(`/api/friends/${userId}`).then(r => r.json()).catch(() => null);
+            if (Array.isArray(backendRes) && backendRes.length > 0) {
+              const bIds = backendRes.map((p: any) => p.id || p.friend_id).filter(Boolean);
+              friendIds = Array.from(new Set(bIds)).filter(id => id !== userId);
+            }
+          } catch {}
+        }
+
+        if (friendIds.length > 0) {
           const { data: profs } = await supabase
             .from('profiles')
             .select('id, full_name, username, avatar_url')

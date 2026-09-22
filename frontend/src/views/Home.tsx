@@ -201,7 +201,7 @@ export function Home({
     <div className="min-h-screen bg-[#EDEDF1] dark:bg-zinc-950 pb-36 pt-0 transition-colors">
       
       {/* Top Header Container */}
-      <div className="px-6 pt-10 pb-4 h-[88px] flex justify-between items-center max-w-[480px] md:max-w-6xl md:px-10 mx-auto md:hidden">
+      <div className="px-5 md:px-10 pt-10 pb-3 flex justify-between items-center max-w-[480px] md:max-w-6xl mx-auto md:hidden">
         <div className="flex items-center gap-2">
           <img src="/logo-light.svg" alt="Plates logo" className="w-16 h-16 shrink-0 dark:hidden" />
           <img src="/logo.svg" alt="Plates logo" className="w-16 h-16 rounded-[22.5%] shrink-0 shadow-sm hidden dark:block" />
