@@ -214,9 +214,9 @@ export function SearchFriends({ session, onBack }: SearchFriendsProps) {
 
   return (
     <div className="min-h-screen bg-[#EDEDF1] dark:bg-zinc-950 pb-36 relative transition-colors font-['Sora']">
-      
-      {/* Top Header */}
-      <div className="px-6 pt-6 pb-2">
+      <div className="max-w-[480px] md:max-w-2xl mx-auto px-5 md:px-10 md:pt-6">
+        {/* Top Header */}
+        <div className="pt-6 pb-2">
         {/* Top Header Row: Back Button (Left) & QR Code Button (Right) */}
         <div className="flex items-center justify-between -ml-2 mb-3">
           <button 
@@ -281,7 +281,7 @@ export function SearchFriends({ session, onBack }: SearchFriendsProps) {
 
       {/* Mode 1: Plates User Search Results */}
       {activeTab === 'search' && (
-        <div className="px-6 mt-4 flex flex-col gap-3">
+        <div className="mt-4 flex flex-col gap-3">
           {isSearching ? (
             <div className="text-center py-12 text-black/40 dark:text-zinc-500 text-sm font-light">Searching...</div>
           ) : searchResults.length > 0 ? (
@@ -340,7 +340,7 @@ export function SearchFriends({ session, onBack }: SearchFriendsProps) {
 
       {/* Mode 2: Phone / Device Contacts Results */}
       {activeTab === 'phone' && (
-        <div className="px-6 mt-2 flex flex-col gap-3">
+        <div className="mt-2 flex flex-col gap-3">
           {isLoadingContacts ? (
             <div className="flex flex-col items-center justify-center py-16 text-black/50 dark:text-zinc-400 text-sm gap-3">
               <RefreshCw size={24} className="animate-spin text-[#F5C744]" />
@@ -484,6 +484,8 @@ export function SearchFriends({ session, onBack }: SearchFriendsProps) {
           )}
         </div>
       )}
+
+      </div>
 
       {/* Centered QR Modal (My QR Code & Camera Scanner) */}
       <FriendQrModal

@@ -46,8 +46,9 @@ export function DesktopNav({ currentTab, session, onTabChange, onAvatarClick }: 
   return (
     <div className="hidden md:flex flex-col fixed left-0 top-0 bottom-0 w-[280px] h-screen bg-[#EDEDF1] dark:bg-zinc-950 border-r border-black/5 dark:border-white/5 z-50 py-10 px-6 font-['Sora'] justify-between select-none">
       <div className="flex items-center gap-2 mb-10 px-1 shrink-0">
-        <img src="/logo.svg" alt="Plates logo" className="w-20 h-20 rounded-[22.5%] shrink-0 shadow-md" />
-        <h1 className="text-black dark:text-zinc-100 text-5xl font-black font-display tracking-tight leading-none">Plates</h1>
+        <img src="/logo-light.svg" alt="Plates logo" className="w-16 h-16 shrink-0 dark:hidden" />
+        <img src="/logo.svg" alt="Plates logo" className="w-16 h-16 rounded-[22.5%] shrink-0 shadow-sm hidden dark:block" />
+        <h1 className="text-black dark:text-zinc-100 text-5xl font-extrabold font-display tracking-tight leading-none">Plates</h1>
       </div>
 
       <div className="flex flex-col gap-2 flex-1">

@@ -177,7 +177,7 @@ export function Settings({ session, initialView = 'main', isDarkTheme = false, o
       <div className="min-h-screen bg-[#EDEDF1] dark:bg-zinc-950 pb-32 pt-0 md:pt-6 transition-colors font-['Sora']">
         
         {/* Top Header Container with Back Button & 3-Dots Menu */}
-        <div className="max-w-[480px] md:max-w-2xl mx-auto px-6 md:px-10 pt-6 pb-2">
+        <div className="max-w-[480px] md:max-w-2xl mx-auto px-5 md:px-10 pt-6 pb-2">
           <div className="flex items-center justify-between w-full mb-3">
             <div className="flex items-center gap-2">
               <button 
@@ -356,7 +356,7 @@ export function Settings({ session, initialView = 'main', isDarkTheme = false, o
     <div className="min-h-screen bg-[#EDEDF1] dark:bg-zinc-950 pb-32 pt-0 md:pt-6 transition-colors font-['Sora']">
       
       {/* Top Header Container */}
-      <div className="px-6 pt-10 pb-4 h-[88px] flex justify-between items-center max-w-[480px] md:max-w-2xl mx-auto md:px-0">
+      <div className="px-5 md:px-10 pt-10 pb-4 h-[88px] flex justify-between items-center max-w-[480px] md:max-w-2xl mx-auto">
         <h1 className="text-black dark:text-zinc-100 text-4xl md:text-5xl font-bold font-display tracking-tight leading-none">Settings</h1>
       </div>
       

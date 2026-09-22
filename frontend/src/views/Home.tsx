@@ -219,10 +219,10 @@ export function Home({
         </button>
       </div>
 
-      <div className="max-w-[480px] md:max-w-6xl mx-auto px-5 md:px-10 flex flex-col md:grid md:grid-cols-12 gap-6 md:gap-10 md:pt-12">
+      <div className="max-w-[480px] md:max-w-6xl mx-auto px-5 md:px-10 flex flex-col md:grid md:grid-cols-12 gap-6 md:gap-10 md:pt-10">
         
         {/* Left Column (Desktop) */}
-        <div className="flex flex-col gap-6 w-full md:col-span-7 lg:col-span-8 shrink-0">
+        <div className="flex flex-col gap-6 w-full md:col-span-7 lg:col-span-7 min-w-0">
 
         {/* 1. Net Balance Overview Card */}
         <div className="w-full bg-[#D9D9D9] dark:bg-zinc-900 rounded-[26px] p-5 shadow-sm flex flex-col gap-3">
@@ -388,7 +388,7 @@ export function Home({
         </div> {/* End of Left Column */}
 
         {/* Right Column (Desktop) */}
-        <div className="flex flex-col gap-6 w-full md:col-span-5 lg:col-span-4 shrink-0">
+        <div className="flex flex-col gap-6 w-full md:col-span-5 lg:col-span-5 min-w-0">
           {/* 3. Waiting on You Section */}
           <div className="flex flex-col gap-3">
             <h2 className="text-[#1A1A1A] dark:text-zinc-100 text-2xl font-bold font-display tracking-tight px-1">

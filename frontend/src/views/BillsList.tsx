@@ -55,9 +55,9 @@ export function BillsList({ onBillClick, session }: BillsListProps) {
     <div className="min-h-screen bg-[#EDEDF1] dark:bg-zinc-950 pb-32 pt-[160px] md:pt-0 font-['Sora'] transition-colors">
       
       {/* Header Container */}
-      <div className="fixed top-0 left-1/2 -translate-x-1/2 w-full max-w-[480px] z-30 bg-[#EDEDF1] dark:bg-zinc-950 md:sticky md:left-0 md:translate-x-0 md:max-w-full md:px-10 md:pt-4 transition-colors">
-        <div className="max-w-[480px] md:max-w-6xl mx-auto">
-          <div className="px-6 md:px-0 pt-10 pb-4 flex justify-between items-center h-[88px] md:hidden">
+      <div className="fixed top-0 left-1/2 -translate-x-1/2 w-full max-w-[480px] z-30 bg-[#EDEDF1] dark:bg-zinc-950 md:sticky md:left-0 md:translate-x-0 md:max-w-full md:pt-4 transition-colors">
+        <div className="max-w-[480px] md:max-w-6xl mx-auto px-5 md:px-10">
+          <div className="pt-10 pb-4 flex justify-between items-center h-[88px] md:hidden">
             <h1 className="text-black dark:text-zinc-100 text-5xl font-bold font-display tracking-tight leading-none">Bills</h1>
             <div className="w-6 h-6 flex items-center justify-center">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-black dark:text-zinc-100">
@@ -68,7 +68,7 @@ export function BillsList({ onBillClick, session }: BillsListProps) {
           </div>
 
           {/* Filter Tabs */}
-          <div className="px-6 md:px-0 pb-4 md:pt-12 flex gap-2 overflow-x-auto no-scrollbar">
+          <div className="pb-4 md:pt-10 flex gap-2 overflow-x-auto no-scrollbar">
             {[
               { key: 'all', label: 'All' },
               { key: 'highest', label: 'Highest' },
@@ -90,10 +90,10 @@ export function BillsList({ onBillClick, session }: BillsListProps) {
       </div>
 
       {/* Main Content */}
-      <div className="max-w-[480px] md:max-w-6xl mx-auto md:px-10">
+      <div className="max-w-[480px] md:max-w-6xl mx-auto px-5 md:px-10">
         
         {/* Bills Cards */}
-        <div className="px-5 md:px-0 mt-2 flex flex-col md:grid md:grid-cols-2 gap-5 md:gap-6">
+        <div className="mt-2 flex flex-col md:grid md:grid-cols-2 gap-5 md:gap-6">
           {sortedBills.map(bill => {
             const displayStatus = bill.status === 'Settled' ? 'Settled' : 'Pending';
 

@@ -107,9 +107,9 @@ export function FriendsList({
     <div className="min-h-screen bg-[#EDEDF1] dark:bg-zinc-950 pb-32 pt-[160px] md:pt-0 font-['Sora'] transition-colors">
       
       {/* Header Container */}
-      <div className="fixed top-0 left-1/2 -translate-x-1/2 w-full max-w-[480px] z-30 bg-[#EDEDF1] dark:bg-zinc-950 md:sticky md:left-0 md:translate-x-0 md:max-w-full md:px-10 md:pt-4 transition-colors">
-        <div className="max-w-[480px] md:max-w-6xl mx-auto">
-          <div className="px-6 md:px-0 pt-10 pb-4 flex justify-between items-center h-[88px] md:hidden">
+      <div className="fixed top-0 left-1/2 -translate-x-1/2 w-full max-w-[480px] z-30 bg-[#EDEDF1] dark:bg-zinc-950 md:sticky md:left-0 md:translate-x-0 md:max-w-full md:pt-4 transition-colors">
+        <div className="max-w-[480px] md:max-w-6xl mx-auto px-5 md:px-10">
+          <div className="pt-10 pb-4 flex justify-between items-center h-[88px] md:hidden">
             <h1 className="text-black dark:text-zinc-100 text-5xl font-bold font-display tracking-tight leading-none">Friends</h1>
             <button 
               onClick={onSearchClick}
@@ -124,7 +124,7 @@ export function FriendsList({
           </div>
 
           {/* Filter Tabs */}
-          <div className="px-6 md:px-0 pb-4 md:pt-12 flex gap-2 overflow-x-auto no-scrollbar">
+          <div className="pb-4 md:pt-10 flex gap-2 overflow-x-auto no-scrollbar">
             <button 
               onClick={() => setActiveTab('all')}
               className={`h-8 px-4 md:px-5 rounded-[35px] text-sm md:text-base font-semibold whitespace-nowrap shrink-0 flex items-center justify-center transition-colors cursor-pointer ${activeTab === 'all' ? 'bg-[#1A1A1A] dark:bg-zinc-100 text-[#EDEDF1] dark:text-zinc-950' : 'bg-[#D9D9D9] dark:bg-zinc-900 text-black dark:text-zinc-100'}`}
@@ -142,10 +142,10 @@ export function FriendsList({
       </div>
 
       {/* Main Content */}
-      <div className="max-w-[480px] md:max-w-6xl mx-auto md:px-10">
+      <div className="max-w-[480px] md:max-w-6xl mx-auto px-5 md:px-10">
         
         {/* Friends Cards */}
-        <div className="px-5 md:px-0 mt-2 flex flex-col md:grid md:grid-cols-2 gap-5 md:gap-6">
+        <div className="mt-2 flex flex-col md:grid md:grid-cols-2 gap-5 md:gap-6">
           {displayList.length > 0 ? (
             displayList.map((friend) => (
               <div 
