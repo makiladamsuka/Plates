@@ -1,10 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
 import { supabase } from '../lib/supabase';
-import { LogOut, ChevronRight, User as UserIcon, Moon, ChevronLeft, Edit3, Image as ImageIcon, Trash2, AtSign, MoreVertical } from 'lucide-react';
+import { LogOut, ChevronRight, User as UserIcon, Moon, ChevronLeft, Edit3, Image as ImageIcon, Trash2, MoreVertical } from 'lucide-react';
 import { Avatar } from '../components/Avatar';
 import { ChangeDPModal } from '../components/ChangeDPModal';
 import { ChangeNameModal } from '../components/ChangeNameModal';
-import { SetUsernameModal } from '../components/SetUsernameModal';
 import { DeleteConfirmationModal } from '../components/DeleteConfirmationModal';
 import { api } from '../services/api';
 
@@ -19,7 +18,6 @@ export function Settings({ session, initialView = 'main', isDarkTheme = false, o
   const [view, setView] = useState<'main' | 'account'>(initialView);
   const [isChangeDPOpen, setIsChangeDPOpen] = useState(false);
   const [isChangeNameOpen, setIsChangeNameOpen] = useState(false);
-  const [isChangeUsernameOpen, setIsChangeUsernameOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [unsettledBillsCount, setUnsettledBillsCount] = useState(0);
@@ -265,18 +263,7 @@ export function Settings({ session, initialView = 'main', isDarkTheme = false, o
               <ChevronRight size={18} className="text-black/30 dark:text-zinc-600" />
             </button>
 
-            <button 
-              onClick={() => setIsChangeUsernameOpen(true)}
-              className="w-full flex items-center justify-between p-3.5 sm:p-4 hover:bg-black/5 dark:hover:bg-zinc-800/60 rounded-[24px] transition-colors cursor-pointer"
-            >
-              <div className="flex items-center gap-3.5 sm:gap-4">
-                <div className="w-10 h-10 rounded-full bg-black/5 dark:bg-zinc-800 flex items-center justify-center text-[#1A1A1A] dark:text-zinc-300">
-                  <AtSign size={18} />
-                </div>
-                <span className="text-sm sm:text-base font-semibold text-[#1A1A1A] dark:text-zinc-100">Change Username</span>
-              </div>
-              <ChevronRight size={18} className="text-black/30 dark:text-zinc-600" />
-            </button>
+
             
             <button 
               onClick={() => setIsChangeDPOpen(true)}
@@ -320,17 +307,7 @@ export function Settings({ session, initialView = 'main', isDarkTheme = false, o
           onNameUpdated={(newName) => setFullName(newName)}
         />
 
-        {/* Change Username Modal */}
-        <SetUsernameModal
-          isOpen={isChangeUsernameOpen}
-          onClose={() => setIsChangeUsernameOpen(false)}
-          canClose={true}
-          session={session}
-          onUsernameSet={(newUsername) => {
-            setUsername(newUsername);
-            setIsChangeUsernameOpen(false);
-          }}
-        />
+
 
         {/* Delete Account Confirmation Modal */}
         <DeleteConfirmationModal
