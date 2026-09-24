@@ -157,7 +157,37 @@ function App() {
       }
     });
 
-    return () => subscription.unsubscribe();
+    // Listen for cross-tab auth signals (from OAuth popup or another tab)
+    let authChannel: BroadcastChannel | null = null;
+    try {
+      authChannel = new BroadcastChannel('plates_auth_channel');
+      authChannel.onmessage = async (event) => {
+        if (event.data?.type === 'SUPABASE_AUTH_SUCCESS') {
+          const { data: { session } } = await supabase.auth.getSession();
+          if (session) {
+            setSession(session);
+          }
+        }
+      };
+    } catch (e) {}
+
+    const handleStorageChange = async (e: StorageEvent) => {
+      if (e.key === 'plates_auth_timestamp' || e.key?.includes('auth-token')) {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session) {
+          setSession(session);
+        }
+      }
+    };
+    window.addEventListener('storage', handleStorageChange);
+
+    return () => {
+      subscription.unsubscribe();
+      window.removeEventListener('storage', handleStorageChange);
+      if (authChannel) {
+        authChannel.close();
+      }
+    };
   }, []);
 
   // Subtle audio chime for live incoming requests
@@ -350,6 +380,24 @@ function App() {
     }
     setActiveLiveAlert(null);
   };
+
+  // If this window is navigating the auth callback route, always render AuthCallback
+  if (window.location.pathname.startsWith('/auth/callback')) {
+    return <AuthCallback />;
+  }
+
+  // If this window was spawned as the OAuth popup, close it cleanly once session exists
+  if ((window.name === 'google_oauth_popup' || (typeof window !== 'undefined' && window.opener && window.opener !== window)) && session) {
+    try {
+      if (window.opener && window.opener !== window) {
+        window.opener.postMessage({ type: 'SUPABASE_AUTH_SUCCESS' }, '*');
+      }
+      const authChannel = new BroadcastChannel('plates_auth_channel');
+      authChannel.postMessage({ type: 'SUPABASE_AUTH_SUCCESS' });
+      authChannel.close();
+    } catch (e) {}
+    window.close();
+  }
 
   if (isInitializing) {
     return <LoadingScreen />;

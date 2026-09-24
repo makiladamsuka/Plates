@@ -183,10 +183,31 @@ export function Login() {
     };
     window.addEventListener('message', handleMessage);
 
+    let authChannel: BroadcastChannel | null = null;
+    try {
+      authChannel = new BroadcastChannel('plates_auth_channel');
+      authChannel.onmessage = (event) => {
+        if (event.data?.type === 'SUPABASE_AUTH_SUCCESS') {
+          setIsSpinning(false);
+        }
+      };
+    } catch (e) {}
+
+    const handleStorage = (e: StorageEvent) => {
+      if (e.key === 'plates_auth_timestamp' || e.key?.includes('auth-token')) {
+        setIsSpinning(false);
+      }
+    };
+    window.addEventListener('storage', handleStorage);
+
     return () => {
       isMounted = false;
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('message', handleMessage);
+      window.removeEventListener('storage', handleStorage);
+      if (authChannel) {
+        authChannel.close();
+      }
     };
   }, []);
 
@@ -270,7 +291,7 @@ export function Login() {
             <button 
               onClick={() => initiateOAuthPopup('signin')}
               disabled={isSpinning}
-              className="w-full sm:w-auto px-8 py-3.5 bg-[#F9F9F9] hover:bg-[#E5E7EB] text-[#0F0F11] font-semibold rounded-full transition-all duration-200 shadow-[0_0_20px_rgba(255,255,255,0.1)] hover:shadow-[0_0_30px_rgba(255,255,255,0.2)] text-sm md:text-base flex items-center justify-center gap-3 cursor-pointer active:scale-95 disabled:opacity-80"
+              className="inline-flex items-center justify-center gap-3 px-8 py-3.5 bg-[#F9F9F9] hover:bg-[#E5E7EB] text-[#0F0F11] font-semibold rounded-full transition-all duration-200 shadow-[0_0_20px_rgba(255,255,255,0.1)] hover:shadow-[0_0_30px_rgba(255,255,255,0.2)] text-sm md:text-base cursor-pointer active:scale-95 disabled:opacity-80"
             >
               {isSpinning ? (
                 <>
