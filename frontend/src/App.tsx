@@ -117,34 +117,61 @@ function App() {
   }, []);
 
   useEffect(() => {
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      setSession(session);
-      if (session?.provider_token) {
-        sessionStorage.setItem('google_provider_token', session.provider_token);
-      }
-      if (session?.user) {
-        const profile = await syncUserProfile(session.user);
-        if (profile?.requiresUsername) {
-          setIsSetUsernameOpen(true);
+    let isMounted = true;
+    const startTime = Date.now();
+
+    const initAuth = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!isMounted) return;
+
+        setSession(session);
+        if (session?.provider_token) {
+          sessionStorage.setItem('google_provider_token', session.provider_token);
+        }
+
+        if (session?.user) {
+          const profile = await syncUserProfile(session.user);
+          if (profile?.requiresUsername && isMounted) {
+            setIsSetUsernameOpen(true);
+          }
+        }
+      } catch (err) {
+        console.warn('Initial session check notice:', err);
+      } finally {
+        if (isMounted) {
+          // Ensure a smooth, polished minimum display time for the branded loading screen
+          const elapsed = Date.now() - startTime;
+          const minDelay = 350;
+          if (elapsed < minDelay) {
+            setTimeout(() => {
+              if (isMounted) setIsInitializing(false);
+            }, minDelay - elapsed);
+          } else {
+            setIsInitializing(false);
+          }
         }
       }
-      setIsInitializing(false);
-    });
+    };
+
+    initAuth();
 
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (!isMounted) return;
+      
       setSession(session);
       if (session?.provider_token) {
         sessionStorage.setItem('google_provider_token', session.provider_token);
       }
       if (session?.user) {
         const profile = await syncUserProfile(session.user);
-        if (profile?.requiresUsername) {
+        if (profile?.requiresUsername && isMounted) {
           setIsSetUsernameOpen(true);
         }
       }
-      if (event === 'SIGNED_OUT' || !session) {
+      if (event === 'SIGNED_OUT') {
         sessionStorage.removeItem('google_provider_token');
         setCurrentTab('home');
         setCurrentView('list');

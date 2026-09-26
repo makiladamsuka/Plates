@@ -1,7 +1,7 @@
 // Service Worker for Plates PWA
-const CACHE_NAME = 'plates-cache-v1';
+const CACHE_NAME = 'plates-cache-v2';
 
-self.addEventListener('install', (event) => {
+self.addEventListener('install', () => {
   self.skipWaiting();
 });
 
@@ -17,26 +17,41 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-// Network-first strategy with cache fallback for offline readiness
+// Network-first strategy with offline fallback
 self.addEventListener('fetch', (event) => {
-  // Only handle GET requests and ignore non-http schemes (e.g. chrome-extension)
   if (event.request.method !== 'GET' || !event.request.url.startsWith('http')) {
     return;
   }
 
-  // Bypass service worker caching for API endpoints and Supabase / Google OAuth
+  // Bypass service worker caching for API endpoints, Supabase, Google Auth, and hot updates
   if (
     event.request.url.includes('/api/') ||
     event.request.url.includes('supabase.co') ||
-    event.request.url.includes('accounts.google.com')
+    event.request.url.includes('accounts.google.com') ||
+    event.request.url.includes('googleapis.com')
   ) {
+    return;
+  }
+
+  // Always use Network-First for HTML navigation so users get latest updates instantly
+  if (event.request.mode === 'navigate') {
+    event.respondWith(
+      fetch(event.request)
+        .then((networkResponse) => {
+          if (networkResponse && networkResponse.status === 200) {
+            const responseToCache = networkResponse.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, responseToCache));
+          }
+          return networkResponse;
+        })
+        .catch(() => caches.match(event.request).then((cached) => cached || caches.match('/')))
+    );
     return;
   }
 
   event.respondWith(
     fetch(event.request)
       .then((networkResponse) => {
-        // Cache static assets dynamically
         if (
           networkResponse &&
           networkResponse.status === 200 &&
@@ -47,21 +62,13 @@ self.addEventListener('fetch', (event) => {
            event.request.url.endsWith('.woff2'))
         ) {
           const responseToCache = networkResponse.clone();
-          caches.open(CACHE_NAME).then((cache) => {
-            cache.put(event.request, responseToCache);
-          });
+          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, responseToCache));
         }
         return networkResponse;
       })
       .catch(() => {
         return caches.match(event.request).then((cachedResponse) => {
-          if (cachedResponse) {
-            return cachedResponse;
-          }
-          // Return cached index.html for navigation if offline
-          if (event.request.mode === 'navigate') {
-            return caches.match('/');
-          }
+          if (cachedResponse) return cachedResponse;
           return new Response('Offline', { status: 503, statusText: 'Offline' });
         });
       })

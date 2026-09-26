@@ -30,10 +30,32 @@
     <!-- Google Identity Services -->
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     <script>
-      // Register Service Worker for PWA installation support
+      // Register Service Worker for PWA installation support and auto-update
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', function() {
-          navigator.serviceWorker.register('/sw.js').catch(function(err) {
+          navigator.serviceWorker.register('/sw.js').then(function(reg) {
+            // Check for updates immediately on load
+            reg.update();
+
+            // Re-check for updates whenever user returns to the app
+            document.addEventListener('visibilitychange', function() {
+              if (document.visibilityState === 'visible') {
+                reg.update();
+              }
+            });
+            window.addEventListener('focus', function() {
+              reg.update();
+            });
+
+            // Reload when new service worker takes control so updates apply immediately
+            let refreshing = false;
+            navigator.serviceWorker.addEventListener('controllerchange', function() {
+              if (!refreshing) {
+                refreshing = true;
+                window.location.reload();
+              }
+            });
+          }).catch(function(err) {
             console.warn('[PWA] Service worker registration notice:', err);
           });
         });

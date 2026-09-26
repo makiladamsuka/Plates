@@ -38,7 +38,30 @@ export function Login() {
       const baseUrl = (import.meta.env.VITE_APP_URL || window.location.origin).replace(/\/+$/, '');
       const redirectUrl = `${baseUrl}/auth/callback`;
 
-      // Center the popup window on the screen
+      const isMobileOrStandalone = 
+        /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) ||
+        window.matchMedia('(display-mode: standalone)').matches ||
+        Boolean((navigator as any).standalone);
+
+      // On mobile devices or standalone PWA, direct redirect preserves session in the same storage container
+      if (isMobileOrStandalone) {
+        const { error: authError } = await supabase.auth.signInWithOAuth({
+          provider: 'google',
+          options: {
+            redirectTo: redirectUrl,
+            skipBrowserRedirect: false,
+            queryParams: {
+              access_type: 'offline',
+              prompt: 'consent',
+            },
+          },
+        });
+
+        if (authError) throw authError;
+        return;
+      }
+
+      // Center the popup window on the screen for desktop
       const width = 500;
       const height = 620;
       const left = window.screenX + Math.max(0, (window.outerWidth - width) / 2);
@@ -82,7 +105,7 @@ export function Login() {
         window.location.href = data.url;
       }
     } catch (err: any) {
-      console.error('[auth] OAuth popup error:', err);
+      console.error('[auth] OAuth sign-in error:', err);
       setError(err.message || 'Google sign-in failed. Please try again.');
       setIsSpinning(false);
     }
@@ -119,8 +142,6 @@ export function Login() {
 
           if (typeof window !== 'undefined' && (window as any).google?.accounts?.id) {
             const googleAccounts = (window as any).google.accounts.id;
-            const baseUrl = (import.meta.env.VITE_APP_URL || window.location.origin).replace(/\/+$/, '');
-            const loginUri = `${baseUrl}/auth/callback`;
 
             try {
               googleAccounts.initialize({
@@ -147,8 +168,7 @@ export function Login() {
                     setIsSpinning(false);
                   }
                 },
-                ux_mode: 'redirect',
-                login_uri: loginUri,
+                ux_mode: 'popup',
                 nonce: hashedNonce,
                 use_fedcm_for_prompt: true,
                 auto_select: false,
