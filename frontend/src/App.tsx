@@ -17,6 +17,8 @@ import { IncomingFriendRequestModal } from './components/IncomingFriendRequestMo
 import { SetUsernameModal } from './components/SetUsernameModal';
 import { InstallAppBanner } from './components/InstallAppBanner';
 import { LoadingScreen } from './components/LoadingScreen';
+import { SwipeBackIndicator } from './components/SwipeBackIndicator';
+import { useEdgeSwipeBack } from './utils/useEdgeSwipeBack';
 import { supabase } from './lib/supabase';
 import { api } from './services/api';
 
@@ -78,43 +80,129 @@ function App() {
     }
   }, [isDarkTheme]);
 
-  // Sync internal navigation state with browser history for hardware back button support
+  // Flag to avoid re-pushing history states during popstate / back gestures
+  const isPopStateRef = useRef(false);
+
+  // Check if user is at the root screen (Home tab with no modals or subviews)
+  const isAtRoot = (
+    currentTab === 'home' &&
+    currentView === 'list' &&
+    !selectedBillId &&
+    friendsView === 'list' &&
+    !selectedFriendId &&
+    settingsView === 'main' &&
+    !reviewingBill &&
+    !reviewingFriend &&
+    !isSetUsernameOpen
+  );
+
+  // Handle in-app back navigation (both programmatic and edge-swipe)
+  const handleInAppBack = () => {
+    if (reviewingBill) {
+      setReviewingBill(null);
+      return;
+    }
+    if (reviewingFriend) {
+      setReviewingFriend(null);
+      return;
+    }
+    if (currentTab === 'bills' && currentView === 'detail') {
+      setCurrentView('list');
+      setSelectedBillId(null);
+      return;
+    }
+    if (currentTab === 'friends' && (friendsView === 'detail' || friendsView === 'search')) {
+      setFriendsView('list');
+      setSelectedFriendId(null);
+      return;
+    }
+    if (currentTab === 'settings' && settingsView === 'account') {
+      setSettingsView('main');
+      return;
+    }
+    if (currentTab !== 'home') {
+      setCurrentTab('home');
+      return;
+    }
+  };
+
+  // Edge-swipe to go back gesture hook for mobile / PWA
+  const { isSwiping, swipeProgress } = useEdgeSwipeBack({
+    onBack: handleInAppBack,
+    enabled: !!session && !isAtRoot,
+  });
+
+  // Sync internal navigation state with browser history
   useEffect(() => {
     if (!session) return; // Don't track history while logged out
     
+    if (isPopStateRef.current) {
+      isPopStateRef.current = false;
+      return;
+    }
+
     const stateObj = { 
       currentTab, 
       currentView, 
       selectedBillId, 
       friendsView, 
       selectedFriendId, 
-      settingsView 
+      settingsView,
+      isRoot: isAtRoot
     };
     
     const currentHistoryState = window.history.state;
     
-    if (!currentHistoryState) {
+    if (isAtRoot) {
+      // Home page is root base of stack so hitting back exits/closes app
       window.history.replaceState(stateObj, '');
-    } else if (JSON.stringify(currentHistoryState) !== JSON.stringify(stateObj)) {
-      window.history.pushState(stateObj, '');
+    } else {
+      if (!currentHistoryState) {
+        window.history.replaceState(stateObj, '');
+      } else if (
+        currentHistoryState.currentTab !== currentTab ||
+        currentHistoryState.currentView !== currentView ||
+        currentHistoryState.selectedBillId !== selectedBillId ||
+        currentHistoryState.friendsView !== friendsView ||
+        currentHistoryState.selectedFriendId !== selectedFriendId ||
+        currentHistoryState.settingsView !== settingsView
+      ) {
+        window.history.pushState(stateObj, '');
+      }
     }
-  }, [currentTab, currentView, selectedBillId, friendsView, selectedFriendId, settingsView, session]);
+  }, [currentTab, currentView, selectedBillId, friendsView, selectedFriendId, settingsView, session, isAtRoot]);
 
   // Handle system back button (popstate)
   useEffect(() => {
     const handlePopState = (event: PopStateEvent) => {
+      isPopStateRef.current = true;
+      
+      // Dismiss any open live review modals on back
+      if (reviewingBill || reviewingFriend) {
+        setReviewingBill(null);
+        setReviewingFriend(null);
+      }
+
       if (event.state) {
-        setCurrentTab(event.state.currentTab);
-        setCurrentView(event.state.currentView);
-        setSelectedBillId(event.state.selectedBillId);
-        setFriendsView(event.state.friendsView);
-        setSelectedFriendId(event.state.selectedFriendId);
-        setSettingsView(event.state.settingsView);
+        setCurrentTab(event.state.currentTab || 'home');
+        setCurrentView(event.state.currentView || 'list');
+        setSelectedBillId(event.state.selectedBillId || null);
+        setFriendsView(event.state.friendsView || 'list');
+        setSelectedFriendId(event.state.selectedFriendId || null);
+        setSettingsView(event.state.settingsView || 'main');
+      } else {
+        // Popped past first recorded entry -> restore root home
+        setCurrentTab('home');
+        setCurrentView('list');
+        setSelectedBillId(null);
+        setFriendsView('list');
+        setSelectedFriendId(null);
+        setSettingsView('main');
       }
     };
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
-  }, []);
+  }, [reviewingBill, reviewingFriend]);
 
   useEffect(() => {
     let isMounted = true;
@@ -539,8 +627,18 @@ function App() {
         </div>
 
         <div style={{ display: currentTab === 'settings' ? undefined : 'none' }}>
-          <Settings session={activeSession} initialView={settingsView} isDarkTheme={isDarkTheme} onThemeChange={setIsDarkTheme} />
+          <Settings 
+            session={activeSession} 
+            initialView={settingsView} 
+            isDarkTheme={isDarkTheme} 
+            onThemeChange={setIsDarkTheme} 
+            onViewChange={setSettingsView}
+            onBack={() => setSettingsView('main')}
+          />
         </div>
+
+      {/* Touch Edge-Swipe Visual Indicator */}
+      <SwipeBackIndicator isSwiping={isSwiping} progress={swipeProgress} />
 
       {/* Live In-App Notification Pop-up */}
       <LiveNotificationPopup

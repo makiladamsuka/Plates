@@ -12,9 +12,11 @@ interface SettingsProps {
   initialView?: 'main' | 'account';
   isDarkTheme?: boolean;
   onThemeChange?: (isDark: boolean) => void;
+  onViewChange?: (view: 'main' | 'account') => void;
+  onBack?: () => void;
 }
 
-export function Settings({ session, initialView = 'main', isDarkTheme = false, onThemeChange }: SettingsProps) {
+export function Settings({ session, initialView = 'main', isDarkTheme = false, onThemeChange, onViewChange, onBack }: SettingsProps) {
   const [view, setView] = useState<'main' | 'account'>(initialView);
   const [isChangeDPOpen, setIsChangeDPOpen] = useState(false);
   const [isChangeNameOpen, setIsChangeNameOpen] = useState(false);
@@ -179,7 +181,11 @@ export function Settings({ session, initialView = 'main', isDarkTheme = false, o
           <div className="flex items-center justify-between w-full mb-3">
             <div className="flex items-center gap-2">
               <button 
-                onClick={() => setView('main')} 
+                onClick={() => {
+                  setView('main');
+                  onViewChange?.('main');
+                  onBack?.();
+                }} 
                 className="w-8 h-8 flex items-center justify-center -ml-2 cursor-pointer text-[#1A1A1A] dark:text-zinc-100 hover:text-black dark:hover:text-white transition-colors"
                 title="Go back"
               >
@@ -340,7 +346,10 @@ export function Settings({ session, initialView = 'main', isDarkTheme = false, o
       <div className="max-w-[480px] md:max-w-2xl mx-auto px-5 md:px-10">
         <div className="bg-white dark:bg-zinc-900 rounded-[35px] p-4 flex flex-col gap-2 mt-2 shadow-sm border border-black/5 dark:border-white/5">
         <button 
-          onClick={() => setView('account')}
+          onClick={() => {
+            setView('account');
+            onViewChange?.('account');
+          }}
           className="w-full flex items-center justify-between p-4 hover:bg-black/5 dark:hover:bg-zinc-800/60 rounded-[24px] transition-colors cursor-pointer"
         >
           <div className="flex items-center gap-4">
