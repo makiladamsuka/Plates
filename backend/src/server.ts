@@ -62,9 +62,9 @@ const corsOptions: cors.CorsOptions = {
 
 app.use(cors(corsOptions));
 
-app.use(express.json({ limit: '10mb' }));
+app.use(express.json({ limit: '256kb' }));
 
-// Rate Limiter: Max 200 requests per 15 minutes per IP
+// Global Rate Limiter: Max 200 requests per 15 minutes per IP
 const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 200,
@@ -72,6 +72,49 @@ const apiLimiter = rateLimit({
   legacyHeaders: false,
   message: { error: 'Too many requests, please try again later.' }
 });
+
+// Dedicated Bill Creation Limiter: Max 10 bill creations per minute per user/IP
+const billCreationLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: (req: any) => req.user?.id || req.ip || 'anonymous',
+  message: { error: 'Rate limit exceeded: You are creating bills too quickly. Please wait a minute before trying again.' }
+});
+
+// Write Action Limiter (mutations): Max 30 requests per minute per user/IP
+const writeLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 30,
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: (req: any) => req.user?.id || req.ip || 'anonymous',
+  message: { error: 'Too many requests. Please slow down.' }
+});
+
+// Search Limiter: Max 60 requests per minute per user/IP
+const searchLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 60,
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: (req: any) => req.user?.id || req.ip || 'anonymous',
+  message: { error: 'Too many search requests. Please slow down.' }
+});
+
+// In-memory cache to detect and block rapid duplicate bill submissions (replay / spam)
+const recentBillCreations = new Map<string, number>();
+
+// Clean up stale cache entries every 60 seconds
+setInterval(() => {
+  const now = Date.now();
+  for (const [key, timestamp] of recentBillCreations.entries()) {
+    if (now - timestamp > 30000) {
+      recentBillCreations.delete(key);
+    }
+  }
+}, 60000);
 
 app.use('/api/', apiLimiter);
 
@@ -195,20 +238,91 @@ app.get('/api/bills/:id', async (req, res) => {
   }
 });
 
-// Create a new bill
-app.post('/api/bills', async (req, res) => {
+// Create a new bill (Hardened against DDoS / Spam / Flooding)
+app.post('/api/bills', billCreationLimiter, async (req, res) => {
   try {
+    const authenticatedUserId = (req as any).user?.id;
     const { title, category, total, status, creatorId, participants } = req.body;
-    
+    const effectiveUserId = authenticatedUserId || creatorId;
+
+    if (!effectiveUserId) {
+      return res.status(401).json({ error: 'Authentication or user ID is required to create a bill.' });
+    }
+
+    // In production, prevent spoofing bills on behalf of other users
+    if (process.env.NODE_ENV === 'production' && authenticatedUserId && creatorId && authenticatedUserId !== creatorId) {
+      return res.status(403).json({ error: 'Unauthorized: Cannot create bills on behalf of another user.' });
+    }
+
+    // 1. Validate title
+    if (typeof title !== 'string' || title.trim().length === 0) {
+      return res.status(400).json({ error: 'Bill title is required and cannot be empty.' });
+    }
+    const sanitizedTitle = title.trim().slice(0, 100);
+
+    // 2. Validate category
+    const sanitizedCategory = typeof category === 'string' && category.trim().length > 0 
+      ? category.trim().slice(0, 50) 
+      : 'Restaurant';
+
+    // 3. Validate total amount
+    const parsedTotal = typeof total === 'number' ? total : parseFloat(total);
+    if (isNaN(parsedTotal) || !isFinite(parsedTotal) || parsedTotal <= 0) {
+      return res.status(400).json({ error: 'Total amount must be a positive number greater than zero.' });
+    }
+    if (parsedTotal > 100_000_000) {
+      return res.status(400).json({ error: 'Total amount cannot exceed 100,000,000.' });
+    }
+    const normalizedTotal = Math.round(parsedTotal * 100) / 100;
+
+    // 4. Validate & deduplicate participants
+    let validatedParticipants: { friendId: string; share: number; paid?: boolean }[] = [];
+    if (Array.isArray(participants)) {
+      if (participants.length > 50) {
+        return res.status(400).json({ error: 'A bill cannot exceed 50 participants.' });
+      }
+
+      const seenFriends = new Set<string>();
+      for (const p of participants) {
+        if (!p || typeof p !== 'object' || !p.friendId || typeof p.friendId !== 'string') {
+          continue;
+        }
+        const friendId = p.friendId.trim();
+        if (!friendId || seenFriends.has(friendId)) continue;
+        seenFriends.add(friendId);
+
+        const share = typeof p.share === 'number' && isFinite(p.share) && p.share >= 0 
+          ? Math.round(p.share * 100) / 100 
+          : 0;
+
+        validatedParticipants.push({
+          friendId,
+          share,
+          paid: p.paid
+        });
+      }
+    }
+
+    // 5. Anti-Spam / Rapid Duplicate Request Barrier (Idempotency)
+    const sortedFriendIds = validatedParticipants.map(p => p.friendId).sort().join(',');
+    const billFingerprint = `${effectiveUserId}:${sanitizedTitle.toLowerCase()}:${normalizedTotal}:${sortedFriendIds}`;
+
+    const now = Date.now();
+    const lastSubmission = recentBillCreations.get(billFingerprint);
+    if (lastSubmission && (now - lastSubmission) < 3000) {
+      return res.status(429).json({ error: 'Duplicate bill creation detected. Please wait a moment.' });
+    }
+    recentBillCreations.set(billFingerprint, now);
+
     // Create the bill
     const { data: bill, error: billError } = await supabase
       .from('bills')
       .insert([{ 
-        title, 
-        category, 
-        total, 
+        title: sanitizedTitle, 
+        category: sanitizedCategory, 
+        total: normalizedTotal, 
         status: status || 'Pending',
-        creator_id: creatorId || null
+        creator_id: effectiveUserId
       }])
       .select()
       .single();
@@ -216,9 +330,9 @@ app.post('/api/bills', async (req, res) => {
     if (billError) throw billError;
     
     // Create participants if provided
-    if (participants && participants.length > 0) {
-      const participantInserts = participants.map((p: any) => {
-        const isCreator = creatorId && p.friendId === creatorId;
+    if (validatedParticipants.length > 0) {
+      const participantInserts = validatedParticipants.map((p) => {
+        const isCreator = p.friendId === effectiveUserId;
         return {
           bill_id: bill.id,
           friend_id: p.friendId,
@@ -276,7 +390,7 @@ app.post('/api/bills', async (req, res) => {
 });
 
 // Accept incoming bill request
-app.post('/api/bills/:id/accept', async (req, res) => {
+app.post('/api/bills/:id/accept', writeLimiter, async (req, res) => {
   try {
     const { id } = req.params;
     const { userId } = req.body;
@@ -302,7 +416,7 @@ app.post('/api/bills/:id/accept', async (req, res) => {
 });
 
 // Decline incoming bill request
-app.post('/api/bills/:id/decline', async (req, res) => {
+app.post('/api/bills/:id/decline', writeLimiter, async (req, res) => {
   try {
     const { id } = req.params;
     const { userId } = req.body;
@@ -327,7 +441,7 @@ app.post('/api/bills/:id/decline', async (req, res) => {
 });
 
 // Step 1: Participant marks payment as sent (awaiting creator confirmation)
-app.post('/api/bills/:id/send-payment', async (req, res) => {
+app.post('/api/bills/:id/send-payment', writeLimiter, async (req, res) => {
   try {
     const { id } = req.params;
     const { friendId } = req.body;
@@ -348,7 +462,7 @@ app.post('/api/bills/:id/send-payment', async (req, res) => {
 });
 
 // Step 2: Creator confirms receipt of payment
-app.post('/api/bills/:id/confirm-payment', async (req, res) => {
+app.post('/api/bills/:id/confirm-payment', writeLimiter, async (req, res) => {
   try {
     const { id } = req.params;
     const { friendId } = req.body;
@@ -383,7 +497,7 @@ app.post('/api/bills/:id/confirm-payment', async (req, res) => {
 });
 
 // Step 2 Alternate: Creator declines receipt of payment (not received)
-app.post('/api/bills/:id/decline-payment', async (req, res) => {
+app.post('/api/bills/:id/decline-payment', writeLimiter, async (req, res) => {
   try {
     const { id } = req.params;
     const { friendId } = req.body;
@@ -404,7 +518,7 @@ app.post('/api/bills/:id/decline-payment', async (req, res) => {
 });
 
 // Settle user's share (Legacy direct Pay endpoint)
-app.post('/api/bills/:id/pay', async (req, res) => {
+app.post('/api/bills/:id/pay', writeLimiter, async (req, res) => {
   try {
     const { id } = req.params;
     const { friendId } = req.body;
@@ -438,7 +552,7 @@ app.post('/api/bills/:id/pay', async (req, res) => {
 });
 
 // Delete a bill (Creator can delete anytime; Participants can only remove settled bills)
-app.delete('/api/bills/:id', async (req, res) => {
+app.delete('/api/bills/:id', writeLimiter, async (req, res) => {
   try {
     const { id } = req.params;
     const effectiveUserId = (req as any).user?.id || req.body?.userId || req.query?.userId;
@@ -509,8 +623,8 @@ app.delete('/api/bills/:id', async (req, res) => {
 
 // =============== FRIENDS ROUTES ===============
 
-// Search profiles by name or username with input sanitization
-app.get('/api/profiles/search', async (req, res) => {
+// Search profiles by name or username with input sanitization & rate limiting
+app.get('/api/profiles/search', searchLimiter, async (req, res) => {
   try {
     const { q, userId } = req.query;
     if (!q || (q as string).trim().length < 1) {
@@ -580,7 +694,7 @@ app.get('/api/friends/:userId', async (req, res) => {
 });
 
 // Add a friend
-app.post('/api/friends', async (req, res) => {
+app.post('/api/friends', writeLimiter, async (req, res) => {
   try {
     const { userId, friendId } = req.body;
     const { data, error } = await supabase
@@ -600,7 +714,7 @@ app.post('/api/friends', async (req, res) => {
   }
 });
 // Accept a friend request
-app.post('/api/friends/accept', async (req, res) => {
+app.post('/api/friends/accept', writeLimiter, async (req, res) => {
   try {
     const { requesterId, friendId } = req.body;
     
@@ -650,7 +764,7 @@ app.post('/api/friends/accept', async (req, res) => {
 });
 
 // Remove a friend (Only allowed if all shared bills are settled)
-app.delete('/api/friends', async (req, res) => {
+app.delete('/api/friends', writeLimiter, async (req, res) => {
   try {
     const effectiveUserId = (req as any).user?.id || req.body?.userId;
     const { friendId } = req.body;
@@ -725,7 +839,7 @@ app.delete('/api/friends', async (req, res) => {
 });
 
 // Delete user account (Only allowed if all debts and payments with all friends are 0 / settled)
-app.delete('/api/account', async (req, res) => {
+app.delete('/api/account', writeLimiter, async (req, res) => {
   try {
     const effectiveUserId = (req as any).user?.id || req.body?.userId;
 

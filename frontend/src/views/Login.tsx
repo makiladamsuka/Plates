@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { supabase } from '../lib/supabase';
-import { ShieldCheck, Zap, Loader2 } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 
 const GOOGLE_CLIENT_ID = (
   import.meta.env.VITE_GOOGLE_CLIENT_ID ||
@@ -335,19 +335,6 @@ export function Login() {
           {error && (
             <p className="text-red-400 text-sm font-medium mt-2">{error}</p>
           )}
-
-          {/* Social Proof / Mini Stats */}
-          <div className="pt-4 flex items-center justify-center gap-6 text-xs font-medium text-[#9CA3AF]">
-            <div className="flex items-center gap-2">
-              <ShieldCheck className="w-4 h-4 text-[#2A2A2E]" />
-              <span>Secure & Private</span>
-            </div>
-            <div className="w-1 h-1 rounded-full bg-[#2A2A2E]" />
-            <div className="flex items-center gap-2">
-              <Zap className="w-4 h-4 text-[#2A2A2E]" />
-              <span>Instant Settlements</span>
-            </div>
-          </div>
 
         </div>
       </main>

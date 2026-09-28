@@ -25,4 +25,6 @@ export function SwipeBackIndicator({ isSwiping, progress }: SwipeBackIndicatorPr
       </div>
     </div>
   );
+
+
 }
