@@ -166,12 +166,21 @@ export function NewBillModal({ isOpen, onClose, onSuccess, session: propSession 
 
   const splits = calculateSplits();
 
+  const lastConfirmTimeRef = useRef<number>(0);
+
   const handleConfirm = async () => {
+    // Prevent double invocation if already creating or clicked within 1.5s
+    const now = Date.now();
+    if (isCreating || (now - lastConfirmTimeRef.current < 1500)) {
+      return;
+    }
+    lastConfirmTimeRef.current = now;
     setIsCreating(true);
+
     try {
-      // 1. Primary: Route through API service (uses backend service role key)
+      // 1. Primary: Route through API service (uses backend service role key with rate-limit and DDoS protection)
       await api.createBill({
-        title: billName || 'New Bill',
+        title: (billName || 'New Bill').trim(),
         category: tag || 'Other',
         total: parsedAmount,
         creatorId: userId,
@@ -180,13 +189,21 @@ export function NewBillModal({ isOpen, onClose, onSuccess, session: propSession 
       if (onSuccess) onSuccess();
       handleClose();
     } catch (err: any) {
-      console.warn('API createBill notice, trying direct client fallback:', err);
+      console.warn('API createBill notice:', err);
+      const errMsg = err?.message || '';
+
+      // If intentionally rate-limited, rejected for spam, or duplicate, do not attempt fallback bypass
+      if (errMsg.toLowerCase().includes('rate limit') || errMsg.toLowerCase().includes('too many requests') || errMsg.toLowerCase().includes('duplicate bill')) {
+        alert(errMsg);
+        return;
+      }
+
       try {
-        // 2. Resilient fallback: Direct Supabase client write
+        // 2. Resilient fallback: Direct Supabase client write (only on network/server downtime)
         const { data: billData, error: billError } = await supabase
           .from('bills')
           .insert([{
-            title: billName || 'New Bill',
+            title: (billName || 'New Bill').trim(),
             category: tag || 'Other',
             total: parsedAmount,
             status: 'Pending',
