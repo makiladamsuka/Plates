@@ -230,7 +230,7 @@ function App() {
         if (isMounted) {
           // Ensure a smooth, polished minimum display time for the branded loading screen
           const elapsed = Date.now() - startTime;
-          const minDelay = 350;
+          const minDelay = 800;
           if (elapsed < minDelay) {
             setTimeout(() => {
               if (isMounted) setIsInitializing(false);

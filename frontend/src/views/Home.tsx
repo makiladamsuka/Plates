@@ -292,7 +292,7 @@ export function Home({
           </div>
 
           <div
-              className="px-0 flex gap-3 overflow-x-auto no-scrollbar pb-4 pt-1 snap-x snap-mandatory md:snap-none md:grid md:grid-cols-2 md:gap-6 md:auto-rows-fr"
+              className="px-1 sm:px-0 flex gap-3 overflow-x-auto no-scrollbar pb-4 pt-1 snap-x snap-mandatory md:snap-none md:grid md:grid-cols-2 md:gap-6 md:auto-rows-fr"
           >
             {[...bills]
               .sort((a, b) => {
@@ -317,7 +317,7 @@ export function Home({
                 <div
                   key={`carousel-${bill.id}`}
                   onClick={() => onBillClick?.(bill.id)}
-                  className="w-[168px] sm:w-[185px] md:w-full h-[215px] md:h-[220px] shrink-0 bg-[#D9D9D9] dark:bg-zinc-900 rounded-[28px] md:rounded-[32px] flex flex-col justify-between shadow-sm snap-start cursor-pointer active:scale-[0.98] hover:bg-zinc-300/80 dark:hover:bg-zinc-800 transition-all border border-transparent dark:border-white/5 p-4 sm:p-5 md:p-6"
+                  className="w-[172px] sm:w-[185px] md:w-full h-[215px] md:h-[220px] shrink-0 bg-[#D9D9D9] dark:bg-zinc-900 rounded-[28px] md:rounded-[32px] flex flex-col justify-between shadow-sm snap-start cursor-pointer active:scale-[0.98] hover:bg-zinc-300/80 dark:hover:bg-zinc-800 transition-all border border-transparent dark:border-white/5 p-4 sm:p-5 md:p-6"
                 >
                   <h3 className="text-[#1A1A1A] dark:text-zinc-100 text-lg sm:text-xl md:text-2xl font-bold leading-snug line-clamp-2">
                     {bill.title}
