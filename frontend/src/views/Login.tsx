@@ -35,7 +35,11 @@ export function Login() {
       setIsSpinning(true);
       setError(null);
 
-      const baseUrl = (import.meta.env.VITE_APP_URL || window.location.origin).replace(/\/+$/, '');
+      const canonicalBaseUrl = (import.meta.env.VITE_APP_URL || 'https://www.plates.live').replace(/\/+$/, '');
+      const currentHost = window.location.hostname.toLowerCase();
+      const baseUrl = currentHost === 'plates.live'
+        ? canonicalBaseUrl
+        : (import.meta.env.VITE_APP_URL || window.location.origin).replace(/\/+$/, '');
       const redirectUrl = `${baseUrl}/auth/callback`;
 
       const isMobileOrStandalone = 

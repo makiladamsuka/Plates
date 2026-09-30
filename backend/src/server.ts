@@ -17,6 +17,8 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 const port = process.env.PORT || 3000;
+const canonicalHost = (process.env.CANONICAL_HOST || 'www.plates.live').replace(/^https?:\/\//i, '').replace(/\/+$/, '').toLowerCase();
+const canonicalOrigin = `https://${canonicalHost}`;
 
 // Security HTTP Headers
 // CSP is defined ONLY in frontend/index.html <meta> tag (single source of truth).
@@ -63,6 +65,30 @@ const corsOptions: cors.CorsOptions = {
 app.use(cors(corsOptions));
 
 app.use(express.json({ limit: '256kb' }));
+
+// Normalize the root domain to the canonical www host for all browser navigation.
+app.use((req, res, next) => {
+  if (process.env.NODE_ENV !== 'production') {
+    return next();
+  }
+
+  if (req.path.startsWith('/api')) {
+    return next();
+  }
+
+  const rawHost = req.headers.host ?? '';
+  const host = rawHost.split(':')[0]?.toLowerCase() ?? '';
+  if (!host || host === 'localhost' || host === canonicalHost) {
+    return next();
+  }
+
+  if (host === 'plates.live' || host.endsWith('.plates.live')) {
+    const target = `${canonicalOrigin}${req.originalUrl}`;
+    return res.redirect(308, target);
+  }
+
+  return next();
+});
 
 // Global Rate Limiter: Max 200 requests per 15 minutes per IP
 const apiLimiter = rateLimit({
