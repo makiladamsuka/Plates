@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { supabase } from '../lib/supabase';
 import { Loader2 } from 'lucide-react';
+import { LoadingScreen } from '../components/LoadingScreen';
 
 const GOOGLE_CLIENT_ID = (
   import.meta.env.VITE_GOOGLE_CLIENT_ID ||
@@ -234,6 +235,23 @@ export function Login() {
       }
     };
   }, []);
+
+  useEffect(() => {
+    // Explicitly set dark color-scheme on root so Google Identity Services and iframes render dark natively
+    const prevColorScheme = document.documentElement.style.colorScheme;
+    document.documentElement.style.colorScheme = 'dark';
+    return () => {
+      document.documentElement.style.colorScheme = prevColorScheme;
+    };
+  }, []);
+
+  if (isSpinning) {
+    return (
+      <LoadingScreen
+        message={authMode === 'signup' ? 'Setting up your account...' : 'Signing you in...'}
+      />
+    );
+  }
 
   return (
     <div className="h-[100dvh] max-h-screen bg-[#0F0F11] text-[#F3F4F6] flex flex-col justify-between font-['Plus_Jakarta_Sans',sans-serif] selection:bg-white selection:text-black relative overflow-hidden select-none">

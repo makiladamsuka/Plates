@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { syncUserProfile } from '../lib/profileSync';
+import { LoadingScreen } from '../components/LoadingScreen';
 
 export function AuthCallback() {
   const navigate = useNavigate();
@@ -200,28 +201,22 @@ export function AuthCallback() {
 
   if (isDone) {
     return (
-      <div className="min-h-screen bg-[#EDEDF1] dark:bg-zinc-950 flex flex-col items-center justify-center gap-4 p-6 font-['Sora']">
-        <div className="w-10 h-10 border-3 border-black/10 dark:border-white/10 border-t-emerald-500 rounded-full animate-spin" />
-        <p className="text-black/80 dark:text-zinc-200 text-sm font-medium">
-          Sign-in successful. Closing window...
-        </p>
-        <button
-          onClick={() => window.close()}
-          className="text-xs text-black/50 dark:text-zinc-400 underline hover:text-black dark:hover:text-white cursor-pointer mt-2"
-        >
-          Click here if window does not close automatically
-        </button>
+      <div className="relative">
+        <LoadingScreen message="Sign-in successful. Connecting..." />
+        <div className="fixed bottom-8 inset-x-0 flex justify-center z-[101]">
+          <button
+            onClick={() => window.close()}
+            className="text-xs text-black/50 dark:text-zinc-400 underline hover:text-black dark:hover:text-white cursor-pointer"
+          >
+            Click here if window does not close automatically
+          </button>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#EDEDF1] dark:bg-zinc-950 flex flex-col items-center justify-center gap-4 font-['Sora']">
-      <div className="w-10 h-10 border-3 border-black/10 dark:border-white/10 border-t-[#F5C744] rounded-full animate-spin" />
-      <p className="text-black/60 dark:text-zinc-400 text-sm font-medium">
-        Connecting to Plates...
-      </p>
-    </div>
+    <LoadingScreen message="Connecting to Plates..." />
   );
 }
 
